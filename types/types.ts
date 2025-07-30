@@ -234,7 +234,21 @@ export type Comment = {
 };
 
 export type TeamCompatibilityAnalysis = {
-    overall_score: number;
+    score_breakdown: {
+        technical_alignment: number;
+        schedule_compatibility: number;
+        interest_alignment: number;
+        communication_alignment: number;
+        work_style_compatibility: number;
+        weight_applied: {
+            technical_alignment: number;
+            schedule_compatibility: number;
+            interest_alignment: number;
+            communication_alignment: number;
+            work_style_compatibility: number;
+        };
+        calculation_comment: string;
+    };
     member_analyses: {
         member_email: string;
         strengths: string[];

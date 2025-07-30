@@ -13,7 +13,7 @@ export const apiRequest = async ({ context, responseFormat, input, functionName 
     try {
         const response = await openai.chat.completions.create(
             {
-                model: "gpt-4o-mini",
+                model: "gpt-4o",
                 messages: [
                     { role: "system", content: context },
                     { role: "user", content: input },
@@ -33,15 +33,15 @@ export const apiRequest = async ({ context, responseFormat, input, functionName 
                     function: { name: functionName },
                 },
                 n: 1,
-                temperature: 0.5,
-                max_tokens: 2000,
+                temperature: 0.2,
+                max_tokens: 7000,
                 top_p: 1,
                 frequency_penalty: 0,
                 presence_penalty: 0,
             },
             {
                 signal: controller.signal,
-                timeout: 30000,
+                timeout: 120000,
             }
         );
 
