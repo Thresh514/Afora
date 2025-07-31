@@ -9,16 +9,30 @@ interface TeamScoreChartProps {
 }
 
 const TeamScoreChart = ({ analysis }: TeamScoreChartProps) => {
+    // Calculate overall score from score_breakdown
+    const calculateOverallScore = () => {
+        const breakdown = analysis.score_breakdown;
+        return Math.round(
+            0.35 * breakdown.technical_alignment +
+            0.15 * breakdown.schedule_compatibility +
+            0.2 * breakdown.interest_alignment +
+            0.15 * breakdown.communication_alignment +
+            0.15 * breakdown.work_style_compatibility
+        );
+    };
+
+    const overallScore = calculateOverallScore();
+
     // Prepare data for pie chart - based on overall score
     const pieData = [
         {
             name: "Compatibility",
-            value: analysis.overall_score,
+            value: overallScore,
             fill: "#8884d8",
         },
         {
             name: "Room for Improvement",
-            value: 100 - analysis.overall_score,
+            value: 100 - overallScore,
             fill: "#e5e5e5",
         },
     ];
@@ -83,10 +97,10 @@ const TeamScoreChart = ({ analysis }: TeamScoreChartProps) => {
                         <div
                             className={`text-4xl font-bold`}
                             style={{
-                                color: getScoreColor(analysis.overall_score),
+                                color: getScoreColor(overallScore),
                             }}
                         >
-                            {analysis.overall_score}%
+                            {overallScore}%
                         </div>
                         <p className="text-sm text-muted-foreground">
                             Overall Compatibility
