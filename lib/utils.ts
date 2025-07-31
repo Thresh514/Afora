@@ -23,8 +23,7 @@ export const parseScheduleData = (scheduleString: string) => {
             structured: null,
             readable: scheduleString
         };
-    } catch (error) {
-        // 如果解析失败，返回原始字符串
+    } catch {
         return {
             structured: null,
             readable: scheduleString
