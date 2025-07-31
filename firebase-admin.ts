@@ -10,7 +10,8 @@ import { getFirestore } from "firebase-admin/firestore"
 
 // THIS LETS US WRITE TO AND DELETE ANYTHING
 
-const serviceKey = require("@/service_key.json")
+const serviceKeyJson = Buffer.from(process.env.SERVICE_ACCOUNT_KEY_BASE64!, "base64").toString("utf-8");
+const serviceKey = JSON.parse(serviceKeyJson);
 
 let app: App;
 
