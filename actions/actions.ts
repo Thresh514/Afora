@@ -1138,22 +1138,70 @@ export async function getProjectMembersResponses(projId: string) {
             return { success: true, data: [] };
         }
 
-        // Get all project members' onboardingSurveyResponse
+        // Get all project members' onboardingSurveyResponse and projOnboardingSurveyResponse
         const memberResponses = await Promise.all(
             members.map(async (memberEmail) => {
-                const userDoc = await adminDb
-                    .collection("users")
-                    .doc(memberEmail)
-                    .get();
-                if (userDoc.exists) {
+                try {
+                    // Get user's general onboarding responses
+                    const userDoc = await adminDb
+                        .collection("users")
+                        .doc(memberEmail)
+                        .get();
+                    
+                    if (!userDoc.exists) {
+                        console.log(`User document not found for: ${memberEmail}`);
+                        return null;
+                    }
+                    
                     const userData = userDoc.data();
-                    const responses = userData?.onboardingSurveyResponse || [];
+                    const onboardingResponses = userData?.onboardingSurveyResponse || [];
+                    
+                    // Get project-specific onboarding responses from users/{email}/orgs/{orgId}
+                    // We need to find the orgId for this project
+                    const projectDoc = await adminDb
+                        .collection("projects")
+                        .doc(projId)
+                        .get();
+                    
+                    if (!projectDoc.exists) {
+                        console.log(`Project document not found for: ${projId}`);
+                        return null;
+                    }
+                    
+                    const projectData = projectDoc.data();
+                    const orgId = projectData?.orgId;
+                    
+                    if (!orgId) {
+                        console.log(`No orgId found for project: ${projId}`);
+                        return null;
+                    }
+                    
+                    // Get project onboarding responses from the correct path
+                    const userOrgDoc = await adminDb
+                        .collection("users")
+                        .doc(memberEmail)
+                        .collection("orgs")
+                        .doc(orgId)
+                        .get();
+                    
+                    let projResponses = [];
+                    if (userOrgDoc.exists) {
+                        const userOrgData = userOrgDoc.data();
+                        projResponses = userOrgData?.projOnboardingSurveyResponse || [];
+                        console.log(`Found projResponses for ${memberEmail}:`, projResponses.length, "items");
+                    } else {
+                        console.log(`No org document found for user ${memberEmail} in org ${orgId}`);
+                    }
+                    
                     return {
                         email: memberEmail,
-                        responses: responses,
+                        onboardingResponses: onboardingResponses,
+                        projResponses: projResponses,
                     };
+                } catch (error) {
+                    console.error(`Error getting responses for ${memberEmail}:`, error);
+                    return null;
                 }
-                return null;
             }),
         );
 
@@ -2842,6 +2890,27 @@ export async function reassignTask(
 }
 
 // ================ Team Analysis ================
+
+export async function getProjectTeamCharter(projId: string) {
+    try {
+        const projectDoc = await adminDb.collection("projects").doc(projId).get();
+        
+        if (!projectDoc.exists) {
+            return { success: false, message: "Project not found" };
+        }
+        
+        const projectData = projectDoc.data();
+        const teamCharterResponse = projectData?.teamCharterResponse || [];
+        
+        return { 
+            success: true, 
+            data: teamCharterResponse 
+        };
+    } catch (error) {
+        console.error("Error getting project team charter:", error);
+        return { success: false, message: (error as Error).message };
+    }
+}
 
 export async function saveTeamAnalysis(
     projId: string,
