@@ -68,8 +68,6 @@ function TaskMainContent({
     // Initialize completion data from task
     useEffect(() => {
         if (task) {
-            console.log("penis")
-            console.log(task)
             const taskCompletion = task.completion_percentage || 0;
             setCompletionPercentage([taskCompletion]);
             setTempCompletionPercentage([taskCompletion]);

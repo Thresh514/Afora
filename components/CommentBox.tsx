@@ -38,6 +38,7 @@ const CommentBox: React.FC<CommentBoxProps> = ({
     const editorRef = useRef<HTMLDivElement>(null);
     const [isPending, startTransition] = useTransition();
     const [isClient, setIsClient] = useState(false);
+    const [isContentPresent, setIsContentPresent] = useState(false);
 
     useEffect(() => {
         setIsClient(true);
@@ -62,6 +63,20 @@ const CommentBox: React.FC<CommentBoxProps> = ({
         // 添加这个选项来解决 SSR 问题
         immediatelyRender: false,
     });
+
+    useEffect(() => {
+        if (!editor) return;
+
+        const updateContentState = () => {
+            setIsContentPresent(!!editor.getText().trim());
+        };
+
+        editor.on('update', updateContentState);
+
+        return () => {
+            editor.off('update', updateContentState);
+        };
+    }, [editor]);
 
     const handlePost = () => {
         if (!editor) return;
@@ -166,7 +181,7 @@ const CommentBox: React.FC<CommentBoxProps> = ({
                         variant="default"
                         onClick={handlePost}
                         className="h-8 w-8 sm:h-10 sm:w-10 p-0 transition-all duration-200 hover:scale-105"
-                        disabled={!editor?.getText().trim() || isPending}
+                        disabled={!isContentPresent || isPending}
                     >
                         {isPending ? (
                             <LoaderCircle className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />

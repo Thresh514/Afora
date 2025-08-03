@@ -800,7 +800,7 @@ export async function postComment(
         await newCommentRef.set({
             message: message,
             msgId: newCommentRef.id,
-            time: time,
+            time: JSON.parse(JSON.stringify(time)),
             uid: uid,
         });
     } catch (error) {
