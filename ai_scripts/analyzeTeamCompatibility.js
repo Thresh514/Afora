@@ -376,7 +376,7 @@ export const analyzeTeamCompatibility = async (
     PER MEMBER ANALYSIS (structure strictly required):
     
     **Technical Proficiency**
-    - Score (0–100) with specific justification
+    - Score (50–100) with specific justification
     - 2–3 core technical strengths with evidence from their responses
     - 1–2 specific technical gaps with project impact (e.g., "Lacks JavaScript experience for a frontend-heavy build, which may delay UI development by 2-3 weeks")
     
@@ -469,7 +469,6 @@ export const analyzeTeamCompatibility = async (
     - Look for complementary skills and positive team dynamics
     - Consider growth potential and learning ability of team members
     - Use natural, varied scores (e.g., 82, 87, 79, 84) to reflect nuanced assessment
-    
     
     
     ACTIONABLE IMPROVEMENT RECOMMENDATIONS:

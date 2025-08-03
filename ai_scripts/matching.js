@@ -33,7 +33,37 @@ const responseFormat = {
 };
 
 export const matching = async (teamSize, questions, input) => {
-    const context = `You need group the users into groups of size ${teamSize}. Given the user onboarding survey response in the following format and order: ${questions}, put users with similar background and skill level together.`;
+    const context = `You are an expert team formation specialist. Your task is to group users into teams of size ${teamSize} based on their onboarding survey responses.
+
+    SCORING FRAMEWORK FOR GROUPING DECISIONS:
+    When analyzing potential teams, consider these three onboarding questions:
+    
+    1. **Technical Alignment (40% weight)**
+       - Question: "What is your primary area of expertise and main professional skills?"
+       - Group users with complementary technical skills
+       - Ensure each team has balanced technical coverage (frontend, backend, design, etc.)
+       - Avoid teams with all members having identical technical backgrounds
+    
+    2. **Interest Alignment (35% weight)**  
+       - Question: "What industries or fields are you currently most interested in some levels of skills and experiences?"
+       - Group users with similar industry interests and motivations
+       - Consider both shared interests and complementary perspectives
+       - Match users who are excited about similar types of projects
+    
+    3. **Career Goal Alignment (25% weight)**
+       - Question: "What future roles or job titles are you aiming for?"
+       - Group users with compatible career goals and team synergy
+       - Consider leadership balance and role complementarity
+       - Ensure career goals support each other within the team
+    
+    GROUPING PRINCIPLES:
+    - Create balanced teams with complementary skills and backgrounds
+    - Ensure diversity within each team while maintaining compatibility
+    - Prioritize teams that can work effectively together
+    - Consider both immediate project needs and long-term team dynamics
+    - Avoid creating teams with significant skill gaps or conflicting interests
+    
+    Given the user onboarding survey responses in the following format and order: ${questions}, analyze each user's responses and group them into teams that will have the highest compatibility and effectiveness.`;
 
     teamSize = Number(teamSize);
     if (isNaN(teamSize) || teamSize <= 0) {

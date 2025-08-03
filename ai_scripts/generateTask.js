@@ -300,28 +300,27 @@ Remember: Each stage should have AT LEAST 5-6 detailed tasks, and complex featur
 Output your response in the following JSON schema format.`;
 
         const input = `
+                    Team Charter Questions:
+                    ${teamCharterQuestions.join("\n")}
 
-Team Charter Questions:
-${teamCharterQuestions.join("\n")}
+                    Project Information:
+                    ${JSON.stringify(projectInfo, null, 2)}
 
-Project Information:
-${JSON.stringify(projectInfo, null, 2)}
+                    Team Information:
+                    ${JSON.stringify(teamInfo, null, 2)}
 
-Team Information:
-${JSON.stringify(teamInfo, null, 2)}
+                    Timeline Information:
+                    ${JSON.stringify(timelineInfo, null, 2)}
 
-Timeline Information:
-${JSON.stringify(timelineInfo, null, 2)}
+                    Additional Information:
+                    ${JSON.stringify(additionalInfo, null, 2)}
 
-Additional Information:
-${JSON.stringify(additionalInfo, null, 2)}
+                    Member Survey Questions:
+                    ${projQuestions.join("\n")}
 
-Member Survey Questions:
-${projQuestions.join("\n")}
-
-Member Survey Responses:
-${userResponses.join("\n")}
-`;
+                    Member Survey Responses:
+                    ${userResponses.join("\n")}
+                    `;
 
         const result = await apiRequest({ context, responseFormat, input, functionName: "generateTask" });
         
