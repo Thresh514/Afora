@@ -52,25 +52,7 @@ function StagePage() {
         }
     }, [isLoaded, isSignedIn, router]);
 
-    // 加载过期任务和可用任务
-    const loadTaskPoolData = useCallback(async () => {
-        try {
-            // 获取过期任务
-            const overdueResult = await getOverdueTasks(projId);
-            if (overdueResult.success) {
-                setBackendOverdueTasks(overdueResult.tasks || []);
-            }
 
-
-        } catch (error) {
-            console.error("Failed to load task pool data:", error);
-        }
-    }, [projId]);
-
-    // 加载任务池数据
-    useEffect(() => {
-        loadTaskPoolData();
-    }, [loadTaskPoolData]);
 
     const [isPending, startTransition] = useTransition();
     const [stageData, stageLoading, stageError] = useDocument(
@@ -106,6 +88,24 @@ function StagePage() {
         soft_deadline: string;
     }>>([]);
 
+    // fetch overdue tasks function
+    const fetchOverdueTasks = useCallback(async () => {
+        try {
+            const overdueResult = await getOverdueTasks(projId);
+            if (overdueResult.success) {
+                setBackendOverdueTasks(overdueResult.tasks || []);
+            }
+        } catch (error) {
+            console.error("Failed to fetch overdue tasks:", error);
+        }
+    }, [projId]);
+
+    // handle bounty board open function
+    const handleBountyBoardOpen = useCallback(async () => {
+        setBountyBoardOpen(true);
+        // fetch overdue tasks when the bounty board is opened
+        await fetchOverdueTasks();
+    }, [fetchOverdueTasks]);
 
     if (!isSignedIn) return null;
 
@@ -126,8 +126,6 @@ function StagePage() {
     if (!stage) {
         return <div>Error: The stage has been deleted.</div>;
     }
-
-
 
     // Get overdue tasks for bounty board
     const overdueTasks = backendOverdueTasks.filter((task) => task.stage_id === stageId);
@@ -231,7 +229,7 @@ function StagePage() {
 
     return (
         <div className="w-full h-full flex flex-col bg-gray-100">
-            {/* Header Section - 类似项目页面的设计风格 */}
+            {/* Header Section - similar to the project page design */}
             <div className="relative">
                 <div
                     className="bg-gradient-to-r from-[#6F61EF] to-purple-600 h-64 flex items-center justify-center bg-cover bg-center"
@@ -241,7 +239,7 @@ function StagePage() {
                         backgroundPosition: "center",
                     }}
                 >
-                    {/* 半透明卡片 - 类似项目页面的设计 */}
+                    {/* semi-transparent card - similar to the project page design */}
                     <div
                         className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-6 m-6 w-full max-w-8xl"
                         style={{
@@ -252,22 +250,17 @@ function StagePage() {
                         }}
                     >
                         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                            {/* Stage信息部分 */}
+                            {/* Stage information section */}
                             <div className="flex-1 space-y-4">
                                 <div className="flex items-center justify-between mb-3">
                                     <h1 className="text-3xl md:text-4xl font-bold text-white">
-                                        {"Stage " +
-                                            (stage.order + 1) +
-                                            ". " +
-                                            stage.title}
+                                        {"Stage " + (stage.order + 1) + ": " + stage.title}
                                     </h1>
                                     <div className="flex items-center gap-3">
                                         <BountyBoardButton
                                             overdueTasks={overdueTasks.length}
                                             showBountyBoard={false}
-                                            onClick={() =>
-                                                setBountyBoardOpen(true)
-                                            }
+                                            onClick={handleBountyBoardOpen}
                                         />
                                         <Button
                                             variant="ghost"
@@ -298,7 +291,12 @@ function StagePage() {
                 {/* Bounty Board Dialog */}
                 <Dialog
                     open={bountyBoardOpen}
-                    onOpenChange={setBountyBoardOpen}
+                    onOpenChange={(open) => {
+                        setBountyBoardOpen(open);
+                        if (!open) {
+                            fetchOverdueTasks();
+                        }
+                    }}
                 >
                     <DialogContent className="max-w-7xl h-3/4">
                         <DialogHeader>
@@ -321,7 +319,7 @@ function StagePage() {
                                             key={task.id}
                                             className="group bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-lg hover:border-orange-300 transition-all duration-300 overflow-hidden"
                                         >
-                                            {/* 卡片头部 */}
+                                            {/* card header */}
                                             <div className="bg-gradient-to-r from-orange-500 to-red-500 px-4 py-3">
                                                 <div className="flex items-center justify-between">
                                                     <div className="flex items-center gap-2">
@@ -340,7 +338,7 @@ function StagePage() {
                                                 </div>
                                             </div>
 
-                                            {/* 卡片内容 */}
+                                            {/* card content */}
                                             <div className="p-6">
                                                 <div className="mb-4">
                                                     <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-orange-600 transition-colors">
@@ -351,7 +349,7 @@ function StagePage() {
                                                     </p>
                                                 </div>
 
-                                                {/* 底部信息 */}
+                                                {/* bottom information */}
                                                 <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                                                     <div className="flex items-center gap-2 text-gray-500">
                                                         <svg

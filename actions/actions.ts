@@ -1588,7 +1588,7 @@ export async function getOverdueTasks(projId: string) {
                     !taskData.isCompleted &&
                     taskData.soft_deadline &&
                     new Date(taskData.soft_deadline) < now &&
-                    (taskData.can_be_reassigned || !taskData.assignee)
+                    !taskData.assignee
                 ) {
                     overdueTasks.push({
                         id: taskDoc.id,
