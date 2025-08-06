@@ -405,10 +405,10 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                             <CardContent className="text-center py-8">
                                 <Trophy className="h-12 w-12 mx-auto text-gray-400 mb-4" />
                                 <h3 className="text-lg font-semibold text-gray-500 mb-2">
-                                    No data yet
+                                    No team members found
                                 </h3>
                                 <p className="text-gray-400">
-                                    Complete some tasks to see the leaderboard!
+                                    Add members to your project to see the leaderboard!
                                 </p>
                             </CardContent>
                         </Card>

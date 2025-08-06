@@ -1726,6 +1726,21 @@ export async function getProjectLeaderboard(projId: string) {
     }
 
     try {
+        const projectDoc = await adminDb
+            .collection("projects")
+            .doc(projId)
+            .get();
+
+        if (!projectDoc.exists) {
+            throw new Error("Project not found");
+        }
+
+        const projectData = projectDoc.data();
+        const allMembers = [
+            ...(projectData?.members || []),
+            ...(projectData?.admins || []),
+        ];
+
         const scores = await adminDb
             .collection("user_scores")
             .where("project_id", "==", projId)
@@ -1733,9 +1748,10 @@ export async function getProjectLeaderboard(projId: string) {
             .limit(50)
             .get();
 
-        const leaderboard = scores.docs.map((doc) => {
+        const scoreMap = new Map();
+        scores.docs.forEach((doc) => {
             const data = doc.data();
-            return {
+            scoreMap.set(data.user_email, {
                 id: doc.id,
                 user_email: data.user_email,
                 project_id: data.project_id,
@@ -1744,13 +1760,34 @@ export async function getProjectLeaderboard(projId: string) {
                 tasks_assigned: data.tasks_assigned,
                 average_completion_time: data.average_completion_time,
                 streak: data.streak,
-                // Convert Timestamp to plain object
                 last_updated: data.last_updated ? {
                     _seconds: data.last_updated.seconds,
                     _nanoseconds: data.last_updated.nanoseconds
                 } : null,
-            };
+            });
         });
+
+        const leaderboard = allMembers.map((email) => {
+            const existingScore = scoreMap.get(email);
+            if (existingScore) {
+                return existingScore;
+            } else {
+                //give them a default score of 0
+                return {
+                    id: `default_${email}_${projId}`,
+                    user_email: email,
+                    project_id: projId,
+                    total_points: 0,
+                    tasks_completed: 0,
+                    tasks_assigned: 0,
+                    average_completion_time: 0,
+                    streak: 0,
+                    last_updated: null,
+                };
+            }
+        });
+
+        leaderboard.sort((a, b) => b.total_points - a.total_points);
 
         return {
             success: true,
@@ -1864,13 +1901,11 @@ export async function addProjectMember(
     }
 
     try {
-        // 验证用户是否存在
         const userDoc = await adminDb.collection("users").doc(userEmail).get();
         if (!userDoc.exists) {
             throw new Error("User not found");
         }
 
-        // 验证项目是否存在
         const projectRef = adminDb.collection("projects").doc(projId);
         const projectDoc = await projectRef.get();
 
@@ -1882,7 +1917,6 @@ export async function addProjectMember(
         const currentMembers = projectData?.members || [];
         const currentAdmins = projectData?.admins || [];
 
-        // 检查用户是否已经是成员
         if (
             currentMembers.includes(userEmail) ||
             currentAdmins.includes(userEmail)
@@ -1890,7 +1924,6 @@ export async function addProjectMember(
             throw new Error("User is already a member of this project");
         }
 
-        // 添加成员到相应的角色数组
         if (role === "admin") {
             await projectRef.update({
                 admins: [...currentAdmins, userEmail],
@@ -1901,7 +1934,7 @@ export async function addProjectMember(
             });
         }
 
-        // 为用户添加项目引用
+        //add the project to the user's projs collection
         await adminDb
             .collection("users")
             .doc(userEmail)
@@ -1924,7 +1957,7 @@ export async function addProjectMember(
     }
 }
 
-// 批量更新项目成员
+// batch update project members
 export async function updateProjectMembers(
     projId: string,
     memberEmails: string[],
@@ -1945,12 +1978,12 @@ export async function updateProjectMembers(
         const projectData = projectDoc.data();
         const orgId = projectData?.orgId;
 
-        // 更新项目成员列表
+        // update the project members list
         await projectRef.update({
             members: memberEmails,
         });
 
-        // 为所有新成员添加项目引用
+        // add the project to the new members' projs collection
         for (const memberEmail of memberEmails) {
             try {
                 await adminDb
@@ -1982,7 +2015,7 @@ export async function updateProjectMembers(
     }
 }
 
-// 移除项目成员
+// remove project member
 export async function removeProjectMember(projId: string, userEmail: string) {
     const { userId } = await auth();
     if (!userId) {
@@ -2001,7 +2034,7 @@ export async function removeProjectMember(projId: string, userEmail: string) {
         const currentMembers = projectData?.members || [];
         const currentAdmins = projectData?.admins || [];
 
-        // 从成员或管理员列表中移除
+        // remove the user from the members or admins list
         const updatedMembers = currentMembers.filter(
             (email: string) => email !== userEmail,
         );
@@ -2014,7 +2047,7 @@ export async function removeProjectMember(projId: string, userEmail: string) {
             admins: updatedAdmins,
         });
 
-        // 移除用户的项目引用
+        // remove the project from the user's projs collection
         try {
             await adminDb
                 .collection("users")
@@ -2039,7 +2072,7 @@ export async function removeProjectMember(projId: string, userEmail: string) {
     }
 }
 
-// 更新项目团队大小
+// update project team size
 export async function updateProjectTeamSize(projId: string, teamSize: number) {
     const { userId } = await auth();
     if (!userId) {
@@ -2072,7 +2105,7 @@ export async function updateProjectTeamSize(projId: string, teamSize: number) {
     }
 }
 
-// 自动分配组织成员到项目
+// auto assign organization members to projects
 export async function autoAssignMembersToProjects(orgId: string) {
     const { userId } = await auth();
     if (!userId) {
@@ -2080,7 +2113,7 @@ export async function autoAssignMembersToProjects(orgId: string) {
     }
 
     try {
-        // 获取组织信息
+        // get the organization information
         const orgDoc = await adminDb
             .collection("organizations")
             .doc(orgId)
@@ -2095,7 +2128,7 @@ export async function autoAssignMembersToProjects(orgId: string) {
             ...(orgData?.admins || []),
         ];
 
-        // 获取组织的所有项目
+        // get all the projects in the organization
         const projectsSnapshot = await adminDb
             .collection("projects")
             .where("orgId", "==", orgId)
@@ -2114,7 +2147,7 @@ export async function autoAssignMembersToProjects(orgId: string) {
             };
         });
 
-        // 计算当前已分配的成员
+        // calculate the current assigned members
         const assignedMembers = new Set();
         projects.forEach((project) => {
             const projectMembers = (project.members as string[]) || [];
@@ -2123,7 +2156,7 @@ export async function autoAssignMembersToProjects(orgId: string) {
             );
         });
 
-        // 获取未分配的成员
+        // get the unassigned members
         const unassignedMembers = allMembers.filter(
             (member) => !assignedMembers.has(member),
         );
@@ -2136,11 +2169,11 @@ export async function autoAssignMembersToProjects(orgId: string) {
             };
         }
 
-        // 默认团队大小为3
+        // default team size is 3
         const defaultTeamSize = 3;
         let assignedCount = 0;
 
-        // 为每个项目分配成员
+        // assign members to each project
         for (
             let i = 0;
             i < projects.length && unassignedMembers.length > 0;
@@ -2157,12 +2190,12 @@ export async function autoAssignMembersToProjects(orgId: string) {
                 );
                 const updatedMembers = [...currentMembers, ...membersToAdd];
 
-                // 更新项目成员
+                // update the project members
                 await adminDb.collection("projects").doc(project.id).update({
                     members: updatedMembers,
                 });
 
-                // 为新成员添加项目引用
+                // add the project to the new members' projs collection
                 for (const memberEmail of membersToAdd) {
                     try {
                         await adminDb

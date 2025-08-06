@@ -1,9 +1,9 @@
 "use client";
 import { db } from "@/firebase";
-import { Project, Task } from "@/types/types";
-import {collection, getDocs, query, where} from "firebase/firestore";
+import { Project, Task, Organization } from "@/types/types";
+import {collection, getDocs, query, where, doc} from "firebase/firestore";
 import React, { useEffect, useState, useTransition } from "react";
-import { useCollection } from "react-firebase-hooks/firestore";
+import { useCollection, useDocument } from "react-firebase-hooks/firestore";
 import { Button } from "./ui/button";
 import { updateProjects } from "@/actions/actions";
 import { toast } from "sonner";
@@ -38,6 +38,9 @@ const ProjTab = ({
     const adminQ = query(collection(db, "projects"), where("orgId", "==", orgId));
     const [allProjects] = useCollection(adminQ);
     
+    // 获取组织数据
+    const [org] = useDocument(doc(db, "organizations", orgId));
+    const orgData = org?.data() as Organization;
 
     const userQ = query(
         collection(db, "users", userId, "projs"),
@@ -257,7 +260,7 @@ const ProjTab = ({
                                                 Total Members
                                             </span>
                                             <Badge variant="outline">
-                                                {displayProjects.reduce((total: number, proj: Project) => total + (proj.members?.length || 0), 0)}
+                                                {orgData ? (orgData.admins?.length || 0) + (orgData.members?.length || 0) : 0}
                                             </Badge>
                                         </div>
                                     </div>
