@@ -2,7 +2,7 @@
 
 import { db } from "@/firebase";
 import { useAuth, useUser } from "@clerk/nextjs";
-import { collection, doc, getDoc } from "firebase/firestore";
+import { collection, doc, getDoc, addDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition, useCallback } from "react";
 import { useCollection, useDocument } from "react-firebase-hooks/firestore";
@@ -11,7 +11,7 @@ import { Project, Stage, teamCharterQuestions, TeamCompatibilityAnalysis } from 
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { CircleCheck, PencilLine, Save, Trophy, Target, BarChart3, Loader2, LockKeyhole, NotepadText, Trash2, UsersIcon, EditIcon } from "lucide-react";
+import { CircleCheck, PencilLine, Save, Trophy, Target, BarChart3, Loader2, LockKeyhole, NotepadText, Trash2, UsersIcon, EditIcon, Plus } from "lucide-react";
 import { Reorder, useDragControls } from "framer-motion";
 import { toast } from "sonner";
 import GenerateTasksButton from "@/components/GenerateTasksButton";
@@ -46,6 +46,8 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
     const { user } = useUser();
     const [responses, setResponses] = useState<string[]>([]);
     const [isOpen, setIsOpen] = useState(false);
+    const [isAddStageOpen, setIsAddStageOpen] = useState(false);
+    const [isTeamCharterOpen, setIsTeamCharterOpen] = useState(false);
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [isEditing, setIsEditing] = useState(false);
@@ -61,6 +63,9 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
     );
     const proj = projData?.data() as Project;
     const [projTitle, setProjTitle] = useState(proj?.title || "");
+
+    // Define the 'newStageTitle' state
+    const [newStageTitle, setNewStageTitle] = useState("");
 
     // check if user is admin
     useEffect(() => {
@@ -498,27 +503,22 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                                 }
                                             />
                                             <AlertDialog
-                                                open={isOpen}
-                                                onOpenChange={setIsOpen}
+                                                open={isTeamCharterOpen}
+                                                onOpenChange={setIsTeamCharterOpen}
                                             >
                                                 <AlertDialogTrigger asChild>
                                                     <Button
-                                                        onClick={handleOpenEditing}
+                                                        onClick={() => setIsTeamCharterOpen(true)}
                                                         variant="outline"
                                                     >
-                                                        <EditIcon className="mr-2 h-4 w-4" />{" "}
-                                                        Team Charter
+                                                        <EditIcon className="mr-2 h-4 w-4" /> Team Charter
                                                     </Button>
                                                 </AlertDialogTrigger>
                                                 <AlertDialogContent className="w-full max-w-4xl">
                                                     <AlertDialogHeader>
-                                                        <AlertDialogTitle>
-                                                            Project Team Charter
-                                                        </AlertDialogTitle>
+                                                        <AlertDialogTitle>Project Team Charter</AlertDialogTitle>
                                                         <AlertDialogDescription>
-                                                            Fill out this charter to
-                                                            kick off your project!
-                                                            🚀
+                                                            Fill out this charter to kick off your project! 🚀
                                                         </AlertDialogDescription>
                                                     </AlertDialogHeader>
                                                     <div className="overflow-y-auto max-h-96">
@@ -646,7 +646,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                                     <AlertDialogFooter>
                                                         <Button
                                                             onClick={() =>
-                                                                setIsOpen(false)
+                                                                setIsTeamCharterOpen(false)
                                                             }
                                                             variant="outline"
                                                         >
@@ -983,6 +983,73 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                     </TabsContent>
                 </Tabs>
             </div>
+
+            {/* Add Stage Alert Dialog */}
+            <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
+                <AlertDialogTrigger asChild>
+                    <Button
+                        variant="default"
+                        className="fixed bottom-4 right-4"
+                        onClick={() => setIsOpen(true)}
+                    >
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add Stage
+                    </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="w-full max-w-md">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Add New Stage</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Enter the details for the new stage.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className="p-4">
+                        <Label
+                            htmlFor="stage-title"
+                            className="text-sm font-medium text-gray-700"
+                        >
+                            Stage Title
+                        </Label>
+                        <input
+                            id="stage-title"
+                            type="text"
+                            value={newStageTitle}
+                            onChange={(e) => setNewStageTitle(e.target.value)}
+                            placeholder="Enter stage title"
+                            className="w-full border border-gray-300 rounded-md p-2"
+                        />
+                    </div>
+                    <AlertDialogFooter>
+                        <Button
+                            onClick={() => setIsOpen(false)}
+                            variant="outline"
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={async () => {
+                                try {
+                                    await updateStages(projId, [{
+                                        id: "-1",
+                                        title: newStageTitle,
+                                        order: reorderedStages.length,
+                                        tasksCompleted: 0,
+                                        totalTasks: 0
+                                    }], []);
+                                    toast.success("Stage added successfully!");
+                                } catch (error) {
+                                    console.error("Error adding stage:", error);
+                                    toast.error("Failed to add stage.");
+                                } finally {
+                                    setIsOpen(false);
+                                }
+                            }}
+                        >
+                            Create Stage
+                        </Button>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }
