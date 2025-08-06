@@ -2,7 +2,7 @@
 
 import { db } from "@/firebase";
 import { useAuth, useUser } from "@clerk/nextjs";
-import { collection, doc, getDoc, addDoc } from "firebase/firestore";
+import { collection, doc, getDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition, useCallback } from "react";
 import { useCollection, useDocument } from "react-firebase-hooks/firestore";
@@ -46,7 +46,6 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
     const { user } = useUser();
     const [responses, setResponses] = useState<string[]>([]);
     const [isOpen, setIsOpen] = useState(false);
-    const [isAddStageOpen, setIsAddStageOpen] = useState(false);
     const [isTeamCharterOpen, setIsTeamCharterOpen] = useState(false);
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
@@ -189,15 +188,6 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
         if (projError) {
             return <div>Error: {projError.message}</div>;
         }
-    
-
-    const handleOpenEditing = () => {
-        if (!teamCharterData || loading || error) return;
-        // fetch the latest team charter data
-        const res =
-            (teamCharterData.data()?.teamCharterResponse as string[]) || [];
-        setResponses(res);
-    };
 
     const handleTeamCharterSave = () =>
         startTransition(async () => {
