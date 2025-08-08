@@ -517,10 +517,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                                             <div className="space-y-6">
                                                                 {/* Project Basic Information */}
                                                                 <div className="space-y-4">
-                                                                    <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">
-                                                                        1. Project Basic Information
-                                                                    </h3>
-                                                                    {teamCharterQuestions.slice(0, 3).map((question, index) => (
+                                                                    {teamCharterQuestions.map((question, index) => (
                                                                         <div key={index} className="space-y-2">
                                                                             <Label
                                                                                 htmlFor={`question-${index}`}
@@ -535,93 +532,6 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                                                                 onChange={(e) => {
                                                                                     const newResponses = [...responses];
                                                                                     newResponses[index] = e.target.value;
-                                                                                    setResponses(newResponses);
-                                                                                }}
-                                                                                placeholder="Enter your response here..."
-                                                                                className="min-h-[100px]"
-                                                                            />
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-
-                                                                {/* Team Information */}
-                                                                <div className="space-y-4">
-                                                                    <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">
-                                                                        2. Team Information
-                                                                    </h3>
-                                                                    {teamCharterQuestions.slice(3, 6).map((question, index) => (
-                                                                        <div key={index + 3} className="space-y-2">
-                                                                            <Label
-                                                                                htmlFor={`question-${index + 3}`}
-                                                                                className="text-sm font-medium text-gray-700"
-                                                                            >
-                                                                                {question}
-                                                                            </Label>
-                                                                            <Textarea
-                                                                                id={`question-${index + 3}`}
-                                                                                name={`question-${index + 3}`}
-                                                                                value={responses[index + 3] || ""}
-                                                                                onChange={(e) => {
-                                                                                    const newResponses = [...responses];
-                                                                                    newResponses[index + 3] = e.target.value;
-                                                                                    setResponses(newResponses);
-                                                                                }}
-                                                                                placeholder="Enter your response here..."
-                                                                                className="min-h-[100px]"
-                                                                            />
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-
-                                                                {/* Timeline Planning */}
-                                                                <div className="space-y-4">
-                                                                    <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">
-                                                                        3. Timeline Planning
-                                                                    </h3>
-                                                                    {teamCharterQuestions.slice(6, 9).map((question, index) => (
-                                                                        <div key={index + 6} className="space-y-2">
-                                                                            <Label
-                                                                                htmlFor={`question-${index + 6}`}
-                                                                                className="text-sm font-medium text-gray-700"
-                                                                            >
-                                                                                {question}
-                                                                            </Label>
-                                                                            <Textarea
-                                                                                id={`question-${index + 6}`}
-                                                                                name={`question-${index + 6}`}
-                                                                                value={responses[index + 6] || ""}
-                                                                                onChange={(e) => {
-                                                                                    const newResponses = [...responses];
-                                                                                    newResponses[index + 6] = e.target.value;
-                                                                                    setResponses(newResponses);
-                                                                                }}
-                                                                                placeholder="Enter your response here..."
-                                                                                className="min-h-[100px]"
-                                                                            />
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-
-                                                                {/* Additional Key Information */}
-                                                                <div className="space-y-4">
-                                                                    <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">
-                                                                        4. Additional Key Information
-                                                                    </h3>
-                                                                    {teamCharterQuestions.slice(9).map((question, index) => (
-                                                                        <div key={index + 9} className="space-y-2">
-                                                                            <Label
-                                                                                htmlFor={`question-${index + 9}`}
-                                                                                className="text-sm font-medium text-gray-700"
-                                                                            >
-                                                                                {question}
-                                                                            </Label>
-                                                                            <Textarea
-                                                                                id={`question-${index + 9}`}
-                                                                                name={`question-${index + 9}`}
-                                                                                value={responses[index + 9] || ""}
-                                                                                onChange={(e) => {
-                                                                                    const newResponses = [...responses];
-                                                                                    newResponses[index + 9] = e.target.value;
                                                                                     setResponses(newResponses);
                                                                                 }}
                                                                                 placeholder="Enter your response here..."
