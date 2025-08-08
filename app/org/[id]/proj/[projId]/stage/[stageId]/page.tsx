@@ -100,6 +100,11 @@ function StagePage() {
         }
     }, [projId]);
 
+    // 页面进入时自动拉取一次 Bounty Board 数据
+    useEffect(() => {
+        fetchOverdueTasks();
+    }, [fetchOverdueTasks]);
+
     // handle bounty board open function
     const handleBountyBoardOpen = useCallback(async () => {
         setBountyBoardOpen(true);
