@@ -192,24 +192,17 @@ Given the following information:
 - Project Purpose: ${projectInfo.projectPurpose}
 - Key Stakeholders: ${projectInfo.keyStakeholders}
 - Product Objectives: ${projectInfo.productObjectives}
-- Team Structure: ${teamInfo.teamStructure}
-- Communication Preferences: ${teamInfo.communicationPreferences}
-- Working Style: ${teamInfo.workingStyle}
 - Project Duration: ${timelineInfo.projectDuration}
-- Major Milestones: ${timelineInfo.majorMilestones}
-- Team Availability: ${teamInfo.teamAvailability}
-- Success Criteria: ${additionalInfo.successCriteria}
 - Risks and Challenges: ${additionalInfo.risksAndChallenges}
-- Resource Requirements: ${additionalInfo.resourceRequirements}
 - Team Members Survey Responses: ${userResponses.join(", ")}
 
 Break down the project into logical stages (avoid names like "Stage 1", use meaningful names).
 Each stage MUST contain at least 5-6 detailed tasks, broken down to the most granular level possible.
 
 Task Breakdown Guidelines:
-1. Break each major task into smaller, actionable sub-tasks
-2. Each task should be completable within 1-3 days
-3. Each task should have a clear, measurable outcome
+1. Break each major stages into smaller, actionable tasks
+2. Each stages should be completable within 1-2 weeks
+3. Each task should have a measurable outcome and specific, realistic actions 
 4. Include both technical and non-technical tasks where applicable
 
 Example of Task Granularity:
