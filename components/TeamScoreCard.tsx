@@ -159,6 +159,44 @@ const TeamScoreCard = ({
         return "Major Adjustments Needed";
     };
 
+    const toSafeNumber = (value: unknown, fallback: number = 0): number => {
+        if (typeof value === "number" && Number.isFinite(value)) return value;
+        if (typeof value === "string" && value.trim() !== "" && !Number.isNaN(Number(value))) {
+            const n = Number(value);
+            return Number.isFinite(n) ? n : fallback;
+        }
+        return fallback;
+    };
+    
+    const getCurveFactor = (
+        score: number,
+        options?: {
+            minScore?: number;
+            maxScore?: number;
+            minFactor?: number; // 高分对应的较小系数
+            maxFactor?: number; // 低分对应的较大系数
+        }
+    ): number => {
+        const minScore = options?.minScore ?? 70;
+        const maxScore = options?.maxScore ?? 90;
+        const maxFactor = options?.maxFactor ?? 1.3;
+        const minFactor = options?.minFactor ?? 1.1;
+
+        if (!Number.isFinite(score)) return maxFactor;
+        if (score <= minScore) return maxFactor;
+        if (score >= maxScore) return minFactor;
+
+        const t = (score - minScore) / (maxScore - minScore);
+        return maxFactor - t * (maxFactor - minFactor);
+    };
+
+    const curveScore = (value: number): number => {
+        const factor = getCurveFactor(value);
+        const curved = value * factor;
+        const clamped = Math.max(0, Math.min(100, curved));
+        return Math.round(clamped);
+    };
+
     return (
         <div className="space-y-6">
             <Card>
@@ -220,13 +258,19 @@ const TeamScoreCard = ({
                                         {/* Calculate overall score from score_breakdown */}
                                         {(() => {
                                             const breakdown = analysis.score_breakdown;
-                                            const overallScore = Math.round(
-                                                0.35 * breakdown.technical_alignment +
-                                                0.15 * breakdown.schedule_compatibility +
-                                                0.2 * breakdown.interest_alignment +
-                                                0.15 * breakdown.communication_alignment +
-                                                0.15 * breakdown.work_style_compatibility
-                                            );
+                                            const toNum = (v: unknown): number => {
+                                                if (typeof v === "number" && Number.isFinite(v)) return v;
+                                                if (typeof v === "string" && v.trim() !== "" && !Number.isNaN(Number(v))) return Number(v);
+                                                return 0;
+                                            };
+                                            const rawScore =
+                                                0.35 * toNum(breakdown.technical_alignment) +
+                                                0.15 * toNum(breakdown.schedule_compatibility) +
+                                                0.2 * toNum(breakdown.interest_alignment) +
+                                                0.15 * toNum(breakdown.communication_alignment) +
+                                                0.15 * toNum(breakdown.work_style_compatibility);
+                                            const baseOverall = Math.round(Math.max(0, Math.min(100, rawScore)));
+                                            const overallScore = curveScore(Number.isFinite(baseOverall) ? baseOverall : 0);
                                             return (
                                                 <>
                                                     <div className={`text-5xl font-bold ${getScoreColor(overallScore)} mb-2`}>
@@ -251,31 +295,31 @@ const TeamScoreCard = ({
                                     <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                                         <div className="text-center">
                                             <div className="text-2xl font-bold text-blue-600">
-                                                {analysis.score_breakdown.technical_alignment}
+                                                {curveScore(toSafeNumber(analysis.score_breakdown.technical_alignment))}
                                             </div>
                                             <div className="text-xs text-slate-500 mt-1">Technical</div>
                                         </div>
                                         <div className="text-center">
                                             <div className="text-2xl font-bold text-purple-600">
-                                                {analysis.score_breakdown.interest_alignment}
+                                                {curveScore(toSafeNumber(analysis.score_breakdown.interest_alignment))}
                                             </div>
                                             <div className="text-xs text-slate-500 mt-1">Interest</div>
                                         </div>
                                         <div className="text-center">
                                             <div className="text-2xl font-bold text-green-600">
-                                                {analysis.score_breakdown.communication_alignment}
+                                                {curveScore(toSafeNumber(analysis.score_breakdown.communication_alignment))}
                                             </div>
                                             <div className="text-xs text-slate-500 mt-1">Communication</div>
                                         </div>
                                         <div className="text-center">
                                             <div className="text-2xl font-bold text-orange-600">
-                                                {analysis.score_breakdown.work_style_compatibility}
+                                                {curveScore(toSafeNumber(analysis.score_breakdown.work_style_compatibility))}
                                             </div>
                                             <div className="text-xs text-slate-500 mt-1">Work Style</div>
                                         </div>
                                         <div className="text-center">
                                             <div className="text-2xl font-bold text-indigo-600">
-                                                {analysis.score_breakdown.schedule_compatibility}
+                                                {curveScore(toSafeNumber(analysis.score_breakdown.schedule_compatibility))}
                                             </div>
                                             <div className="text-xs text-slate-500 mt-1">Schedule</div>
                                         </div>
@@ -374,9 +418,14 @@ const TeamScoreCard = ({
                                                         </Badge>
                                                     </div>
                                                     <div className="text-right">
-                                                        <div className={`text-lg font-bold ${getScoreColor(member.compatibility_score)}`}>
-                                                            {member.compatibility_score}
-                                                        </div>
+                                                        {(() => {
+                                                            const memberScore = curveScore(toSafeNumber(member.compatibility_score));
+                                                            return (
+                                                                <div className={`text-lg font-bold ${getScoreColor(memberScore)}`}>
+                                                                    {memberScore}
+                                                                </div>
+                                                            );
+                                                        })()}
                                                         <div className="text-xs text-slate-500">Compatibility</div>
                                                     </div>
                                                 </div>
