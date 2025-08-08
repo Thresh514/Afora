@@ -50,7 +50,7 @@ function JoinOrgButton({
                 setOrgCode("");
             } else {
                 console.log("Failed to join", message);
-                toast.error(message || "Failed to join organization");
+                toast.error(message || "Failed to join group");
             }
         });
     };
@@ -61,7 +61,7 @@ function JoinOrgButton({
       </Button> */}
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Join an Organization</DialogTitle>{" "}
+                    <DialogTitle>Join a Group</DialogTitle>{" "}
                     {/* Updated title */}
                     <DialogDescription>Enter the access code</DialogDescription>
                 </DialogHeader>
@@ -71,7 +71,7 @@ function JoinOrgButton({
                         <Label htmlFor="orgCode" className="text-right">
                             {" "}
                             {/* Updated label */}
-                            Organization Code
+                            Group Code
                         </Label>
                         <Input
                             id="orgCode" // Updated input id

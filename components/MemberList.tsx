@@ -507,7 +507,7 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
                                 className="flex items-center gap-2"
                             >
                                 <FolderOpen className="h-4 w-4" />
-                                Projects
+                                Teams
                             </Button>
                         </div>
                     </div>
@@ -518,7 +518,7 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
                     {userRole === "admin" && selectedView === "overview" ? (
                         <div className="space-y-4">
                             <div className="text-sm font-medium text-gray-500">
-                                Organization Overview
+                                Group Overview
                             </div>
                             <Card className="border-0 shadow-sm">
                                 <CardContent className="p-4">
@@ -541,7 +541,7 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
                                         </div>
                                         <div className="flex justify-between items-center">
                                             <span className="text-sm text-gray-600">
-                                                Active Projects
+                                                Active Teams
                                             </span>
                                             <Badge variant="secondary">
                                                 {projectTeams.length}
@@ -570,21 +570,21 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
                         <div className="space-y-3">
                             <div className="text-sm font-medium text-gray-500">
                                 {userRole === "admin"
-                                    ? "Project List"
-                                    : "My Projects"}
+                                    ? "Team List"
+                                    : "My Teams"}
                             </div>
                             {userAssignedProjects.length === 0 ? (
                                 <div className="text-center py-8">
                                     <FolderOpen className="h-12 w-12 text-gray-400 mx-auto mb-3" />
                                     <h3 className="text-sm font-medium text-gray-900 mb-2">
                                         {userRole === "admin"
-                                            ? "No projects"
-                                            : "You have not been assigned to any projects"}
+                                            ? "No teams"
+                                            : "You have not been assigned to any teams"}
                                     </h3>
                                     <p className="text-xs text-gray-500 mb-4">
                                         {userRole === "admin"
-                                            ? "There are no projects in this organization."
-                                            : "Please contact the administrator to be assigned to a project."}
+                                            ? "There are no teams in this organization."
+                                            : "Please contact the administrator to be assigned to a team."}
                                     </p>
                                 </div>
                             ) : (
@@ -769,7 +769,7 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
                                     size="sm"
                                 >
                                     <Shuffle className="h-4 w-4 mr-2" />
-                                    Auto Assign
+                                    Smart Matching
                                 </Button>
                             </>
                         )}
@@ -785,10 +785,10 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
                     {userRole === "admin" && selectedView === "overview" ? (
                         <div>
                             <h3 className="text-lg font-semibold text-gray-900">
-                                Organization Members Overview
+                                Group Members Overview
                             </h3>
                             <p className="text-sm text-gray-500">
-                                View detailed information about all organization
+                                View detailed information about all group
                                 members
                             </p>
                         </div>
@@ -846,20 +846,20 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
                             </h3>
                             <p className="text-sm text-gray-500">
                                 {unassignedMembers.length} members not assigned
-                                to projects
+                                to teams
                             </p>
                         </div>
                     ) : (
                         <div>
                             <h3 className="text-lg font-semibold text-gray-900">
                                 {userRole === "admin"
-                                    ? "Select Project"
+                                    ? "Select Team"
                                     : "My Team Members"}
                             </h3>
                             <p className="text-sm text-gray-500">
                                 {userRole === "admin"
-                                    ? "Select a project from the left to view team members"
-                                    : "Select a project from the left to view your team members"}
+                                    ? "Select a team from the left to view team members"
+                                    : "Select a team from the left to view your team members"}
                             </p>
                         </div>
                     )}
@@ -981,8 +981,8 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
                                         All members assigned
                                     </h3>
                                     <p className="text-gray-500">
-                                        All organization members have been
-                                        assigned to project teams.
+                                        All group members have been
+                                        assigned to teams.
                                     </p>
                                 </div>
                             )}
@@ -994,26 +994,26 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
                                 <div>
                                     <h3 className="text-lg font-medium text-gray-900 mb-2">
                                         {userRole === "admin"
-                                            ? "No project data"
-                                            : "You have not been assigned to any projects"}
+                                            ? "No team data"
+                                            : "You have not been assigned to any teams"}
                                     </h3>
                                     <p className="text-gray-500 mb-4">
                                         {userRole === "admin"
-                                            ? "There are no projects in this organization. Please check the following:"
-                                            : "Please contact the administrator to be assigned to a project."}
+                                            ? "There are no teams in this group. Please check the following:"
+                                            : "Please contact the administrator to be assigned to a team."}
                                     </p>
                                 </div>
                             ) : (
                                 <div>
                                     <h3 className="text-lg font-medium text-gray-900 mb-2">
                                         {userRole === "admin"
-                                            ? "Select a project to view details"
-                                            : "Select a project to view team members"}
+                                            ? "Select a team to view details"
+                                            : "Select a team to view team members"}
                                     </h3>
                                     <p className="text-gray-500">
                                         {userRole === "admin"
-                                            ? "Select a project from the left project list to view team members."
-                                            : "Select a project from the left project list to view your team members."}
+                                            ? "Select a team from the left team list to view team members."
+                                            : "Select a team from the left team list to view your team members."}
                                     </p>
                                 </div>
                             )}

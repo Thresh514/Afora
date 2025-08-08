@@ -31,10 +31,10 @@ function DeleteOrg() {
 
             if (success) {
                 router.replace("/");
-                toast.success("Organization deleted successfully");
+                toast.success("Group deleted successfully");
                 setIsOpen(false);
             } else {
-                toast.error("Failed to delete organization");
+                toast.error("Failed to delete group");
             }
         });
     };
@@ -51,8 +51,8 @@ function DeleteOrg() {
                             Are you absolutely sure you want to delete?
                         </DialogTitle>
                         <DialogDescription>
-                            This will delete the organization and all its
-                            contents, removing all users from the organization.
+                            This will delete the group and all its
+                            contents, removing all users from the group.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter className="sm:justify-end gap-2">

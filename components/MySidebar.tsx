@@ -86,14 +86,14 @@ function MySidebar() {
                 <SidebarContent>
                     <div className="flex-1">
                         <SidebarGroup>
-                            <SidebarGroupLabel>Organizations</SidebarGroupLabel>
+                            <SidebarGroupLabel>Groups</SidebarGroupLabel>
                             <SidebarGroupContent>
                                 <SidebarMenu>
                                     {/* Loading state */}
                                     {loading && (
                                         <SidebarMenuItem>
                                             <div className="px-2 py-1 text-sm text-gray-500">
-                                                Loading organizations...
+                                                Loading groups...
                                             </div>
                                         </SidebarMenuItem>
                                     )}
@@ -102,12 +102,12 @@ function MySidebar() {
                                     {error && (
                                         <SidebarMenuItem>
                                             <div className="px-2 py-1 text-sm text-red-500">
-                                                Error loading organizations
+                                                Error loading groups
                                             </div>
                                         </SidebarMenuItem>
                                     )}
 
-                                    {/* Organizations list */}
+                                    {/* Groups list */}
                                     {!loading &&
                                         !error &&
                                         orgMap &&
@@ -143,7 +143,7 @@ function MySidebar() {
                                         orgIds.length === 0 && (
                                             <SidebarMenuItem>
                                                 <div className="px-2 py-1 text-sm text-gray-500">
-                                                    No organizations found
+                                                    No groups found
                                                 </div>
                                             </SidebarMenuItem>
                                         )}

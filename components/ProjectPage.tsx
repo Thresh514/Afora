@@ -352,7 +352,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
 
                                 <div className="flex items-center justify-between mb-2">
                                     <h2 className="text-xl md:text-2xl font-semibold text-white">
-                                        Project Overview
+                                        Team Overview
                                     </h2>
                                     {stages && stages.length > 0 && (
                                         <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg px-4 py-3 inline-flex items-center gap-4">
@@ -390,7 +390,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                             className="flex items-center gap-2"
                         >
                             <Target className="h-4 w-4" />
-                            Project Roadmap
+                            Team Roadmap
                         </TabsTrigger>
                         <TabsTrigger
                             value="team-analytics"
@@ -408,7 +408,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                 <CardHeader>
                                     <CardTitle className="flex items-center gap-2">
                                         <BarChart3 className="h-5 w-5 text-blue-600" />
-                                        Project Statistics
+                                        Team Statistics
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
@@ -476,11 +476,11 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                             No stages yet
                                         </h3>
                                         <p>
-                                            {isAdmin ? (
-                                                "Try generating stages and tasks to start your project."
-                                            ) : (
-                                                "Please wait for the admin to create project stages."
-                                            )}
+                                                {isAdmin ? (
+                                                    "Try generating stages and tasks to start your team."
+                                                ) : (
+                                                    "Please wait for the admin to create team stages."
+                                                )}
                                         </p>
                                     </div>
                                     {isAdmin && (
@@ -506,9 +506,9 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                                 </AlertDialogTrigger>
                                                 <AlertDialogContent className="w-full max-w-4xl">
                                                     <AlertDialogHeader>
-                                                        <AlertDialogTitle>Project Team Charter</AlertDialogTitle>
+                                                        <AlertDialogTitle>Team Charter</AlertDialogTitle>
                                                         <AlertDialogDescription>
-                                                            Fill out this charter to kick off your project! 🚀
+                                                            Fill out this charter to kick off your team! 🚀
                                                         </AlertDialogDescription>
                                                     </AlertDialogHeader>
                                                     <div className="overflow-y-auto max-h-96">
@@ -765,7 +765,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                     ) : (
                                         <div className="bg-white rounded-lg shadow-sm border p-6 space-y-4">
                                             <h3 className="text-lg font-semibold mb-4 text-gray-800">
-                                                Project Stages
+                                                Team Stages
                                             </h3>
                                             {stages.map((stage, index) => (
                                                 <HoverCard key={stage.id}>

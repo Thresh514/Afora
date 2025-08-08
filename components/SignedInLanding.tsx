@@ -85,7 +85,7 @@ function SignedInLanding() {
             <div className="flex flex-col items-center justify-center min-h-screen">
                 <Background3D />
                 <div className="text-red-500 bg-red-50 px-6 py-4 rounded-lg shadow-sm">
-                    Failed to load organizations. Please try again later.
+                    Failed to load groups. Please try again later.
                 </div>
             </div>
         );
@@ -107,8 +107,8 @@ function SignedInLanding() {
                         </h1>
                         <p className="text-gray-600">
                             {orgs.length > 0 
-                                ? `You've joined ${orgs.length} organization${orgs.length > 1 ? 's' : ''}` 
-                                : "Start by creating or joining an organization"}
+                                ? `You've joined ${orgs.length} group${orgs.length > 1 ? 's' : ''}` 
+                                : "Start by creating or joining a group"}
                         </p>
                     </div>
                 </div>
@@ -117,7 +117,7 @@ function SignedInLanding() {
             {/* Main Content */}
             <div className="max-w-7xl mx-auto px-4 pb-12">
                 <div className="flex justify-between items-center mb-8">
-                    <h2 className="text-2xl font-semibold text-gray-900">My Organizations</h2>
+                    <h2 className="text-2xl font-semibold text-gray-900">My Groups</h2>
                     
                     {/* Organization Actions */}
                     <div className="relative">
@@ -127,7 +127,7 @@ function SignedInLanding() {
                             <DropdownMenuTrigger asChild>
                                 <button className="flex items-center gap-2 px-4 py-2 bg-white text-indigo-600 rounded-full shadow-md hover:shadow-lg transition-all duration-300 border border-indigo-100 hover:border-indigo-200">
                                     <Plus className="w-5 h-5" />
-                                    <span>New Organization</span>
+                                    <span>New Group</span>
                                 </button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-48">
@@ -139,7 +139,7 @@ function SignedInLanding() {
                                             setDropdownOpen(false);
                                         }}
                                     >
-                                        Create Org
+                                        Create Group
                                     </Button>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem>
@@ -150,7 +150,7 @@ function SignedInLanding() {
                                             setDropdownOpen(false);
                                         }}
                                     >
-                                        Join Org
+                                        Join Group
                                     </Button>
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
@@ -178,17 +178,17 @@ function SignedInLanding() {
                             className="mb-6 opacity-80"
                         />
                         <h2 className="text-2xl font-semibold text-gray-800 mb-3">
-                            Create Your First Organization
+                            Create Your First Group
                         </h2>
                         <p className="text-gray-600 mb-8 text-center max-w-md">
-                            Create an organization, invite team members, and start your collaboration journey
+                            Create a group, invite team members, and start your collaboration journey
                         </p>
                         <button 
                             className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:bg-indigo-700"
                             onClick={() => setIsNewOrgOpen(true)}
                         >
                             <Plus className="w-5 h-5" />
-                            <span>New Organization</span>
+                            <span>New Group</span>
                         </button>
                     </div>
                 )}

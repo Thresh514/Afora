@@ -53,7 +53,7 @@ function InviteUser(props: InviteUserProps) {
 
             if (success) {
                 setIsOpen(false);
-                toast.success("User added to organization successfully");
+                toast.success("User added to group successfully");
             } else {
                 toast.error(message);
             }
@@ -69,7 +69,7 @@ function InviteUser(props: InviteUserProps) {
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>
-                            Invite a user to your organization
+                            Invite a user to your group
                         </DialogTitle>
                         <DialogDescription>
                             Enter the email of the user you want to invite.

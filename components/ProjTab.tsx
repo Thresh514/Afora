@@ -153,7 +153,7 @@ const ProjTab = ({
             try {
                 const result = await updateProjects(orgId, parsedOutput.groups);
                 if (result?.success) {
-                    toast.success("Projects updated successfully!");
+                    toast.success("Teams updated successfully!");
                     setOutput("");
                     setParsedOutput(null);
                     setRefreshTrigger((prev: number) => prev + 1);
@@ -162,7 +162,7 @@ const ProjTab = ({
                 }
             } catch (error) {
                 console.error("Failed to update projects:", error);
-                toast.error("Failed to update projects");
+                toast.error("Failed to update teams");
             }
         });
     };
@@ -195,7 +195,7 @@ const ProjTab = ({
                             <Briefcase className="h-6 w-6" />
                         </div>
                         <h2 className="text-xl font-bold">
-                            Project Management
+                            Team Management
                         </h2>
                     </div>
 
@@ -206,7 +206,7 @@ const ProjTab = ({
                                 {totalProjects}
                             </div>
                             <div className="text-xs opacity-90">
-                                Total Projects
+                                Total Teams
                             </div>
                         </div>
                         <div className="bg-white bg-opacity-20 backdrop-blur-sm p-3 rounded-lg">
@@ -223,14 +223,14 @@ const ProjTab = ({
                 <div className="flex-1 overflow-y-auto p-4">
                         <div className="space-y-4">
                             <div className="text-sm font-medium text-gray-500">
-                                Project Overview
+                                Team Overview
                             </div>
                             <Card className="border-0 shadow-sm">
                                 <CardContent className="p-4">
                                     <div className="space-y-3">
                                         <div className="flex justify-between items-center">
                                             <span className="text-sm text-gray-600">
-                                                Total Projects
+                                                Total Teams
                                             </span>
                                             <Badge variant="secondary">
                                                 {totalProjects}
@@ -238,7 +238,7 @@ const ProjTab = ({
                                         </div>
                                         <div className="flex justify-between items-center">
                                             <span className="text-sm text-gray-600">
-                                                Active Projects
+                                                Active Teams
                                             </span>
                                             <Badge variant="default">
                                                 {activeProjects}
@@ -334,10 +334,10 @@ const ProjTab = ({
                 {/* Content Header */}
                 <div className="p-6 border-b border-gray-200 bg-white">
                     <h3 className="text-lg font-semibold text-gray-900">
-                        Project Overview
+                        Team Overview
                     </h3>
                     <p className="text-sm text-gray-500">
-                        Manage and monitor all your projects
+                        Manage and monitor all your teams
                     </p>
                 </div>
 
@@ -372,13 +372,13 @@ const ProjTab = ({
                                         <Folder className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                                         <h3 className="text-lg font-medium text-gray-900 mb-2">
                                             {userRole === "admin"
-                                                ? "Welcome to Project Management!"
-                                                : "No projects assigned"}
+                                                ? "Welcome to Team Management!"
+                                                : "No teams assigned"}
                                         </h3>
                                         <p className="text-gray-500 mb-4">
                                             {userRole === "admin"
-                                                ? "Start creating your first project, experience the new task pool management system"
-                                                : "Wait for admins to create projects and assign you"}
+                                                ? "Start creating your first team, experience the new task pool management system"
+                                                : "Wait for admins to create teams and assign you"}
                                         </p>
                                     </div>
                                 </div>

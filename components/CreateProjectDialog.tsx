@@ -49,13 +49,13 @@ export default function CreateProjectDialog({
                 // 1. 创建项目
                 const result = await createProject(orgId, newProjectTitle.trim());
                 if (!result.success) {
-                    toast.error(result.message || "Failed to create project");
+                    toast.error(result.message || "Failed to create team");
                     return;
                 }
 
                 const projectId = result.projectId;
                 if (!projectId) {
-                    toast.error("Project created but no project ID returned");
+                    toast.error("Team created but no team ID returned");
                     return;
                 }
 
@@ -64,13 +64,13 @@ export default function CreateProjectDialog({
                     try {
                         const orgData = org?.data();
                         if (!orgData) {
-                            toast.error("Organization data not found");
+                            toast.error("Group data not found");
                             return;
                         }
 
                         const memberList = orgData.members || [];
                         if (memberList.length === 0) {
-                            toast.warning("No members found in organization");
+                            toast.warning("No members found in group");
                             return;
                         }
 
@@ -99,23 +99,23 @@ export default function CreateProjectDialog({
                                 if (selectedGroup && selectedGroup.length > 0) {
                                     // 更新项目成员
                                     await updateProjectMembers(projectId, selectedGroup);
-                                    toast.success(`Project created with ${selectedGroup.length} matched team members!`);
+                                    toast.success(`Team created with ${selectedGroup.length} matched members!`);
                                 } else {
-                                    toast.success("Project created successfully!");
+                                    toast.success("Team created successfully!");
                                 }
                             } else {
-                                toast.success("Project created successfully!");
+                                toast.success("Team created successfully!");
                             }
                         } catch (parseError) {
                             console.error("Error parsing matching result:", parseError);
-                            toast.success("Project created successfully!");
+                            toast.success("Team created successfully!");
                         }
                     } catch (matchingError) {
                         console.error("Error in team matching:", matchingError);
-                        toast.success("Project created successfully!");
+                        toast.success("Team created successfully!");
                     }
                 } else {
-                    toast.success("Project created successfully!");
+                    toast.success("Team created successfully!");
                 }
 
                 setNewProjectTitle("");
@@ -124,7 +124,7 @@ export default function CreateProjectDialog({
                 onProjectCreated?.();
             } catch (error) {
                 console.error("Error creating project:", error);
-                toast.error("Failed to create project");
+                toast.error("Failed to create team");
             }
         });
     };
@@ -138,7 +138,7 @@ export default function CreateProjectDialog({
     }
 
     if (error) {
-        return <Button disabled>Error loading organization</Button>;
+        return <Button disabled>Error loading group</Button>;
     }
 
     return (
@@ -153,26 +153,26 @@ export default function CreateProjectDialog({
                     size={totalProjects === 0 ? "default" : "sm"}
                 >
                     <Plus className="h-4 w-4 mr-2" />
-                    {totalProjects === 0 ? "Create First Project" : "New Project"}
+                    {totalProjects === 0 ? "Create First Team" : "New Team"}
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                    <DialogTitle>Create New Project</DialogTitle>
+                    <DialogTitle>Create New Team</DialogTitle>
                     <DialogDescription>
-                        Enter project details and optionally match team members.
+                        Enter team details and optionally match members.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                     <div className="flex flex-col gap-2">
                         <Label htmlFor="project-title" className="text-sm font-medium">
-                            Project Title
+                            Team Name
                         </Label>
                         <Input
                             id="project-title"
                             value={newProjectTitle}
                             onChange={(e) => setNewProjectTitle(e.target.value)}
-                            placeholder="Enter project title..."
+                            placeholder="Enter team name..."
                             onKeyPress={(e) =>
                                 e.key === "Enter" && handleCreateProject()
                             }
@@ -195,7 +195,7 @@ export default function CreateProjectDialog({
                             className="w-full"
                         />
                         <p className="text-xs text-muted-foreground">
-                            Leave empty to create project without team matching
+                            Leave empty to create team without member matching
                         </p>
                     </div>
                 </div>
@@ -210,7 +210,7 @@ export default function CreateProjectDialog({
                         onClick={handleCreateProject}
                         disabled={isPending || !newProjectTitle.trim()}
                     >
-                        {isPending ? "Creating..." : "Create Project"}
+                        {isPending ? "Creating..." : "Create Team"}
                     </Button>
                 </DialogFooter>
             </DialogContent>

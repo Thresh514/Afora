@@ -15,7 +15,7 @@ interface ProjectCardProps {
 const ProjectCard = ({
     projId,
     orgId,
-    projectName = "Sample Project",
+    projectName = "Sample Team",
     tasks = [],
     members = [],
 }: ProjectCardProps) => {
@@ -120,7 +120,7 @@ const ProjectCard = ({
                         className="w-full group-hover:bg-slate-100 group-hover:border-slate-300 transition-all duration-300"
                     >
                         <FolderOpen className="h-4 w-4 mr-2" />
-                        View Project
+                        View Team
                         <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
                     </Button>
                 </CardContent>

@@ -325,7 +325,7 @@ const TaskManagement = ({
                                 </h3>
                                 <p className="text-gray-500">
                                     Create your first task to get started with
-                                    project management.
+                                    team management.
                                 </p>
                             </div>
                         )}

@@ -408,7 +408,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                                     No team members found
                                 </h3>
                                 <p className="text-gray-400">
-                                    Add members to your project to see the leaderboard!
+                                    Add members to your team to see the leaderboard!
                                 </p>
                             </CardContent>
                         </Card>

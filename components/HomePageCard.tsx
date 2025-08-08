@@ -29,7 +29,7 @@ function HomePageCard({ org }: HomePageCardProps) {
             <div className="flex flex-col h-96 shadow-lg rounded-2xl overflow-hidden bg-white dark:bg-gray-800 w-96 animate-pulse">
                 <div className="h-32 bg-gray-200 dark:bg-gray-700" />
                 <div className="flex-1 flex items-center justify-center p-6">
-                    <p className="text-gray-500">Loading organization data...</p>
+                    <p className="text-gray-500">Loading group data...</p>
                 </div>
             </div>
         );

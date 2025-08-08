@@ -241,12 +241,12 @@ const [page, setPage] = useState(0);
                     {page === 0 && (
                         <AlertDialogHeader>
                             <AlertDialogTitle>
-                                Project Onboarding Survey
+                                Team Onboarding Survey
                             </AlertDialogTitle>
                             <AlertDialogDescription>
                                 Please take a minute to fill out this mandatory
                                 form. The information will be used for matching
-                                of teammates for your project.
+                                of teammates for your team.
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                     )}

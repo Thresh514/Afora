@@ -10,7 +10,7 @@ import StoreProvider from "./StoreProvider";
 
 export const metadata: Metadata = {
   title: "Afora",
-  description: "Your next all-in-one project management app",
+  description: "Your next all-in-one team management app",
 };
 
 export default function RootLayout({

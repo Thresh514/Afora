@@ -37,7 +37,7 @@ const TeamScoreCard = ({
             (async () => {
                 try {
                     if (!projectFilter) {
-                        toast.error("Project ID is required for team analysis");
+                        toast.error("Team ID is required for analysis");
                         return;
                     }
                     const membersData = await getProjectMembersResponses(projectFilter);
@@ -204,7 +204,7 @@ const TeamScoreCard = ({
                     <CardTitle className="flex items-center gap-2">
                         <BarChart3 className="h-5 w-5 text-purple-600" />
                         {projectFilter
-                            ? "Project Team Compatibility Analysis"
+                            ? "Team Compatibility Analysis"
                             : "Team Compatibility Analysis"}
                     </CardTitle>
                     <CardDescription>
