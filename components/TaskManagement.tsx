@@ -118,7 +118,7 @@ const TaskManagement = ({
                                                     <div className="flex-1 min-w-0">
                                                         <CardTitle className="text-base font-medium truncate">
                                                             {index + 1}.{" "}
-                                                            {task.title} (⭐{task.points || 1})
+                                                            {task.title} (⭐{task.points || 10})
                                                         </CardTitle>
                                                     </div>
                                                 </div>

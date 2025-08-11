@@ -195,7 +195,7 @@ function TaskPage() {
                                                 <span className="font-medium">
                                                     Points:
                                                 </span>
-                                                <span>{task?.points || 1}</span>
+                                                <span>{task?.points || 10}</span>
                                             </div>
                                         </div>
                                     </div>

@@ -337,7 +337,7 @@ function StagePage() {
                                                     <div className="flex items-center gap-2">
                                                         <div className="bg-white/20 px-3 py-1 rounded-full">
                                                             <span className="text-white text-sm font-bold">
-                                                                {task.points || 1} Point{(task.points || 1) > 1 ? 's' : ''}
+                                                                {task.points || 10} Point{(task.points || 10) > 1 ? 's' : ''}
                                                             </span>
                                                         </div>
                                                     </div>
