@@ -79,16 +79,17 @@ function StagePage() {
     const [isEditing, setIsEditing] = useState(false);
     const [bountyBoardOpen, setBountyBoardOpen] = useState(false);
 
-    // 新增：存储从后端获取的过期任务
+    // 恢复原有逻辑：存储从后端获取的过期任务
     const [backendOverdueTasks, setBackendOverdueTasks] = useState<Array<{
         id: string;
         title: string;
         description: string;
         stage_id: string;
         soft_deadline: string;
+        points?: number;
     }>>([]);
 
-    // fetch overdue tasks function
+    // fetch overdue tasks function 
     const fetchOverdueTasks = useCallback(async () => {
         try {
             const overdueResult = await getOverdueTasks(projId);
@@ -114,15 +115,15 @@ function StagePage() {
 
     if (!isSignedIn) return null;
 
-        if (stageLoading || tasksLoading) {
-            return <Skeleton className="w-full h-96" />;
-        }
+    if (stageLoading || tasksLoading) {
+        return <Skeleton className="w-full h-96" />;
+    }
 
-        if (stageError) {
-            return <div>Error: {stageError.message}</div>;
-        }
+    if (stageError) {
+        return <div>Error: {stageError.message}</div>;
+    }
 
-        if (tasksError) {
+    if (tasksError) {
         return <div>Error: {tasksError.message}</div>;
     }
 
@@ -132,7 +133,7 @@ function StagePage() {
         return <div>Error: The stage has been deleted.</div>;
     }
 
-    // Get overdue tasks for bounty board
+    // Get overdue tasks for bounty board (恢复原有逻辑)
     const overdueTasks = backendOverdueTasks.filter((task) => task.stage_id === stageId);
 
     const handleNewTask = () => {
@@ -336,7 +337,7 @@ function StagePage() {
                                                     <div className="flex items-center gap-2">
                                                         <div className="bg-white/20 px-3 py-1 rounded-full">
                                                             <span className="text-white text-sm font-bold">
-                                                                1 Point
+                                                                {task.points || 1} Point{(task.points || 1) > 1 ? 's' : ''}
                                                             </span>
                                                         </div>
                                                     </div>

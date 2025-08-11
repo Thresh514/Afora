@@ -3036,3 +3036,149 @@ export async function getTeamAnalysis(projId: string) {
         return { success: false, message: (error as Error).message };
     }
 }
+
+/**
+ * 自动 drop 过期任务
+ * 扫描所有已分配但超过 soft_deadline 的任务，自动将其设置为 available
+ */
+export async function autoDropOverdueTasks() {
+    const { userId } = await auth();
+    if (!userId) {
+        throw new Error("Unauthorized");
+    }
+
+    return await autoDropOverdueTasksInternal(userId);
+}
+
+/**
+ * 内部版本：自动 drop 过期任务（供 cron job 使用）
+ * 不需要用户认证，直接执行
+ */
+export async function autoDropOverdueTasksInternal(executedBy: string = "system") {
+
+    const now = new Date();
+    const currentISOString = now.toISOString();
+
+    try {
+        console.log("🔍 开始检查过期任务...");
+        
+        // 获取所有项目
+        const projectsSnapshot = await adminDb.collection("projects").get();
+        const overdueTasks: { 
+            ref: FirebaseFirestore.DocumentReference; 
+            data: any;
+            projectId: string;
+            stageId: string;
+        }[] = [];
+        
+        for (const projectDoc of projectsSnapshot.docs) {
+            const stagesSnapshot = await projectDoc.ref.collection("stages").get();
+            
+            for (const stageDoc of stagesSnapshot.docs) {
+                const tasksSnapshot = await stageDoc.ref.collection("tasks").get();
+                
+                for (const taskDoc of tasksSnapshot.docs) {
+                    const taskData = taskDoc.data();
+                    
+                    // 匹配现有的 getOverdueTasks 逻辑，但查找已分配的任务
+                    if (
+                        taskData.assignee && // 已分配
+                        taskData.status !== "available" && // 只处理非 available 的任务
+                        taskData.isCompleted !== true && // 处理 undefined 情况
+                        taskData.soft_deadline &&
+                        new Date(taskData.soft_deadline) < now &&
+                        taskData.canBeReassigned !== false // 默认允许重新分配
+                    ) {
+                        overdueTasks.push({
+                            ref: taskDoc.ref,
+                            data: taskData,
+                            projectId: projectDoc.id,
+                            stageId: stageDoc.id
+                        });
+                    }
+                }
+            }
+            
+            // 限制批处理数量
+            if (overdueTasks.length >= 100) break;
+        }
+        
+        if (overdueTasks.length === 0) {
+            console.log("没有找到需要自动 drop 的过期任务");
+            return { 
+                success: true, 
+                tasksProcessed: 0, 
+                message: "没有需要处理的过期任务" 
+            };
+        }
+        
+        console.log(`找到 ${overdueTasks.length} 个需要自动 drop 的过期任务`);
+        
+        // 使用批量写入进行更新（使用现有的 unassignTask 逻辑）
+        const batch = adminDb.batch();
+        let processedCount = 0;
+        
+        overdueTasks.forEach(({ ref, data, projectId, stageId }) => {
+            // 使用现有的 unassignTask 逻辑
+            batch.update(ref, {
+                assignee: "",
+                status: "available", 
+                assigned_at: null,
+                completion_percentage: 0,
+                // 添加自动处理标记
+                auto_dropped_at: currentISOString,
+            });
+            
+            processedCount++;
+            
+            console.log(`准备自动 drop 任务: ${data.title} (assignee: ${data.assignee})`);
+            console.log(`  项目: ${projectId}, 阶段: ${stageId}`);
+        });
+        
+        // 执行批量更新
+        if (processedCount > 0) {
+            await batch.commit();
+            console.log(`✅ 成功自动 drop ${processedCount} 个过期任务`);
+            
+            // 记录处理结果到日志集合（可选）
+            await adminDb.collection("function_logs").add({
+                functionName: "autoDropOverdueTasks", 
+                executedAt: currentISOString,
+                tasksProcessed: processedCount,
+                executedBy: executedBy,
+                status: "success",
+                taskDetails: overdueTasks.map(task => ({
+                    title: task.data.title,
+                    assignee: task.data.assignee,
+                    soft_deadline: task.data.soft_deadline,
+                    projectId: task.projectId,
+                    stageId: task.stageId
+                }))
+            });
+        }
+        
+        return {
+            success: true,
+            tasksProcessed: processedCount,
+            executedAt: currentISOString,
+            message: `成功自动 drop ${processedCount} 个过期任务`
+        };
+        
+    } catch (error) {
+        console.error("自动 drop 过期任务时发生错误:", error);
+        
+        // 记录错误到日志集合
+        await adminDb.collection("function_logs").add({
+            functionName: "autoDropOverdueTasks",
+            executedAt: currentISOString,
+            executedBy: executedBy,
+            status: "error",
+            error: (error as Error).message
+        });
+        
+        return { 
+            success: false, 
+            message: `自动 drop 过期任务失败: ${(error as Error).message}` 
+        };
+    }
+}

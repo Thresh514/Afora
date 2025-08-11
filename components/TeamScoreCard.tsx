@@ -179,8 +179,8 @@ const TeamScoreCard = ({
     ): number => {
         const minScore = options?.minScore ?? 70;
         const maxScore = options?.maxScore ?? 90;
-        const maxFactor = options?.maxFactor ?? 1.3;
-        const minFactor = options?.minFactor ?? 1.1;
+        const maxFactor = options?.maxFactor ?? 1.18;
+        const minFactor = options?.minFactor ?? 1.05;
 
         if (!Number.isFinite(score)) return maxFactor;
         if (score <= minScore) return maxFactor;

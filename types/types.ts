@@ -202,6 +202,7 @@ export type Task = {
     assignedAt?: string; // When the task was assigned
     completedAt?: string; // When the task was completed
     canBeReassigned?: boolean; // Whether the task can be reassigned after soft deadline
+    auto_dropped_at?: string; // When the task was automatically dropped by Cloud Function
 };
 
 export type GeneratedTasks = {
