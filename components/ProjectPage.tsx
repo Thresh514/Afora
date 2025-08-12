@@ -2,7 +2,7 @@
 
 import { db } from "@/firebase";
 import { useAuth, useUser } from "@clerk/nextjs";
-import { collection, doc, getDoc, addDoc } from "firebase/firestore";
+import { collection, doc, getDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition, useCallback } from "react";
 import { useCollection, useDocument } from "react-firebase-hooks/firestore";
@@ -46,7 +46,6 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
     const { user } = useUser();
     const [responses, setResponses] = useState<string[]>([]);
     const [isOpen, setIsOpen] = useState(false);
-    const [isAddStageOpen, setIsAddStageOpen] = useState(false);
     const [isTeamCharterOpen, setIsTeamCharterOpen] = useState(false);
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
@@ -67,12 +66,14 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
     // Define the 'newStageTitle' state
     const [newStageTitle, setNewStageTitle] = useState("");
 
-    // check if user is admin
+    // check if user is team member (admin or regular member can create stages)
     useEffect(() => {
         if (user?.primaryEmailAddress?.emailAddress && projData) {
             const userEmail = user.primaryEmailAddress.emailAddress;
             const admins = projData.data()?.admins || [];
-            setIsAdmin(admins.includes(userEmail));
+            const members = projData.data()?.members || [];
+            const isTeamMember = admins.includes(userEmail) || members.includes(userEmail);
+            setIsAdmin(isTeamMember); // Use isAdmin variable to represent team member permissions
         }
     }, [user, projData]);
 
@@ -145,6 +146,16 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
         doc(db, "projects", projId),
     );
 
+    // 当teamCharterData加载完成后，设置responses的初始值
+    useEffect(() => {
+        if (teamCharterData && !loading && !error) {
+            const savedResponses = teamCharterData.data()?.teamCharterResponse || [];
+            if (savedResponses.length > 0) {
+                setResponses(savedResponses);
+            }
+        }
+    }, [teamCharterData, loading, error]);
+
     const stages: Stage[] = useMemo(() => {
         return (
             stagesData?.docs
@@ -189,15 +200,6 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
         if (projError) {
             return <div>Error: {projError.message}</div>;
         }
-    
-
-    const handleOpenEditing = () => {
-        if (!teamCharterData || loading || error) return;
-        // fetch the latest team charter data
-        const res =
-            (teamCharterData.data()?.teamCharterResponse as string[]) || [];
-        setResponses(res);
-    };
 
     const handleTeamCharterSave = () =>
         startTransition(async () => {
@@ -205,11 +207,11 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                 if (!teamCharterData || loading || error) return;
                 await setTeamCharter(projId, responses);
                 toast.success("Team Charter saved successfully!");
+                setIsOpen(false); // 只在保存成功时关闭对话框
             } catch (e) {
                 console.log(e);
                 toast.error("Failed to save Team Charter.");
             }
-            setIsOpen(false);
         });
 
     const handleEditSave = () => {
@@ -362,7 +364,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
 
                                 <div className="flex items-center justify-between mb-2">
                                     <h2 className="text-xl md:text-2xl font-semibold text-white">
-                                        Project Overview
+                                        Team Overview
                                     </h2>
                                     {stages && stages.length > 0 && (
                                         <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg px-4 py-3 inline-flex items-center gap-4">
@@ -400,7 +402,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                             className="flex items-center gap-2"
                         >
                             <Target className="h-4 w-4" />
-                            Project Roadmap
+                            Team Roadmap
                         </TabsTrigger>
                         <TabsTrigger
                             value="team-analytics"
@@ -418,7 +420,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                 <CardHeader>
                                     <CardTitle className="flex items-center gap-2">
                                         <BarChart3 className="h-5 w-5 text-blue-600" />
-                                        Project Statistics
+                                        Team Statistics
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
@@ -486,11 +488,11 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                             No stages yet
                                         </h3>
                                         <p>
-                                            {isAdmin ? (
-                                                "Try generating stages and tasks to start your project."
-                                            ) : (
-                                                "Please wait for the admin to create project stages."
-                                            )}
+                                                {isAdmin ? (
+                                                    "Try generating stages and tasks to start your team."
+                                                ) : (
+                                                    "Please wait for the admin to create team stages."
+                                                )}
                                         </p>
                                     </div>
                                     {isAdmin && (
@@ -516,9 +518,9 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                                 </AlertDialogTrigger>
                                                 <AlertDialogContent className="w-full max-w-4xl">
                                                     <AlertDialogHeader>
-                                                        <AlertDialogTitle>Project Team Charter</AlertDialogTitle>
+                                                        <AlertDialogTitle>Team Charter</AlertDialogTitle>
                                                         <AlertDialogDescription>
-                                                            Fill out this charter to kick off your project! 🚀
+                                                            Fill out this charter to kick off your team! 🚀
                                                         </AlertDialogDescription>
                                                     </AlertDialogHeader>
                                                     <div className="overflow-y-auto max-h-96">
@@ -527,10 +529,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                                             <div className="space-y-6">
                                                                 {/* Project Basic Information */}
                                                                 <div className="space-y-4">
-                                                                    <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">
-                                                                        1. Project Basic Information
-                                                                    </h3>
-                                                                    {teamCharterQuestions.slice(0, 3).map((question, index) => (
+                                                                    {teamCharterQuestions.map((question, index) => (
                                                                         <div key={index} className="space-y-2">
                                                                             <Label
                                                                                 htmlFor={`question-${index}`}
@@ -545,93 +544,6 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                                                                 onChange={(e) => {
                                                                                     const newResponses = [...responses];
                                                                                     newResponses[index] = e.target.value;
-                                                                                    setResponses(newResponses);
-                                                                                }}
-                                                                                placeholder="Enter your response here..."
-                                                                                className="min-h-[100px]"
-                                                                            />
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-
-                                                                {/* Team Information */}
-                                                                <div className="space-y-4">
-                                                                    <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">
-                                                                        2. Team Information
-                                                                    </h3>
-                                                                    {teamCharterQuestions.slice(3, 6).map((question, index) => (
-                                                                        <div key={index + 3} className="space-y-2">
-                                                                            <Label
-                                                                                htmlFor={`question-${index + 3}`}
-                                                                                className="text-sm font-medium text-gray-700"
-                                                                            >
-                                                                                {question}
-                                                                            </Label>
-                                                                            <Textarea
-                                                                                id={`question-${index + 3}`}
-                                                                                name={`question-${index + 3}`}
-                                                                                value={responses[index + 3] || ""}
-                                                                                onChange={(e) => {
-                                                                                    const newResponses = [...responses];
-                                                                                    newResponses[index + 3] = e.target.value;
-                                                                                    setResponses(newResponses);
-                                                                                }}
-                                                                                placeholder="Enter your response here..."
-                                                                                className="min-h-[100px]"
-                                                                            />
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-
-                                                                {/* Timeline Planning */}
-                                                                <div className="space-y-4">
-                                                                    <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">
-                                                                        3. Timeline Planning
-                                                                    </h3>
-                                                                    {teamCharterQuestions.slice(6, 9).map((question, index) => (
-                                                                        <div key={index + 6} className="space-y-2">
-                                                                            <Label
-                                                                                htmlFor={`question-${index + 6}`}
-                                                                                className="text-sm font-medium text-gray-700"
-                                                                            >
-                                                                                {question}
-                                                                            </Label>
-                                                                            <Textarea
-                                                                                id={`question-${index + 6}`}
-                                                                                name={`question-${index + 6}`}
-                                                                                value={responses[index + 6] || ""}
-                                                                                onChange={(e) => {
-                                                                                    const newResponses = [...responses];
-                                                                                    newResponses[index + 6] = e.target.value;
-                                                                                    setResponses(newResponses);
-                                                                                }}
-                                                                                placeholder="Enter your response here..."
-                                                                                className="min-h-[100px]"
-                                                                            />
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-
-                                                                {/* Additional Key Information */}
-                                                                <div className="space-y-4">
-                                                                    <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">
-                                                                        4. Additional Key Information
-                                                                    </h3>
-                                                                    {teamCharterQuestions.slice(9).map((question, index) => (
-                                                                        <div key={index + 9} className="space-y-2">
-                                                                            <Label
-                                                                                htmlFor={`question-${index + 9}`}
-                                                                                className="text-sm font-medium text-gray-700"
-                                                                            >
-                                                                                {question}
-                                                                            </Label>
-                                                                            <Textarea
-                                                                                id={`question-${index + 9}`}
-                                                                                name={`question-${index + 9}`}
-                                                                                value={responses[index + 9] || ""}
-                                                                                onChange={(e) => {
-                                                                                    const newResponses = [...responses];
-                                                                                    newResponses[index + 9] = e.target.value;
                                                                                     setResponses(newResponses);
                                                                                 }}
                                                                                 placeholder="Enter your response here..."
@@ -737,7 +649,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                                                                     </HoverCardTrigger>
                                                                                     <HoverCardContent className="p-2 bg-gray-800 text-white rounded-md shadow-lg">
                                                                                         <p className="text-sm">
-                                                                                            {isAdmin ? "此阶段已锁定。帮助团队成员完成他们的任务！" : "此阶段已锁定。请等待管理员解锁。"}
+                                                                                            {isAdmin ? "此阶段已锁定。帮助团队成员完成他们的任务！" : "此阶段已锁定。请等待团队成员解锁。"}
                                                                                         </p>
                                                                                     </HoverCardContent>
                                                                                 </HoverCard>
@@ -865,7 +777,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                     ) : (
                                         <div className="bg-white rounded-lg shadow-sm border p-6 space-y-4">
                                             <h3 className="text-lg font-semibold mb-4 text-gray-800">
-                                                Project Stages
+                                                Team Stages
                                             </h3>
                                             {stages.map((stage, index) => (
                                                 <HoverCard key={stage.id}>

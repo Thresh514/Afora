@@ -504,6 +504,8 @@ export async function createProject(
     orgId: string,
     projectTitle: string,
     members: string[] = [],
+    teamSize?: number,
+    admins: string[] = [],
 ) {
     const { sessionClaims } = await auth();
 
@@ -556,13 +558,20 @@ export async function createProject(
         }
 
         // 创建项目文档
-        const projectRef = await adminDb.collection("projects").add({
+        const projectData: any = {
             orgId: orgId,
             title: projectTitle.trim(),
             members: members,
-            admins: [userId],
+            admins: admins.length > 0 ? admins : [userId], // Use provided admins or fallback to creator
             createdAt: Timestamp.now(),
-        });
+        };
+        
+        // 如果提供了团队大小，则添加到项目数据中
+        if (teamSize && teamSize > 0) {
+            projectData.teamSize = teamSize;
+        }
+        
+        const projectRef = await adminDb.collection("projects").add(projectData);
 
         const projectId = projectRef.id;
 
@@ -716,11 +725,20 @@ export async function updateStagesTasks(
                 batch.set(taskRef, {
                     title: task.task_name,
                     description: task.task_description,
-                    assignee: null,
+                    assignee: task.assigned_member || "", // Use AI-assigned member
+                    assignment_reason: task.assignment_reason || "", // Store assignment reasoning
                     id: taskRef.id,
                     order: taskIndex,
                     soft_deadline: task.soft_deadline,
                     hard_deadline: task.hard_deadline,
+                    isCompleted: false,
+                    // 任务池相关字段 - if assigned, mark as assigned
+                    status: task.assigned_member ? "assigned" : "available",
+                    points: 10,
+                    completion_percentage: 0,
+                    canBeReassigned: true,
+                    // Add assigned timestamp if task is pre-assigned
+                    ...(task.assigned_member && { assigned_at: Timestamp.now() }),
                 });
             });
         });
@@ -890,7 +908,7 @@ export async function createTask(
             order: 0, // Update this if ordering logic is required
             isCompleted: false,
             status: "available",
-            points,
+            points: 10,
             completion_percentage: 0,
             can_be_reassigned: true,
             soft_deadline: softDeadline,
@@ -1282,7 +1300,7 @@ export async function assignTask(
             assignee: assigneeEmail,
             status: "assigned",
             assigned_at: Timestamp.now(),
-            points: taskData?.points || 1,
+            points: taskData?.points || 10,
             completion_percentage: 0,
             can_be_reassigned: true,
         });
@@ -1406,7 +1424,7 @@ export async function completeTaskWithProgress(
             }
 
             // 更新用户积分
-            pointsEarned = taskData?.points || 1;
+            pointsEarned = taskData?.points || 10;
             await updateUserScore(userEmail, projId, pointsEarned, true);
             await updateUserTaskStats(userEmail, projId, "completed");
         }
@@ -1592,7 +1610,7 @@ export async function getOverdueTasks(projId: string) {
                     !taskData.isCompleted &&
                     taskData.soft_deadline &&
                     new Date(taskData.soft_deadline) < now &&
-                    (taskData.can_be_reassigned || !taskData.assignee)
+                    !taskData.assignee
                 ) {
                     overdueTasks.push({
                         id: taskDoc.id,
@@ -1730,6 +1748,21 @@ export async function getProjectLeaderboard(projId: string) {
     }
 
     try {
+        const projectDoc = await adminDb
+            .collection("projects")
+            .doc(projId)
+            .get();
+
+        if (!projectDoc.exists) {
+            throw new Error("Project not found");
+        }
+
+        const projectData = projectDoc.data();
+        const allMembers = [
+            ...(projectData?.members || []),
+            ...(projectData?.admins || []),
+        ];
+
         const scores = await adminDb
             .collection("user_scores")
             .where("project_id", "==", projId)
@@ -1737,9 +1770,10 @@ export async function getProjectLeaderboard(projId: string) {
             .limit(50)
             .get();
 
-        const leaderboard = scores.docs.map((doc) => {
+        const scoreMap = new Map();
+        scores.docs.forEach((doc) => {
             const data = doc.data();
-            return {
+            scoreMap.set(data.user_email, {
                 id: doc.id,
                 user_email: data.user_email,
                 project_id: data.project_id,
@@ -1748,13 +1782,34 @@ export async function getProjectLeaderboard(projId: string) {
                 tasks_assigned: data.tasks_assigned,
                 average_completion_time: data.average_completion_time,
                 streak: data.streak,
-                // Convert Timestamp to plain object
                 last_updated: data.last_updated ? {
                     _seconds: data.last_updated.seconds,
                     _nanoseconds: data.last_updated.nanoseconds
                 } : null,
-            };
+            });
         });
+
+        const leaderboard = allMembers.map((email) => {
+            const existingScore = scoreMap.get(email);
+            if (existingScore) {
+                return existingScore;
+            } else {
+                //give them a default score of 0
+                return {
+                    id: `default_${email}_${projId}`,
+                    user_email: email,
+                    project_id: projId,
+                    total_points: 0,
+                    tasks_completed: 0,
+                    tasks_assigned: 0,
+                    average_completion_time: 0,
+                    streak: 0,
+                    last_updated: null,
+                };
+            }
+        });
+
+        leaderboard.sort((a, b) => b.total_points - a.total_points);
 
         return {
             success: true,
@@ -1868,13 +1923,11 @@ export async function addProjectMember(
     }
 
     try {
-        // 验证用户是否存在
         const userDoc = await adminDb.collection("users").doc(userEmail).get();
         if (!userDoc.exists) {
             throw new Error("User not found");
         }
 
-        // 验证项目是否存在
         const projectRef = adminDb.collection("projects").doc(projId);
         const projectDoc = await projectRef.get();
 
@@ -1886,7 +1939,6 @@ export async function addProjectMember(
         const currentMembers = projectData?.members || [];
         const currentAdmins = projectData?.admins || [];
 
-        // 检查用户是否已经是成员
         if (
             currentMembers.includes(userEmail) ||
             currentAdmins.includes(userEmail)
@@ -1894,7 +1946,6 @@ export async function addProjectMember(
             throw new Error("User is already a member of this project");
         }
 
-        // 添加成员到相应的角色数组
         if (role === "admin") {
             await projectRef.update({
                 admins: [...currentAdmins, userEmail],
@@ -1905,7 +1956,7 @@ export async function addProjectMember(
             });
         }
 
-        // 为用户添加项目引用
+        //add the project to the user's projs collection
         await adminDb
             .collection("users")
             .doc(userEmail)
@@ -1928,7 +1979,7 @@ export async function addProjectMember(
     }
 }
 
-// 批量更新项目成员
+// batch update project members
 export async function updateProjectMembers(
     projId: string,
     memberEmails: string[],
@@ -1949,12 +2000,12 @@ export async function updateProjectMembers(
         const projectData = projectDoc.data();
         const orgId = projectData?.orgId;
 
-        // 更新项目成员列表
+        // update the project members list
         await projectRef.update({
             members: memberEmails,
         });
 
-        // 为所有新成员添加项目引用
+        // add the project to the new members' projs collection
         for (const memberEmail of memberEmails) {
             try {
                 await adminDb
@@ -1986,7 +2037,7 @@ export async function updateProjectMembers(
     }
 }
 
-// 移除项目成员
+// remove project member
 export async function removeProjectMember(projId: string, userEmail: string) {
     const { userId } = await auth();
     if (!userId) {
@@ -2005,7 +2056,7 @@ export async function removeProjectMember(projId: string, userEmail: string) {
         const currentMembers = projectData?.members || [];
         const currentAdmins = projectData?.admins || [];
 
-        // 从成员或管理员列表中移除
+        // remove the user from the members or admins list
         const updatedMembers = currentMembers.filter(
             (email: string) => email !== userEmail,
         );
@@ -2018,7 +2069,7 @@ export async function removeProjectMember(projId: string, userEmail: string) {
             admins: updatedAdmins,
         });
 
-        // 移除用户的项目引用
+        // remove the project from the user's projs collection
         try {
             await adminDb
                 .collection("users")
@@ -2043,7 +2094,7 @@ export async function removeProjectMember(projId: string, userEmail: string) {
     }
 }
 
-// 更新项目团队大小
+// update project team size
 export async function updateProjectTeamSize(projId: string, teamSize: number) {
     const { userId } = await auth();
     if (!userId) {
@@ -2076,15 +2127,150 @@ export async function updateProjectTeamSize(projId: string, teamSize: number) {
     }
 }
 
-// 自动分配组织成员到项目
-export async function autoAssignMembersToProjects(orgId: string) {
+// Backtracking algorithm to find optimal allocation strategy
+function findOptimalAllocationWithBacktracking(projects: any[], availableMembers: number) {
+    // Generate all possible allocation scenarios
+    const allocationScenarios = generateAllocationScenarios(projects, availableMembers);
+    
+    // Evaluate each scenario and find the optimal solution
+    let bestScenario = null;
+    let minTotalEmptySpots = Infinity;
+    let maxFilledProjects = -1;
+    
+    for (let i = 0; i < allocationScenarios.length; i++) {
+        const scenario = allocationScenarios[i];
+        const evaluation = evaluateAllocationScenario(scenario, projects);
+        
+        // Priority: 1. More completely filled projects 2. Fewer total empty spots
+        if (evaluation.filledProjects > maxFilledProjects || 
+            (evaluation.filledProjects === maxFilledProjects && evaluation.totalEmptySpots < minTotalEmptySpots)) {
+            bestScenario = scenario;
+            minTotalEmptySpots = evaluation.totalEmptySpots;
+            maxFilledProjects = evaluation.filledProjects;
+        }
+    }
+    
+    if (bestScenario) {
+        return applyAllocationScenario(bestScenario, projects);
+    }
+    
+    // Fallback to simple strategy
+    return projects.sort((a, b) => b.spotsAvailable - a.spotsAvailable);
+}
+
+// Generate all possible allocation scenarios
+function generateAllocationScenarios(projects: any[], availableMembers: number): number[][] {
+    const scenarios: number[][] = [];
+    
+    // Recursively generate allocation scenarios
+    function backtrack(projectIndex: number, allocation: number[], remainingMembers: number) {
+        if (projectIndex === projects.length) {
+            if (remainingMembers >= 0) {
+                scenarios.push([...allocation]);
+            }
+            return;
+        }
+        
+        const project = projects[projectIndex];
+        const maxAssignable = Math.min(project.spotsAvailable, remainingMembers);
+        
+        // Try assigning 0 to maxAssignable members to current project
+        for (let assign = 0; assign <= maxAssignable; assign++) {
+            allocation[projectIndex] = assign;
+            backtrack(projectIndex + 1, allocation, remainingMembers - assign);
+        }
+    }
+    
+    backtrack(0, [], availableMembers);
+    return scenarios;
+}
+
+// Evaluate allocation scenario
+function evaluateAllocationScenario(allocation: number[], projects: any[]) {
+    let filledProjects = 0;
+    let totalEmptySpots = 0;
+    
+    for (let i = 0; i < projects.length; i++) {
+        const project = projects[i];
+        const assigned = allocation[i];
+        const remaining = project.spotsAvailable - assigned;
+        
+        if (remaining === 0) {
+            filledProjects++;
+        }
+        totalEmptySpots += remaining;
+    }
+    
+    return { filledProjects, totalEmptySpots, allocation };
+}
+
+// Apply allocation scenario, return project processing order
+function applyAllocationScenario(allocation: number[], projects: any[]) {
+    const projectsWithAllocation = projects.map((project, index) => ({
+        ...project,
+        plannedAllocation: allocation[index]
+    }));
+    
+    // Sort by allocation count descending, prioritize projects with more member allocations
+    return projectsWithAllocation
+        .filter(p => p.plannedAllocation > 0)
+        .sort((a, b) => b.plannedAllocation - a.plannedAllocation);
+}
+
+// Backup simple strategy for large projects
+function findOptimalAllocationForLargeProjects(projects: any[], availableMembers: number) {
+    // Strategy: prioritize large projects, maximize individual project completeness
+    const sortedProjects = [...projects].sort((a, b) => b.spotsAvailable - a.spotsAvailable); // Sort large to small
+    
+    const projectsToFill = [];
+    let remainingMembers = availableMembers;
+    
+    for (const project of sortedProjects) {
+        if (remainingMembers > 0) {
+            projectsToFill.push(project);
+            const willAssign = Math.min(project.spotsAvailable, remainingMembers);
+            remainingMembers -= willAssign;
+        }
+    }
+    
+    return projectsToFill;
+}
+
+// Backup greedy algorithm function
+function findOptimalAllocation(projects: any[], availableMembers: number) {
+    // Greedy algorithm: prioritize projects that can be completely filled
+    const sortedProjects = [...projects].sort((a, b) => a.spotsAvailable - b.spotsAvailable);
+    
+    // Try to find projects that can be completely filled
+    const canFillCompletely = [];
+    const cannotFillCompletely = [];
+    let remainingMembers = availableMembers;
+    
+    for (const project of sortedProjects) {
+        if (remainingMembers >= project.spotsAvailable) {
+            canFillCompletely.push(project);
+            remainingMembers -= project.spotsAvailable;
+        } else {
+            cannotFillCompletely.push(project);
+        }
+    }
+    
+    // Handle completely fillable projects first, then partially fillable ones
+    // For partially fillable projects, sort by spots needed ascending (prioritize smaller projects)
+    cannotFillCompletely.sort((a, b) => a.spotsAvailable - b.spotsAvailable);
+    
+    return [...canFillCompletely, ...cannotFillCompletely];
+}
+
+// Smart assign organization members to projects using AI matching
+export async function autoAssignMembersToProjects(orgId: string, teamSize?: number) {
     const { userId } = await auth();
     if (!userId) {
         throw new Error("Unauthorized");
     }
 
     try {
-        // 获取组织信息
+        // Get the organization information
         const orgDoc = await adminDb
             .collection("organizations")
             .doc(orgId)
@@ -2099,7 +2285,7 @@ export async function autoAssignMembersToProjects(orgId: string) {
             ...(orgData?.admins || []),
         ];
 
-        // 获取组织的所有项目
+        // Get all the projects in the organization
         const projectsSnapshot = await adminDb
             .collection("projects")
             .where("orgId", "==", orgId)
@@ -2114,11 +2300,13 @@ export async function autoAssignMembersToProjects(orgId: string) {
             return {
                 id: doc.id,
                 members: data.members || [],
+                title: data.title || "",
+                teamSize: data.teamSize || teamSize, // Use project's own team size or passed parameter
                 ...data,
             };
         });
 
-        // 计算当前已分配的成员
+        // Calculate the current assigned members
         const assignedMembers = new Set();
         projects.forEach((project) => {
             const projectMembers = (project.members as string[]) || [];
@@ -2127,7 +2315,7 @@ export async function autoAssignMembersToProjects(orgId: string) {
             );
         });
 
-        // 获取未分配的成员
+        // Get the unassigned members
         const unassignedMembers = allMembers.filter(
             (member) => !assignedMembers.has(member),
         );
@@ -2140,66 +2328,242 @@ export async function autoAssignMembersToProjects(orgId: string) {
             };
         }
 
-        // 默认团队大小为3
-        const defaultTeamSize = 3;
-        let assignedCount = 0;
-
-        // 为每个项目分配成员
-        for (
-            let i = 0;
-            i < projects.length && unassignedMembers.length > 0;
-            i++
-        ) {
-            const project = projects[i];
-            const currentMembers = (project.members as string[]) || [];
-            const spotsAvailable = defaultTeamSize - currentMembers.length;
-
-            if (spotsAvailable > 0) {
-                const membersToAdd = unassignedMembers.splice(
-                    0,
-                    spotsAvailable,
-                );
-                const updatedMembers = [...currentMembers, ...membersToAdd];
-
-                // 更新项目成员
-                await adminDb.collection("projects").doc(project.id).update({
-                    members: updatedMembers,
-                });
-
-                // 为新成员添加项目引用
-                for (const memberEmail of membersToAdd) {
-                    try {
-                        await adminDb
-                            .collection("users")
-                            .doc(memberEmail)
-                            .collection("projs")
-                            .doc(project.id)
-                            .set(
-                                {
-                                    orgId: orgId,
-                                },
-                                { merge: true },
-                            );
-                    } catch (error) {
-                        console.error(
-                            `Failed to add project reference for user ${memberEmail}:`,
-                            error,
-                        );
+        // Get user survey responses for AI matching
+        let memberSurveyData = [];
+        for (const memberEmail of unassignedMembers) {
+            try {
+                const userDoc = await adminDb
+                    .collection("users")
+                    .doc(memberEmail)
+                    .get();
+                
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    
+                    // 检查用户是否允许参与匹配
+                    const allowMatching = userData?.allowMatching !== false; // 默认true，除非明确设置为false
+                    
+                    if (allowMatching) {
+                        // Get user's platform survey response data
+                        const onboardingSurveyResponses = userData?.onboardingSurveyResponse || [];
+                        
+                        memberSurveyData.push({
+                            email: memberEmail,
+                            name: userData?.fullName || memberEmail,
+                            onboardingSurveyResponses: onboardingSurveyResponses,
+                        });
+                    } else {
+                        console.log(`User ${memberEmail} has opted out of matching`);
                     }
                 }
+            } catch (error) {
+                console.error(`Failed to get survey data for ${memberEmail}:`, error);
+                // Continue processing other users even if one fails
+                memberSurveyData.push({
+                    email: memberEmail,
+                    name: memberEmail,
+                    onboardingSurveyResponses: [],
+                });
+            }
+        }
 
-                assignedCount += membersToAdd.length;
+        let totalAssignedCount = 0;
+        const assignmentResults = [];
+
+        // Smart assignment for projects using optimal filling strategy
+        
+        // Calculate project requirements and available members
+        const projectsNeedingMembers = projects
+            .map(project => {
+                const currentMembers = (project.members as string[]) || [];
+                const currentAdmins = ((project as any).admins as string[]) || [];
+                // 合并成员和管理员，确保管理员的技能也被考虑
+                const allCurrentMembers = [...new Set([...currentMembers, ...currentAdmins])];
+                const projectTeamSize = project.teamSize || teamSize || 3; // Use project config > passed parameter > default
+                const spotsAvailable = projectTeamSize - allCurrentMembers.length;
+                return {
+                    ...project,
+                    currentMembers: allCurrentMembers, // 使用包含管理员的完整成员列表
+                    projectTeamSize,
+                    spotsAvailable
+                };
+            })
+            .filter(project => project.spotsAvailable > 0);
+
+        const totalSpotsNeeded = projectsNeedingMembers.reduce((sum, project) => sum + project.spotsAvailable, 0);
+        const availableMembers = memberSurveyData.length;
+        
+        // Optimal allocation strategy: prioritize larger projects
+        let optimalAllocation;
+        if (availableMembers >= totalSpotsNeeded) {
+            // If enough members, all projects can be filled completely - sort by project size descending
+            optimalAllocation = projectsNeedingMembers.sort((a, b) => b.spotsAvailable - a.spotsAvailable);
+        } else {
+            // Not enough members, use backtracking algorithm for optimal allocation
+            optimalAllocation = findOptimalAllocationWithBacktracking(projectsNeedingMembers, availableMembers);
+        }
+
+        for (const project of optimalAllocation) {
+            if (project.spotsAvailable > 0 && memberSurveyData.length > 0) {
+                try {
+                    // Get existing project members' information
+                    const existingMembersData = [];
+                    for (const memberEmail of project.currentMembers) {
+                        try {
+                            const userDoc = await adminDb
+                                .collection("users")
+                                .doc(memberEmail)
+                                .get();
+                            
+                            if (userDoc.exists) {
+                                const userData = userDoc.data();
+                                const onboardingSurveyResponses = userData?.onboardingSurveyResponse || [];
+                                existingMembersData.push({
+                                    email: memberEmail,
+                                    name: userData?.fullName || memberEmail,
+                                    onboardingSurveyResponses: onboardingSurveyResponses,
+                                });
+                            }
+                        } catch (error) {
+                            console.error(`Failed to get data for existing member ${memberEmail}:`, error);
+                        }
+                    }
+
+                    // Prepare AI matching input data
+                    const matchingInput: string[] = memberSurveyData.map(member => {
+                        const responses = member.onboardingSurveyResponses || [];
+                        return `User: ${member.email}, Name: ${member.name}, Survey Responses: ${JSON.stringify(responses)}`;
+                    });
+                    
+                    // Prepare existing members information
+                    const existingMembersInfo = existingMembersData.map(member => {
+                        const responses = member.onboardingSurveyResponses || [];
+                        return `Existing Member: ${member.email}, Name: ${member.name}, Survey Responses: ${JSON.stringify(responses)}`;
+                    });
+
+                    // Calculate actual allocation size (using backtracking planned allocation or project needs)
+                    const plannedAllocation = (project as any).plannedAllocation || project.spotsAvailable;
+                    const actualAllocationSize = Math.min(plannedAllocation, memberSurveyData.length);
+
+                    // Call AI matching API, choose different strategy based on existing members
+                    let matchingResultRaw;
+                    if (existingMembersInfo.length > 0) {
+                        const matchingModule = await import("@/ai_scripts/matching");
+                        const { matchingWithExistingTeam } = matchingModule as any;
+                        matchingResultRaw = await matchingWithExistingTeam(
+                            actualAllocationSize, // Use actual allocatable member count
+                            ["What is your primary area of expertise and main professional skills?", 
+                             "What industries or fields are you currently most interested in some levels of skills and experiences?", 
+                             "What future roles or job titles are you aiming for?"], // Question list
+                            matchingInput, // New member data
+                            existingMembersInfo // Existing member data
+                        );
+                    } else {
+                        const { matching } = await import("@/ai_scripts/matching");
+                        matchingResultRaw = await matching(
+                            actualAllocationSize, // Use actual allocatable member count
+                            ["What is your primary area of expertise and main professional skills?", 
+                             "What industries or fields are you currently most interested in some levels of skills and experiences?", 
+                             "What future roles or job titles are you aiming for?"], // Question list
+                            matchingInput // New member data
+                        );
+                    }
+                    
+                    // Parse JSON string
+                    let matchingResult;
+                    try {
+                        matchingResult = typeof matchingResultRaw === 'string' 
+                            ? JSON.parse(matchingResultRaw) 
+                            : matchingResultRaw;
+                    } catch (parseError) {
+                        console.error(`Failed to parse AI matching result:`, parseError);
+                        throw new Error("Failed to parse AI matching result");
+                    }
+
+                    // Check AI matching result - handle different return formats
+                    let groups = null;
+                    if (matchingResult?.success && matchingResult.data?.groups) {
+                        // If has success field and nested data
+                        groups = matchingResult.data.groups;
+                    } else if (matchingResult?.groups) {
+                        // If directly returns groups
+                        groups = matchingResult.groups;
+                    } else if (Array.isArray(matchingResult)) {
+                        // If directly returns array
+                        groups = matchingResult;
+                    }
+
+                    if (groups && groups.length > 0) {
+                        // Take the first best matched group, ensure not exceeding actual allocatable members
+                        const bestGroup: string[] = groups[0];
+                        const membersToAdd: string[] = bestGroup.slice(0, actualAllocationSize);
+                        
+                        if (membersToAdd.length > 0) {
+                            // 获取当前项目的实际members和admins，只更新members字段
+                            const projectDoc = await adminDb.collection("projects").doc(project.id).get();
+                            const projectData = projectDoc.data();
+                            const currentMembers = (projectData?.members as string[]) || [];
+                            const updatedMembers = [...currentMembers, ...membersToAdd];
+
+                            // Update the project members (只更新普通成员，不影响管理员)
+                            await adminDb.collection("projects").doc(project.id).update({
+                                members: updatedMembers,
+                            });
+
+                            // Add the project to the new members' projs collection
+                            for (const memberEmail of membersToAdd) {
+                                try {
+                                    await adminDb
+                                        .collection("users")
+                                        .doc(memberEmail)
+                                        .collection("projs")
+                                        .doc(project.id)
+                                        .set(
+                                            {
+                                                orgId: orgId,
+                                            },
+                                            { merge: true },
+                                        );
+                                } catch (error) {
+                                    console.error(
+                                        `Failed to add project reference for user ${memberEmail}:`,
+                                        error,
+                                    );
+                                }
+                            }
+
+                            // Remove assigned members from the pending assignment list
+                            memberSurveyData = memberSurveyData.filter(
+                                member => !membersToAdd.includes(member.email)
+                            );
+
+                            totalAssignedCount += membersToAdd.length;
+                            assignmentResults.push({
+                                projectId: project.id,
+                                projectTitle: project.title,
+                                assignedMembers: membersToAdd,
+                                count: membersToAdd.length
+                            });
+                        }
+                    }
+                } catch (error) {
+                    console.error(`AI matching failed for project ${project.id}:`, error);
+                    // If AI matching fails, could implement simple round-robin assignment as fallback
+                    // For now, skip this project
+                    continue;
+                }
             }
         }
 
         return {
             success: true,
-            message: `Successfully assigned ${assignedCount} members to projects`,
-            assigned: assignedCount,
-            remaining: unassignedMembers.length,
+            message: `Successfully assigned ${totalAssignedCount} members to projects using AI matching`,
+            assigned: totalAssignedCount,
+            remaining: memberSurveyData.length,
+            details: assignmentResults,
         };
     } catch (error) {
-        console.error("Error auto-assigning members:", error);
+        console.error("Error smart-assigning members:", error);
         return { success: false, message: (error as Error).message };
     }
 }
@@ -2516,7 +2880,7 @@ export async function migrateTasksToTaskPool() {
                             status: taskData.isCompleted
                                 ? "completed"
                                 : "available",
-                            points: 1,
+                            points: 10,
                             completion_percentage: taskData.isCompleted
                                 ? 100
                                 : 0,
@@ -3005,5 +3369,204 @@ export async function getTeamAnalysis(projId: string) {
     } catch (error) {
         console.error("Error getting team analysis:", error);
         return { success: false, message: (error as Error).message };
+    }
+}
+
+/**
+ * 更新用户匹配偏好设置
+ * 控制用户是否参与AI匹配算法
+ */
+export async function updateUserMatchingPreference(
+    allowMatching: boolean,
+) {
+    const { userId } = await auth();
+    if (!userId) {
+        throw new Error("Unauthorized");
+    }
+
+    try {
+        await adminDb.collection("users").doc(userId).set(
+            {
+                allowMatching: allowMatching,
+                matchingPreferenceUpdatedAt: new Date().toISOString(),
+            },
+            { merge: true },
+        );
+        return { success: true };
+    } catch (error) {
+        console.error("Error updating matching preference:", error);
+        return { success: false, message: (error as Error).message };
+    }
+}
+
+/**
+ * 获取用户匹配偏好设置
+ */
+export async function getUserMatchingPreference() {
+    const { userId } = await auth();
+    if (!userId) {
+        throw new Error("Unauthorized");
+    }
+
+    try {
+        const userDoc = await adminDb.collection("users").doc(userId).get();
+        if (!userDoc.exists) {
+            return { success: true, allowMatching: true }; // 默认允许匹配
+        }
+        
+        const userData = userDoc.data();
+        return { 
+            success: true, 
+            allowMatching: userData?.allowMatching !== false // 默认true，除非明确设置为false
+        };
+    } catch (error) {
+        console.error("Error getting matching preference:", error);
+        return { success: false, message: (error as Error).message };
+    }
+}
+
+/**
+ * 自动 drop 过期任务
+ * 扫描所有已分配但超过 soft_deadline 的任务，自动将其设置为 available
+ */
+export async function autoDropOverdueTasks() {
+    const { userId } = await auth();
+    if (!userId) {
+        throw new Error("Unauthorized");
+    }
+
+    return await autoDropOverdueTasksInternal(userId);
+}
+
+/**
+ * 内部版本：自动 drop 过期任务（供 cron job 使用）
+ * 不需要用户认证，直接执行
+ */
+export async function autoDropOverdueTasksInternal(executedBy: string = "system") {
+
+    const now = new Date();
+    const currentISOString = now.toISOString();
+
+    try {
+        console.log("🔍 开始检查过期任务...");
+        
+        // 获取所有项目
+        const projectsSnapshot = await adminDb.collection("projects").get();
+        const overdueTasks: { 
+            ref: FirebaseFirestore.DocumentReference; 
+            data: any;
+            projectId: string;
+            stageId: string;
+        }[] = [];
+        
+        for (const projectDoc of projectsSnapshot.docs) {
+            const stagesSnapshot = await projectDoc.ref.collection("stages").get();
+            
+            for (const stageDoc of stagesSnapshot.docs) {
+                const tasksSnapshot = await stageDoc.ref.collection("tasks").get();
+                
+                for (const taskDoc of tasksSnapshot.docs) {
+                    const taskData = taskDoc.data();
+                    
+                    // 匹配现有的 getOverdueTasks 逻辑，但查找已分配的任务
+                    if (
+                        taskData.assignee && // 已分配
+                        taskData.status !== "available" && // 只处理非 available 的任务
+                        taskData.isCompleted !== true && // 处理 undefined 情况
+                        taskData.soft_deadline &&
+                        new Date(taskData.soft_deadline) < now &&
+                        taskData.canBeReassigned !== false // 默认允许重新分配
+                    ) {
+                        overdueTasks.push({
+                            ref: taskDoc.ref,
+                            data: taskData,
+                            projectId: projectDoc.id,
+                            stageId: stageDoc.id
+                        });
+                    }
+                }
+            }
+            
+            // 限制批处理数量
+            if (overdueTasks.length >= 100) break;
+        }
+        
+        if (overdueTasks.length === 0) {
+            console.log("没有找到需要自动 drop 的过期任务");
+            return { 
+                success: true, 
+                tasksProcessed: 0, 
+                message: "没有需要处理的过期任务" 
+            };
+        }
+        
+        console.log(`找到 ${overdueTasks.length} 个需要自动 drop 的过期任务`);
+        
+        // 使用批量写入进行更新（使用现有的 unassignTask 逻辑）
+        const batch = adminDb.batch();
+        let processedCount = 0;
+        
+        overdueTasks.forEach(({ ref, data, projectId, stageId }) => {
+            // 使用现有的 unassignTask 逻辑
+            batch.update(ref, {
+                assignee: "",
+                status: "available", 
+                assigned_at: null,
+                completion_percentage: 0,
+                // 添加自动处理标记
+                auto_dropped_at: currentISOString,
+            });
+            
+            processedCount++;
+            
+            console.log(`准备自动 drop 任务: ${data.title} (assignee: ${data.assignee})`);
+            console.log(`  项目: ${projectId}, 阶段: ${stageId}`);
+        });
+        
+        // 执行批量更新
+        if (processedCount > 0) {
+            await batch.commit();
+            console.log(`✅ 成功自动 drop ${processedCount} 个过期任务`);
+            
+            // 记录处理结果到日志集合（可选）
+            await adminDb.collection("function_logs").add({
+                functionName: "autoDropOverdueTasks", 
+                executedAt: currentISOString,
+                tasksProcessed: processedCount,
+                executedBy: executedBy,
+                status: "success",
+                taskDetails: overdueTasks.map(task => ({
+                    title: task.data.title,
+                    assignee: task.data.assignee,
+                    soft_deadline: task.data.soft_deadline,
+                    projectId: task.projectId,
+                    stageId: task.stageId
+                }))
+            });
+        }
+        
+        return {
+            success: true,
+            tasksProcessed: processedCount,
+            executedAt: currentISOString,
+            message: `成功自动 drop ${processedCount} 个过期任务`
+        };
+        
+    } catch (error) {
+        console.error("自动 drop 过期任务时发生错误:", error);
+        
+        // 记录错误到日志集合
+        await adminDb.collection("function_logs").add({
+            functionName: "autoDropOverdueTasks",
+            executedAt: currentISOString,
+            executedBy: executedBy,
+            status: "error",
+            error: (error as Error).message
+        });
+        
+        return { 
+            success: false, 
+            message: `自动 drop 过期任务失败: ${(error as Error).message}` 
+        };
     }
 }

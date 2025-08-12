@@ -67,11 +67,11 @@ const OrganizationPage = ({ id }: { id: string }) => {
         }
 
         if (!org) {
-            return <div>No organization found</div>;
+            return <div>No group found</div>;
         }
 
     if (!orgData) {
-        return <div>No organization found</div>;
+        return <div>No group found</div>;
     }
 
     return (
@@ -86,7 +86,7 @@ const OrganizationPage = ({ id }: { id: string }) => {
                         value="projects"
                         className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm"
                     >
-                        Projects
+                        Teams
                     </TabsTrigger>
                     <TabsTrigger
                         value="members"

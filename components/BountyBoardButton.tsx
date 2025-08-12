@@ -13,7 +13,7 @@ const BountyBoardButton = ({
     showBountyBoard,
     onClick,
 }: BountyBoardButtonProps) => {
-    // 如果没有任务，显示普通按钮
+    // if there are no tasks, show the normal button
     if (overdueTasks === 0) {
         return (
             <Button
@@ -27,19 +27,19 @@ const BountyBoardButton = ({
         );
     }
 
-    // 有任务时显示炫酷动画按钮
+    // when there are tasks, show the cool animation button
     return (
         <>
             {/* Add custom CSS for gradient animation */}
             <style
                 dangerouslySetInnerHTML={{
                     __html: `
-        @keyframes gradient {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
-        }
-        `,
+                            @keyframes gradient {
+                            0% { background-position: 0% 50%; }
+                            50% { background-position: 100% 50%; }
+                            100% { background-position: 0% 50%; }
+                            }
+                            `,
                 }}
             />
 

@@ -27,6 +27,7 @@ export type Project = {
     admins: string[];
     teamCharterResponse: string[];
     projectType?: string; // 项目类型：Frontend, Backend, Mobile等
+    teamSize?: number; // 团队大小配置
     createdAt?: string;
     description?: string;
     // Add other fields as necessary
@@ -163,21 +164,11 @@ export const projQuestions = [
 ];
 
 export const teamCharterQuestions = [
-    "Project Purpose (Describe the main goals and intentions of the project)",
-    "Key Project Stakeholders (List all key stakeholders and their roles)",
-    "Product Objectives (List specific functional goals and expected outcomes)",
-
-    "Team Structure and Roles (Describe team members, their expertise and responsibilities)",
-    "Team Communication Preferences (Communication methods and frequency)",
-    "Team Working Style (e.g., Agile, Waterfall, or hybrid approach)",
-    
-    "Project Timeline (Expected project duration, e.g., 2 months/12 weeks)",
-    "Major Milestones (List key project milestones)",
-    "Team Availability (Weekly time commitment per team member)",
-    
-    "Success Criteria (Metrics to measure project success)",
-    "Potential Risks and Challenges (Identify possible risks and challenges)",
-    "Resource Requirements (Required technologies, tools, and resources)"
+    "What is the main mission/vision of the project?",
+    "List key project milestones",
+    "Target Demographic (Who are you building the product/service for)",
+    "Expected project duration (in weeks)",
+    "Potential Risks, Challenges, and Constraints (Identify possible risks and challenges)",
 ];
 
 // export interface Task {
@@ -203,15 +194,17 @@ export type Task = {
     soft_deadline: string;
     hard_deadline: string;
     assignee: string;
+    assignment_reason?: string; // AI-generated reason for task assignment based on member capabilities
     order: number;
     isCompleted: boolean;
     completion_percentage?: number; // Task completion percentage (0-100)
     // Task pool related fields
-    points: number; // Points earned for completing the task (default: 1)
+    points: number; // Points earned for completing the task (default: 10)
     status: "available" | "assigned" | "completed" | "overdue"; // Task status
     assignedAt?: string; // When the task was assigned
     completedAt?: string; // When the task was completed
     canBeReassigned?: boolean; // Whether the task can be reassigned after soft deadline
+    auto_dropped_at?: string; // When the task was automatically dropped by Cloud Function
 };
 
 export type GeneratedTasks = {
@@ -222,6 +215,8 @@ export type GeneratedTasks = {
             task_description: string; // The detailed description of the task
             soft_deadline: string;
             hard_deadline: string;
+            assigned_member: string; // Email address of the assigned team member
+            assignment_reason: string; // Reason for the assignment based on capabilities and interests
         }[];
     }[];
 };

@@ -418,7 +418,7 @@ export async function completeTaskWithProgress(
       }
 
       // 更新用户积分
-      const points = taskData?.points || 1;
+      const points = taskData?.points || 10;
       await updateUserScore(userEmail, projId, points, true);
       await updateUserTaskStats(userEmail, projId, 'completed');
 
@@ -428,7 +428,7 @@ export async function completeTaskWithProgress(
 
     return { 
       success: true, 
-      points_earned: isCompleted ? (taskData?.points || 1) : 0 
+      points_earned: isCompleted ? (taskData?.points || 10) : 0 
     };
   } catch (error) {
     console.error(error);

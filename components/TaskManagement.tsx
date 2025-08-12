@@ -118,7 +118,7 @@ const TaskManagement = ({
                                                     <div className="flex-1 min-w-0">
                                                         <CardTitle className="text-base font-medium truncate">
                                                             {index + 1}.{" "}
-                                                            {task.title} (⭐{task.points || 1})
+                                                            {task.title} (⭐{task.points || 10})
                                                         </CardTitle>
                                                     </div>
                                                 </div>
@@ -325,7 +325,7 @@ const TaskManagement = ({
                                 </h3>
                                 <p className="text-gray-500">
                                     Create your first task to get started with
-                                    project management.
+                                    team management.
                                 </p>
                             </div>
                         )}

@@ -7,10 +7,12 @@ import AppOnboarding from "@/components/AppOnboarding";
 import { SidebarProvider } from "@/components/ui/sidebar"
 import MySidebar from "@/components/MySidebar";
 import StoreProvider from "./StoreProvider";
+import { Analytics } from "@vercel/analytics/next"
+import CronInitializer from "@/components/CronInitializer";
 
 export const metadata: Metadata = {
   title: "Afora",
-  description: "Your next all-in-one project management app",
+  description: "Your next all-in-one team management app",
 };
 
 export default function RootLayout({
@@ -66,7 +68,9 @@ export default function RootLayout({
               </SignedOut>
             </div>
           </SidebarProvider>
+          <CronInitializer />
           <Toaster position="top-center" />
+          <Analytics />
         </body>
       </html>
     </ClerkProvider>

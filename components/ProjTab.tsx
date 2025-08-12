@@ -1,18 +1,20 @@
 "use client";
 import { db } from "@/firebase";
-import { Project, Task } from "@/types/types";
-import {collection, getDocs, query, where} from "firebase/firestore";
+import { Project, Task, Organization } from "@/types/types";
+import {collection, getDocs, query, where, doc} from "firebase/firestore";
+import { batchInQuery } from "@/lib/batchQuery";
 import React, { useEffect, useState, useTransition } from "react";
-import { useCollection } from "react-firebase-hooks/firestore";
+import { useCollection, useDocument } from "react-firebase-hooks/firestore";
 import { Button } from "./ui/button";
 import { updateProjects } from "@/actions/actions";
 import { toast } from "sonner";
 import ProjectCard from "./ProjectCard";
-import {Folder, Users, Briefcase} from "lucide-react";
+import {Folder, Users, Briefcase, Loader2} from "lucide-react";
 import { Badge } from "./ui/badge";
 import { Card, CardContent } from "./ui/card";
 import { Separator } from "./ui/separator";
 import CreateProjectDialog from "./CreateProjectDialog";
+import LoadingOverlay from "./LoadingOverlay";
 
 type MatchingOutput = {
     groupSize: number;
@@ -38,6 +40,9 @@ const ProjTab = ({
     const adminQ = query(collection(db, "projects"), where("orgId", "==", orgId));
     const [allProjects] = useCollection(adminQ);
     
+    // 获取组织数据
+    const [org] = useDocument(doc(db, "organizations", orgId));
+    const orgData = org?.data() as Organization;
 
     const userQ = query(
         collection(db, "users", userId, "projs"),
@@ -59,11 +64,11 @@ const ProjTab = ({
                     .filter(Boolean);
                 if (projectIds.length > 0) {
                     try {
-                        const projectDocs = await getDocs(
-                            query(
-                                collection(db, "projects"),
-                                where("__name__", "in", projectIds),
-                            ),
+                        // 使用批量查询来避免 Firebase IN 查询超过30个值的限制
+                        const projectDocs = await batchInQuery(
+                            collection(db, "projects"),
+                            "__name__",
+                            projectIds
                         );
                         const projects = projectDocs.docs.map(
                             (doc) => ({
@@ -150,7 +155,7 @@ const ProjTab = ({
             try {
                 const result = await updateProjects(orgId, parsedOutput.groups);
                 if (result?.success) {
-                    toast.success("Projects updated successfully!");
+                    toast.success("Teams updated successfully!");
                     setOutput("");
                     setParsedOutput(null);
                     setRefreshTrigger((prev: number) => prev + 1);
@@ -159,7 +164,7 @@ const ProjTab = ({
                 }
             } catch (error) {
                 console.error("Failed to update projects:", error);
-                toast.error("Failed to update projects");
+                toast.error("Failed to update teams");
             }
         });
     };
@@ -182,7 +187,13 @@ const ProjTab = ({
         : userProjList;
 
     return (
-        <div className="flex h-auto bg-gradient-to-br from-gray-50 to-purple-50 rounded-lg overflow-hidden py-12">
+        <>
+            <LoadingOverlay 
+                isVisible={isPending}
+                message="Processing Team Groups..."
+                description="Applying new team group configuration, please wait..."
+            />
+            <div className="flex h-auto bg-gradient-to-br from-gray-50 to-purple-50 rounded-lg overflow-hidden py-12">
             {/* Left Sidebar */}
             <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
                 {/* Header */}
@@ -192,7 +203,7 @@ const ProjTab = ({
                             <Briefcase className="h-6 w-6" />
                         </div>
                         <h2 className="text-xl font-bold">
-                            Project Management
+                            Team Management
                         </h2>
                     </div>
 
@@ -203,7 +214,7 @@ const ProjTab = ({
                                 {totalProjects}
                             </div>
                             <div className="text-xs opacity-90">
-                                Total Projects
+                                Total Teams
                             </div>
                         </div>
                         <div className="bg-white bg-opacity-20 backdrop-blur-sm p-3 rounded-lg">
@@ -220,14 +231,14 @@ const ProjTab = ({
                 <div className="flex-1 overflow-y-auto p-4">
                         <div className="space-y-4">
                             <div className="text-sm font-medium text-gray-500">
-                                Project Overview
+                                Team Overview
                             </div>
                             <Card className="border-0 shadow-sm">
                                 <CardContent className="p-4">
                                     <div className="space-y-3">
                                         <div className="flex justify-between items-center">
                                             <span className="text-sm text-gray-600">
-                                                Total Projects
+                                                Total Teams
                                             </span>
                                             <Badge variant="secondary">
                                                 {totalProjects}
@@ -235,7 +246,7 @@ const ProjTab = ({
                                         </div>
                                         <div className="flex justify-between items-center">
                                             <span className="text-sm text-gray-600">
-                                                Active Projects
+                                                Active Teams
                                             </span>
                                             <Badge variant="default">
                                                 {activeProjects}
@@ -257,7 +268,7 @@ const ProjTab = ({
                                                 Total Members
                                             </span>
                                             <Badge variant="outline">
-                                                {displayProjects.reduce((total: number, proj: Project) => total + (proj.members?.length || 0), 0)}
+                                                {orgData ? (orgData.admins?.length || 0) + (orgData.members?.length || 0) : 0}
                                             </Badge>
                                         </div>
                                     </div>
@@ -269,16 +280,13 @@ const ProjTab = ({
                 {/* Actions */}
                 <div className="p-4 border-t border-gray-200 bg-gray-50">
                     <div className="space-y-2">
-                        {userRole === "admin" && (
-                            <>
-                                <CreateProjectDialog 
-                                    orgId={orgId} 
-                                    totalProjects={totalProjects}
-                                    userRole={userRole as "admin" | "member"}
-                                    onProjectCreated={handleProjectCreated} 
-                                />
-                            </>
-                        )}
+                        {/* All team members can create projects */}
+                        <CreateProjectDialog 
+                            orgId={orgId} 
+                            totalProjects={totalProjects}
+                            userRole={userRole as "admin" | "member"}
+                            onProjectCreated={handleProjectCreated} 
+                        />
                     </div>
                 </div>
             </div>
@@ -316,7 +324,14 @@ const ProjTab = ({
                         </div>
                         <div className="flex justify-end space-x-4">
                             <Button disabled={isPending} onClick={handleAccept}>
-                                {isPending ? "Accepting..." : "Accept Groups"}
+                                {isPending ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Accepting Groups...
+                                    </>
+                                ) : (
+                                    "Accept Groups"
+                                )}
                             </Button>
                             <Button
                                 variant="secondary"
@@ -331,10 +346,10 @@ const ProjTab = ({
                 {/* Content Header */}
                 <div className="p-6 border-b border-gray-200 bg-white">
                     <h3 className="text-lg font-semibold text-gray-900">
-                        Project Overview
+                        Team Overview
                     </h3>
                     <p className="text-sm text-gray-500">
-                        Manage and monitor all your projects
+                        Manage and monitor all your teams
                     </p>
                 </div>
 
@@ -357,6 +372,7 @@ const ProjTab = ({
                                                     projId={proj.projId}
                                                     projectName={proj.title}
                                                     members={proj.members}
+                                                    admins={proj.admins}
                                                     tasks={projectTasks[proj.projId] || []}
                                                     backgroundImage=""
                                                 />
@@ -369,13 +385,13 @@ const ProjTab = ({
                                         <Folder className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                                         <h3 className="text-lg font-medium text-gray-900 mb-2">
                                             {userRole === "admin"
-                                                ? "Welcome to Project Management!"
-                                                : "No projects assigned"}
+                                                ? "Welcome to Team Management!"
+                                                : "No teams assigned"}
                                         </h3>
                                         <p className="text-gray-500 mb-4">
                                             {userRole === "admin"
-                                                ? "Start creating your first project, experience the new task pool management system"
-                                                : "Wait for admins to create projects and assign you"}
+                                                ? "Start creating your first team, experience the new task pool management system"
+                                                : "Wait for admins to create teams and assign you"}
                                         </p>
                                     </div>
                                 </div>
@@ -384,6 +400,7 @@ const ProjTab = ({
                 </div>
             </div>
         </div>
+        </>
     );
 };
 

@@ -376,7 +376,7 @@ export const analyzeTeamCompatibility = async (
     PER MEMBER ANALYSIS (structure strictly required):
     
     **Technical Proficiency**
-    - Score (0–100) with specific justification
+    - Score (50–100) with specific justification
     - 2–3 core technical strengths with evidence from their responses
     - 1–2 specific technical gaps with project impact (e.g., "Lacks JavaScript experience for a frontend-heavy build, which may delay UI development by 2-3 weeks")
     
@@ -408,7 +408,7 @@ export const analyzeTeamCompatibility = async (
     
     2. **Schedule Compatibility**
         - If availability data is provided: Calculate overlap percentage and identify bottlenecks
-        - If availability is missing: Assume good alignment (80-85 score) with potential for coordination
+        - If availability is missing: acknowledge uncertainty; do not use a default numeric score; rely on other evidence and state limitations
         - Specific time conflicts (e.g., "Only 1 hour overlap across 3 members on weekdays")
     
     3. **Interest & Motivation Alignment**
@@ -436,11 +436,11 @@ export const analyzeTeamCompatibility = async (
       * interest_alignment
       * communication_alignment
       * work_style_compatibility
-    - When data is missing or uncertain, assign 80-85 by default as an optimistic fallback. A score below 60 should only be used when there is explicit evidence of significant incompatibility.
+    - When data is missing or uncertain: do not apply any default numeric score. Respect schema minimums only and clearly explain uncertainty in calculation_comment. A score below 60 should only be used when there is explicit evidence of significant incompatibility.
     - Use natural, varied scores (e.g., 82, 87, 79, 84) rather than round numbers ending in 0 or 5.
     - Provide a clear calculation_comment explaining the reasoning behind each dimension score
     - Be generous in scoring - look for positive aspects and potential rather than focusing on gaps
-    - Absence of data should default to 80-85, NOT lower scores
+    - Do not apply any default numeric score when data is absent; explain limitations instead of guessing
     
     SCORING EXAMPLE:
     If technical_alignment=87, interest_alignment=83, communication_alignment=78, work_style_compatibility=82, schedule_compatibility=79:
@@ -463,13 +463,12 @@ export const analyzeTeamCompatibility = async (
     - 40–59: Basic compatibility, significant improvements recommended
     
     SCORING GUIDELINES:
-    - Start with optimistic baseline scores (80-85) and adjust based on evidence
+    - Do not use baseline defaults. Score strictly on available evidence; when uncertain, explain in calculation_comment
     - Focus on potential and strengths rather than limitations
     - Only reduce scores significantly when there is clear evidence of incompatibility
     - Look for complementary skills and positive team dynamics
     - Consider growth potential and learning ability of team members
     - Use natural, varied scores (e.g., 82, 87, 79, 84) to reflect nuanced assessment
-    
     
     
     ACTIONABLE IMPROVEMENT RECOMMENDATIONS:
@@ -550,7 +549,7 @@ export const analyzeTeamCompatibility = async (
 
             Please analyze the compatibility of this team in detail. Your analysis should strictly follow the JSON schema response format and be grounded in the data provided.
 
-            Focus on the following core dimensions, applying a **weighted scoring system** for Hackathon settings (e.g., Technical 35%, Interest 20%, Vision/Values 15% each, Schedule 15%). If data is missing, assume a conservative default (e.g., 60).
+            Focus on the following core dimensions, applying a **weighted scoring system** for Hackathon settings (e.g., Technical 35%, Interest 20%, Vision/Values 15% each, Schedule 15%). If data is missing, acknowledge uncertainty instead of using any default numeric value.
 
             Key analysis areas:
             1. **Technical Alignment** – Assess whether the team's combined technical skills can cover project needs. Highlight missing or redundant skills.

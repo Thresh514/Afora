@@ -67,7 +67,7 @@ const OrgHeader = ({ id }: OrgHeaderProps) => {
     }
 
     if (!org || !orgData) {
-        return <div>No organization found</div>;
+        return <div>No group found</div>;
     }
 
     return (

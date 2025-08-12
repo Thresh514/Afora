@@ -36,13 +36,13 @@ function NewOrgButton({
                     orgDescription,
                 );
                 if (success && orgId) {
-                    toast.success("Organization created successfully!");
+                    toast.success("Group created successfully!");
                     setIsOpen(false);
                     router.push(`/org/${orgId}`);
                     setOrgName("");
                     setOrgDescription("");
                 } else {
-                    toast.error(message || "Failed to create organization");
+                    toast.error(message || "Failed to create group");
                 }
             })();
         });
@@ -58,9 +58,9 @@ function NewOrgButton({
       </Button> */}
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Create a New Organization</DialogTitle>
+                    <DialogTitle>Create a New Group</DialogTitle>
                     <DialogDescription>
-                        Enter the organization details
+                        Enter the group details
                     </DialogDescription>
                 </DialogHeader>
 
@@ -73,7 +73,7 @@ function NewOrgButton({
                             id="orgName"
                             value={orgName}
                             onChange={(e) => setOrgName(e.target.value)}
-                            placeholder="Enter organization name"
+                            placeholder="Enter group name"
                             className="col-span-3"
                         />
                     </div>
@@ -85,7 +85,7 @@ function NewOrgButton({
                             id="orgDescription"
                             value={orgDescription}
                             onChange={(e) => setOrgDescription(e.target.value)}
-                            placeholder="Enter organization description"
+                            placeholder="Enter group description"
                             className="col-span-3"
                         />
                     </div>

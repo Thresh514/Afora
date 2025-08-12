@@ -314,7 +314,7 @@ const SubmissionCard = ({
                                                 : "No one has been assigned to this task yet"}
                                         </p>
                                         <p className="text-gray-500 text-xs">
-                                            You can browse other tasks in the project
+                                            You can browse other tasks in the team
                                         </p>
                                     </div>
                                 </div>

@@ -5,6 +5,7 @@ import { useCollection } from "react-firebase-hooks/firestore";
 import { useUser } from "@clerk/nextjs";
 import { collection, DocumentData, query, where } from "firebase/firestore";
 import { db } from "@/firebase";
+import { batchInQueryForHooks } from "@/lib/batchQuery";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
@@ -43,19 +44,43 @@ function MySidebar() {
     const [orgIds, setOrgIds] = useState<string[]>([]);
     const [orgMap, setOrgMap] = useState<Map<string, string>>(new Map());
 
-    // Memoize the query to maintain stability
-    const orgQuery = useMemo(
-        () =>
-            orgIds.length > 0 && orgIds.filter(Boolean).length > 0
-                ? query(
-                        collection(db, "organizations"),
-                        where("__name__", "in", orgIds.filter(Boolean)),
-                    )
-                : null,
-        [orgIds],
-    );
+    // 使用自定义状态来处理批量查询，避免 Firebase IN 查询超过30个值的限制
+    const [value, setValue] = useState<any>(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<Error | null>(null);
 
-    const [value, loading, error] = useCollection(orgQuery);
+    // 获取组织数据的效果
+    useEffect(() => {
+        const fetchOrgData = async () => {
+            const filteredOrgIds = orgIds.filter(Boolean);
+            
+            if (filteredOrgIds.length === 0) {
+                setValue(null);
+                setLoading(false);
+                setError(null);
+                return;
+            }
+
+            setLoading(true);
+            setError(null);
+
+            try {
+                const result = await batchInQueryForHooks(
+                    collection(db, "organizations"),
+                    "__name__",
+                    filteredOrgIds
+                );
+                setValue(result);
+            } catch (err) {
+                console.error("Error fetching organization data:", err);
+                setError(err as Error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchOrgData();
+    }, [orgIds]); // 依赖于 orgIds 的变化
 
     // Get orgIds from userOrgs
     useEffect(() => {
@@ -86,14 +111,14 @@ function MySidebar() {
                 <SidebarContent>
                     <div className="flex-1">
                         <SidebarGroup>
-                            <SidebarGroupLabel>Organizations</SidebarGroupLabel>
+                            <SidebarGroupLabel>Groups</SidebarGroupLabel>
                             <SidebarGroupContent>
                                 <SidebarMenu>
                                     {/* Loading state */}
                                     {loading && (
                                         <SidebarMenuItem>
                                             <div className="px-2 py-1 text-sm text-gray-500">
-                                                Loading organizations...
+                                                Loading groups...
                                             </div>
                                         </SidebarMenuItem>
                                     )}
@@ -102,12 +127,12 @@ function MySidebar() {
                                     {error && (
                                         <SidebarMenuItem>
                                             <div className="px-2 py-1 text-sm text-red-500">
-                                                Error loading organizations
+                                                Error loading groups
                                             </div>
                                         </SidebarMenuItem>
                                     )}
 
-                                    {/* Organizations list */}
+                                    {/* Groups list */}
                                     {!loading &&
                                         !error &&
                                         orgMap &&
@@ -143,7 +168,7 @@ function MySidebar() {
                                         orgIds.length === 0 && (
                                             <SidebarMenuItem>
                                                 <div className="px-2 py-1 text-sm text-gray-500">
-                                                    No organizations found
+                                                    No groups found
                                                 </div>
                                             </SidebarMenuItem>
                                         )}
