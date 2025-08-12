@@ -31,6 +31,17 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import {
+    AlertDialog,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Plus } from "lucide-react";
 
 
 function StagePage() {
@@ -45,6 +56,9 @@ function StagePage() {
     const [swapTaskDialogOpen, setSwapTaskDialogOpen] = useState(false);
     const [currentTaskId, setCurrentTaskId] = useState<string>("");
     const [swapAssigneeEmail, setSwapAssigneeEmail] = useState("");
+
+    const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false); // State for Create Task dialog
+    const [isDeleteTaskOpen, setIsDeleteTaskOpen] = useState(false); // State for Delete Task dialog
 
     useEffect(() => {
         if (isLoaded && !isSignedIn) {
@@ -136,14 +150,20 @@ function StagePage() {
     // Get overdue tasks for bounty board (恢复原有逻辑)
     const overdueTasks = backendOverdueTasks.filter((task) => task.stage_id === stageId);
 
-    const handleNewTask = () => {
-        createTask(projId, stageId, tasks.length + 1)
-            .then(() => {
-                toast.success("Task created successfully!");
-            })
-            .catch((error) => {
-                toast.error("Failed to create task: " + error.message);
-            });
+    const handleNewTask = async () => {
+        const title = (document.getElementById("task-title") as HTMLInputElement)?.value || "New Task";
+        const description = (document.getElementById("task-description") as HTMLTextAreaElement)?.value || "Default task description";
+        const softDeadline = (document.getElementById("soft-deadline") as HTMLInputElement)?.value || "";
+        const hardDeadline = (document.getElementById("hard-deadline") as HTMLInputElement)?.value || "";
+        const points = parseInt((document.getElementById("task-points") as HTMLInputElement)?.value || "1");
+
+        try {
+            await createTask(projId, stageId, title, description, softDeadline, hardDeadline, points);
+            toast.success("Task created successfully!");
+        } catch (error) {
+            console.error("Error creating task:", error);
+            toast.error("Failed to create task: " + error.message);
+        }
     };
 
     const handleDeleteTask = (taskId: string) => {
@@ -156,7 +176,7 @@ function StagePage() {
                     toast.error("Failed to delete task: " + error.message);
                 })
                 .finally(() => {
-                    setIsOpen(false);
+                    setIsDeleteTaskOpen(false); // Close Delete Task dialog
                     setIsEditing(false);
                 });
         });
@@ -474,6 +494,112 @@ function StagePage() {
                     </DialogContent>
                 </Dialog>
 
+                {/* Create Task Dialog */}
+                <AlertDialog open={isCreateTaskOpen} onOpenChange={setIsCreateTaskOpen}>
+                    <AlertDialogTrigger asChild>
+                        <Button
+                            variant="default"
+                            className="fixed bottom-4 right-4 z-50" // Added z-50 for higher Z-layer
+                            onClick={() => setIsCreateTaskOpen(true)}
+                        >
+                            <Plus className="mr-2 h-4 w-4" />
+                            Create Task
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="w-full max-w-md">
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Create New Task</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Enter the details for the new task.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <div className="p-4 space-y-4">
+                            <div>
+                                <Label htmlFor="task-title" className="text-sm font-medium text-gray-700">
+                                    Task Title
+                                </Label>
+                                <Input
+                                    id="task-title"
+                                    type="text"
+                                    placeholder="Enter task title"
+                                    className="w-full"
+                                />
+                            </div>
+                            <div>
+                                <Label htmlFor="task-description" className="text-sm font-medium text-gray-700">
+                                    Task Description
+                                </Label>
+                                <Textarea
+                                    id="task-description"
+                                    placeholder="Enter task description"
+                                    className="w-full"
+                                />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <Label htmlFor="soft-deadline" className="text-sm font-medium text-gray-700">
+                                        Soft Deadline
+                                    </Label>
+                                    <Input
+                                        id="soft-deadline"
+                                        type="date"
+                                        className="w-full"
+                                    />
+                                </div>
+                                <div>
+                                    <Label htmlFor="hard-deadline" className="text-sm font-medium text-gray-700">
+                                        Hard Deadline
+                                    </Label>
+                                    <Input
+                                        id="hard-deadline"
+                                        type="date"
+                                        className="w-full"
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <Label htmlFor="task-points" className="text-sm font-medium text-gray-700">
+                                    Points
+                                </Label>
+                                <Input
+                                    id="task-points"
+                                    type="number"
+                                    min="1"
+                                    max="10"
+                                    placeholder="Enter task points"
+                                    className="w-full"
+                                />
+                            </div>
+                        </div>
+                        <AlertDialogFooter>
+                            <Button variant="outline" onClick={() => setIsCreateTaskOpen(false)}>
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={async () => {
+                                    const title = (document.getElementById("task-title") as HTMLInputElement)?.value || "New Task";
+                                    const description = (document.getElementById("task-description") as HTMLTextAreaElement)?.value || "Default task description";
+                                    const softDeadline = (document.getElementById("soft-deadline") as HTMLInputElement)?.value || "";
+                                    const hardDeadline = (document.getElementById("hard-deadline") as HTMLInputElement)?.value || "";
+                                    const points = parseInt((document.getElementById("task-points") as HTMLInputElement)?.value || "1");
+
+                                    try {
+                                        await createTask(projId, stageId, title, description, softDeadline, hardDeadline, points);
+                                        toast.success("Task created successfully!");
+                                    } catch (error) {
+                                        console.error("Error creating task:", error);
+                                        toast.error("Failed to create task.");
+                                    } finally {
+                                        setIsCreateTaskOpen(false); // Close Create Task dialog
+                                    }
+                                }}
+                            >
+                                Create Task
+                            </Button>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+
                 {/* Task Management Component */}
                 <TaskManagement
                     tasks={tasks}
@@ -484,8 +610,8 @@ function StagePage() {
                     handleDropTask={handleDropTask}
                     handleAcceptTask={handleAcceptTask}
                     isPending={isPending}
-                    isOpen={isOpen}
-                    setIsOpen={setIsOpen}
+                    isOpen={isDeleteTaskOpen} // Pass Delete Task state
+                    setIsOpen={setIsDeleteTaskOpen} // Pass Delete Task state setter
                     orgId={id}
                     projId={projId}
                     stageId={stageId}

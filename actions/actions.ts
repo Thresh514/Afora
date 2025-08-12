@@ -880,7 +880,11 @@ export async function updateStages(
 export async function createTask(
     projId: string,
     stageId: string,
-    order: number,
+    title: string,
+    description: string,
+    softDeadline: string,
+    hardDeadline: string,
+    points: number
 ) {
     const { userId } = await auth();
     if (!userId) {
@@ -895,20 +899,20 @@ export async function createTask(
             .doc(stageId)
             .collection("tasks")
             .doc();
+
         const defaultTask = {
-            title: "New Task",
-            description: "This is a default task description.",
-            assignee: "", // 更新字段名以匹配新的结构
+            title,
+            description,
+            assignee: "",
             id: taskRef.id,
-            order: order,
+            order: 0, // Update this if ordering logic is required
             isCompleted: false,
-            // 新增任务池相关字段
             status: "available",
             points: 10,
             completion_percentage: 0,
             can_be_reassigned: true,
-            soft_deadline: "",
-            hard_deadline: "",
+            soft_deadline: softDeadline,
+            hard_deadline: hardDeadline,
         };
 
         await taskRef.set(defaultTask);
@@ -2968,7 +2972,7 @@ export async function initializeUserScores(projId?: string) {
             ];
 
             for (const userEmail of allMembers) {
-                try {
+                               try {
                     // 检查用户是否已有积分记录
                     const existingScores = await adminDb
                         .collection("user_scores")
