@@ -130,7 +130,7 @@ afora-firestore/
 - `updateProjectTitle(projId, newTitle)`
 
 #### 任务管理
-- `createTask(projId, stageId, order)`
+- `createTask(projId, stageId, taskId, title, description, soft_deadline, hard_deadline, points)`
 - `deleteTask(projId, stageId, taskId)`
 - `updateTask(projId, stageId, taskId, title, description, soft_deadline, hard_deadline)`
 - `setTaskComplete(projId, stageId, taskId, isCompleted)`
