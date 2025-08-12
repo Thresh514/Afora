@@ -504,6 +504,7 @@ export async function createProject(
     orgId: string,
     projectTitle: string,
     members: string[] = [],
+    teamSize?: number,
 ) {
     const { sessionClaims } = await auth();
 
@@ -556,13 +557,20 @@ export async function createProject(
         }
 
         // 创建项目文档
-        const projectRef = await adminDb.collection("projects").add({
+        const projectData: any = {
             orgId: orgId,
             title: projectTitle.trim(),
             members: members,
             admins: [userId],
             createdAt: Timestamp.now(),
-        });
+        };
+        
+        // 如果提供了团队大小，则添加到项目数据中
+        if (teamSize && teamSize > 0) {
+            projectData.teamSize = teamSize;
+        }
+        
+        const projectRef = await adminDb.collection("projects").add(projectData);
 
         const projectId = projectRef.id;
 
@@ -2111,15 +2119,150 @@ export async function updateProjectTeamSize(projId: string, teamSize: number) {
     }
 }
 
-// auto assign organization members to projects
-export async function autoAssignMembersToProjects(orgId: string) {
+// Backtracking algorithm to find optimal allocation strategy
+function findOptimalAllocationWithBacktracking(projects: any[], availableMembers: number) {
+    // Generate all possible allocation scenarios
+    const allocationScenarios = generateAllocationScenarios(projects, availableMembers);
+    
+    // Evaluate each scenario and find the optimal solution
+    let bestScenario = null;
+    let minTotalEmptySpots = Infinity;
+    let maxFilledProjects = -1;
+    
+    for (let i = 0; i < allocationScenarios.length; i++) {
+        const scenario = allocationScenarios[i];
+        const evaluation = evaluateAllocationScenario(scenario, projects);
+        
+        // Priority: 1. More completely filled projects 2. Fewer total empty spots
+        if (evaluation.filledProjects > maxFilledProjects || 
+            (evaluation.filledProjects === maxFilledProjects && evaluation.totalEmptySpots < minTotalEmptySpots)) {
+            bestScenario = scenario;
+            minTotalEmptySpots = evaluation.totalEmptySpots;
+            maxFilledProjects = evaluation.filledProjects;
+        }
+    }
+    
+    if (bestScenario) {
+        return applyAllocationScenario(bestScenario, projects);
+    }
+    
+    // Fallback to simple strategy
+    return projects.sort((a, b) => b.spotsAvailable - a.spotsAvailable);
+}
+
+// Generate all possible allocation scenarios
+function generateAllocationScenarios(projects: any[], availableMembers: number): number[][] {
+    const scenarios: number[][] = [];
+    
+    // Recursively generate allocation scenarios
+    function backtrack(projectIndex: number, allocation: number[], remainingMembers: number) {
+        if (projectIndex === projects.length) {
+            if (remainingMembers >= 0) {
+                scenarios.push([...allocation]);
+            }
+            return;
+        }
+        
+        const project = projects[projectIndex];
+        const maxAssignable = Math.min(project.spotsAvailable, remainingMembers);
+        
+        // Try assigning 0 to maxAssignable members to current project
+        for (let assign = 0; assign <= maxAssignable; assign++) {
+            allocation[projectIndex] = assign;
+            backtrack(projectIndex + 1, allocation, remainingMembers - assign);
+        }
+    }
+    
+    backtrack(0, [], availableMembers);
+    return scenarios;
+}
+
+// Evaluate allocation scenario
+function evaluateAllocationScenario(allocation: number[], projects: any[]) {
+    let filledProjects = 0;
+    let totalEmptySpots = 0;
+    
+    for (let i = 0; i < projects.length; i++) {
+        const project = projects[i];
+        const assigned = allocation[i];
+        const remaining = project.spotsAvailable - assigned;
+        
+        if (remaining === 0) {
+            filledProjects++;
+        }
+        totalEmptySpots += remaining;
+    }
+    
+    return { filledProjects, totalEmptySpots, allocation };
+}
+
+// Apply allocation scenario, return project processing order
+function applyAllocationScenario(allocation: number[], projects: any[]) {
+    const projectsWithAllocation = projects.map((project, index) => ({
+        ...project,
+        plannedAllocation: allocation[index]
+    }));
+    
+    // Sort by allocation count descending, prioritize projects with more member allocations
+    return projectsWithAllocation
+        .filter(p => p.plannedAllocation > 0)
+        .sort((a, b) => b.plannedAllocation - a.plannedAllocation);
+}
+
+// Backup simple strategy for large projects
+function findOptimalAllocationForLargeProjects(projects: any[], availableMembers: number) {
+    // Strategy: prioritize large projects, maximize individual project completeness
+    const sortedProjects = [...projects].sort((a, b) => b.spotsAvailable - a.spotsAvailable); // Sort large to small
+    
+    const projectsToFill = [];
+    let remainingMembers = availableMembers;
+    
+    for (const project of sortedProjects) {
+        if (remainingMembers > 0) {
+            projectsToFill.push(project);
+            const willAssign = Math.min(project.spotsAvailable, remainingMembers);
+            remainingMembers -= willAssign;
+        }
+    }
+    
+    return projectsToFill;
+}
+
+// Backup greedy algorithm function
+function findOptimalAllocation(projects: any[], availableMembers: number) {
+    // Greedy algorithm: prioritize projects that can be completely filled
+    const sortedProjects = [...projects].sort((a, b) => a.spotsAvailable - b.spotsAvailable);
+    
+    // Try to find projects that can be completely filled
+    const canFillCompletely = [];
+    const cannotFillCompletely = [];
+    let remainingMembers = availableMembers;
+    
+    for (const project of sortedProjects) {
+        if (remainingMembers >= project.spotsAvailable) {
+            canFillCompletely.push(project);
+            remainingMembers -= project.spotsAvailable;
+        } else {
+            cannotFillCompletely.push(project);
+        }
+    }
+    
+    // Handle completely fillable projects first, then partially fillable ones
+    // For partially fillable projects, sort by spots needed ascending (prioritize smaller projects)
+    cannotFillCompletely.sort((a, b) => a.spotsAvailable - b.spotsAvailable);
+    
+    return [...canFillCompletely, ...cannotFillCompletely];
+}
+
+// Smart assign organization members to projects using AI matching
+export async function autoAssignMembersToProjects(orgId: string, teamSize?: number) {
     const { userId } = await auth();
     if (!userId) {
         throw new Error("Unauthorized");
     }
 
     try {
-        // get the organization information
+        // Get the organization information
         const orgDoc = await adminDb
             .collection("organizations")
             .doc(orgId)
@@ -2134,7 +2277,7 @@ export async function autoAssignMembersToProjects(orgId: string) {
             ...(orgData?.admins || []),
         ];
 
-        // get all the projects in the organization
+        // Get all the projects in the organization
         const projectsSnapshot = await adminDb
             .collection("projects")
             .where("orgId", "==", orgId)
@@ -2149,11 +2292,13 @@ export async function autoAssignMembersToProjects(orgId: string) {
             return {
                 id: doc.id,
                 members: data.members || [],
+                title: data.title || "",
+                teamSize: data.teamSize || teamSize, // Use project's own team size or passed parameter
                 ...data,
             };
         });
 
-        // calculate the current assigned members
+        // Calculate the current assigned members
         const assignedMembers = new Set();
         projects.forEach((project) => {
             const projectMembers = (project.members as string[]) || [];
@@ -2162,7 +2307,7 @@ export async function autoAssignMembersToProjects(orgId: string) {
             );
         });
 
-        // get the unassigned members
+        // Get the unassigned members
         const unassignedMembers = allMembers.filter(
             (member) => !assignedMembers.has(member),
         );
@@ -2175,66 +2320,228 @@ export async function autoAssignMembersToProjects(orgId: string) {
             };
         }
 
-        // default team size is 3
-        const defaultTeamSize = 3;
-        let assignedCount = 0;
-
-        // assign members to each project
-        for (
-            let i = 0;
-            i < projects.length && unassignedMembers.length > 0;
-            i++
-        ) {
-            const project = projects[i];
-            const currentMembers = (project.members as string[]) || [];
-            const spotsAvailable = defaultTeamSize - currentMembers.length;
-
-            if (spotsAvailable > 0) {
-                const membersToAdd = unassignedMembers.splice(
-                    0,
-                    spotsAvailable,
-                );
-                const updatedMembers = [...currentMembers, ...membersToAdd];
-
-                // update the project members
-                await adminDb.collection("projects").doc(project.id).update({
-                    members: updatedMembers,
+        // Get user survey responses for AI matching
+        let memberSurveyData = [];
+        for (const memberEmail of unassignedMembers) {
+            try {
+                const userDoc = await adminDb
+                    .collection("users")
+                    .doc(memberEmail)
+                    .get();
+                
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    
+                    // Get user's platform survey response data
+                    const onboardingSurveyResponses = userData?.onboardingSurveyResponse || [];
+                    
+                    memberSurveyData.push({
+                        email: memberEmail,
+                        name: userData?.fullName || memberEmail,
+                        onboardingSurveyResponses: onboardingSurveyResponses,
+                    });
+                }
+            } catch (error) {
+                console.error(`Failed to get survey data for ${memberEmail}:`, error);
+                // Continue processing other users even if one fails
+                memberSurveyData.push({
+                    email: memberEmail,
+                    name: memberEmail,
+                    onboardingSurveyResponses: [],
                 });
+            }
+        }
 
-                // add the project to the new members' projs collection
-                for (const memberEmail of membersToAdd) {
-                    try {
-                        await adminDb
-                            .collection("users")
-                            .doc(memberEmail)
-                            .collection("projs")
-                            .doc(project.id)
-                            .set(
-                                {
-                                    orgId: orgId,
-                                },
-                                { merge: true },
-                            );
-                    } catch (error) {
-                        console.error(
-                            `Failed to add project reference for user ${memberEmail}:`,
-                            error,
+        let totalAssignedCount = 0;
+        const assignmentResults = [];
+
+        // Smart assignment for projects using optimal filling strategy
+        
+        // Calculate project requirements and available members
+        const projectsNeedingMembers = projects
+            .map(project => {
+                const currentMembers = (project.members as string[]) || [];
+                const projectTeamSize = project.teamSize || teamSize || 3; // Use project config > passed parameter > default
+                const spotsAvailable = projectTeamSize - currentMembers.length;
+                return {
+                    ...project,
+                    currentMembers,
+                    projectTeamSize,
+                    spotsAvailable
+                };
+            })
+            .filter(project => project.spotsAvailable > 0);
+
+        const totalSpotsNeeded = projectsNeedingMembers.reduce((sum, project) => sum + project.spotsAvailable, 0);
+        const availableMembers = memberSurveyData.length;
+        
+        // Optimal allocation strategy: prioritize larger projects
+        let optimalAllocation;
+        if (availableMembers >= totalSpotsNeeded) {
+            // If enough members, all projects can be filled completely - sort by project size descending
+            optimalAllocation = projectsNeedingMembers.sort((a, b) => b.spotsAvailable - a.spotsAvailable);
+        } else {
+            // Not enough members, use backtracking algorithm for optimal allocation
+            optimalAllocation = findOptimalAllocationWithBacktracking(projectsNeedingMembers, availableMembers);
+        }
+
+        for (const project of optimalAllocation) {
+            if (project.spotsAvailable > 0 && memberSurveyData.length > 0) {
+                try {
+                    // Get existing project members' information
+                    const existingMembersData = [];
+                    for (const memberEmail of project.currentMembers) {
+                        try {
+                            const userDoc = await adminDb
+                                .collection("users")
+                                .doc(memberEmail)
+                                .get();
+                            
+                            if (userDoc.exists) {
+                                const userData = userDoc.data();
+                                const onboardingSurveyResponses = userData?.onboardingSurveyResponse || [];
+                                existingMembersData.push({
+                                    email: memberEmail,
+                                    name: userData?.fullName || memberEmail,
+                                    onboardingSurveyResponses: onboardingSurveyResponses,
+                                });
+                            }
+                        } catch (error) {
+                            console.error(`Failed to get data for existing member ${memberEmail}:`, error);
+                        }
+                    }
+
+                    // Prepare AI matching input data
+                    const matchingInput: string[] = memberSurveyData.map(member => {
+                        const responses = member.onboardingSurveyResponses || [];
+                        return `User: ${member.email}, Name: ${member.name}, Survey Responses: ${JSON.stringify(responses)}`;
+                    });
+                    
+                    // Prepare existing members information
+                    const existingMembersInfo = existingMembersData.map(member => {
+                        const responses = member.onboardingSurveyResponses || [];
+                        return `Existing Member: ${member.email}, Name: ${member.name}, Survey Responses: ${JSON.stringify(responses)}`;
+                    });
+
+                    // Calculate actual allocation size (using backtracking planned allocation or project needs)
+                    const plannedAllocation = (project as any).plannedAllocation || project.spotsAvailable;
+                    const actualAllocationSize = Math.min(plannedAllocation, memberSurveyData.length);
+
+                    // Call AI matching API, choose different strategy based on existing members
+                    let matchingResultRaw;
+                    if (existingMembersInfo.length > 0) {
+                        const matchingModule = await import("@/ai_scripts/matching");
+                        const { matchingWithExistingTeam } = matchingModule as any;
+                        matchingResultRaw = await matchingWithExistingTeam(
+                            actualAllocationSize, // Use actual allocatable member count
+                            ["What is your primary area of expertise and main professional skills?", 
+                             "What industries or fields are you currently most interested in some levels of skills and experiences?", 
+                             "What future roles or job titles are you aiming for?"], // Question list
+                            matchingInput, // New member data
+                            existingMembersInfo // Existing member data
+                        );
+                    } else {
+                        const { matching } = await import("@/ai_scripts/matching");
+                        matchingResultRaw = await matching(
+                            actualAllocationSize, // Use actual allocatable member count
+                            ["What is your primary area of expertise and main professional skills?", 
+                             "What industries or fields are you currently most interested in some levels of skills and experiences?", 
+                             "What future roles or job titles are you aiming for?"], // Question list
+                            matchingInput // New member data
                         );
                     }
-                }
+                    
+                    // Parse JSON string
+                    let matchingResult;
+                    try {
+                        matchingResult = typeof matchingResultRaw === 'string' 
+                            ? JSON.parse(matchingResultRaw) 
+                            : matchingResultRaw;
+                    } catch (parseError) {
+                        console.error(`Failed to parse AI matching result:`, parseError);
+                        throw new Error("Failed to parse AI matching result");
+                    }
 
-                assignedCount += membersToAdd.length;
+                    // Check AI matching result - handle different return formats
+                    let groups = null;
+                    if (matchingResult?.success && matchingResult.data?.groups) {
+                        // If has success field and nested data
+                        groups = matchingResult.data.groups;
+                    } else if (matchingResult?.groups) {
+                        // If directly returns groups
+                        groups = matchingResult.groups;
+                    } else if (Array.isArray(matchingResult)) {
+                        // If directly returns array
+                        groups = matchingResult;
+                    }
+
+                    if (groups && groups.length > 0) {
+                        // Take the first best matched group, ensure not exceeding actual allocatable members
+                        const bestGroup: string[] = groups[0];
+                        const membersToAdd: string[] = bestGroup.slice(0, actualAllocationSize);
+                        
+                        if (membersToAdd.length > 0) {
+                            const updatedMembers = [...project.currentMembers, ...membersToAdd];
+
+                            // Update the project members
+                            await adminDb.collection("projects").doc(project.id).update({
+                                members: updatedMembers,
+                            });
+
+                            // Add the project to the new members' projs collection
+                            for (const memberEmail of membersToAdd) {
+                                try {
+                                    await adminDb
+                                        .collection("users")
+                                        .doc(memberEmail)
+                                        .collection("projs")
+                                        .doc(project.id)
+                                        .set(
+                                            {
+                                                orgId: orgId,
+                                            },
+                                            { merge: true },
+                                        );
+                                } catch (error) {
+                                    console.error(
+                                        `Failed to add project reference for user ${memberEmail}:`,
+                                        error,
+                                    );
+                                }
+                            }
+
+                            // Remove assigned members from the pending assignment list
+                            memberSurveyData = memberSurveyData.filter(
+                                member => !membersToAdd.includes(member.email)
+                            );
+
+                            totalAssignedCount += membersToAdd.length;
+                            assignmentResults.push({
+                                projectId: project.id,
+                                projectTitle: project.title,
+                                assignedMembers: membersToAdd,
+                                count: membersToAdd.length
+                            });
+                        }
+                    }
+                } catch (error) {
+                    console.error(`AI matching failed for project ${project.id}:`, error);
+                    // If AI matching fails, could implement simple round-robin assignment as fallback
+                    // For now, skip this project
+                    continue;
+                }
             }
         }
 
         return {
             success: true,
-            message: `Successfully assigned ${assignedCount} members to projects`,
-            assigned: assignedCount,
-            remaining: unassignedMembers.length,
+            message: `Successfully assigned ${totalAssignedCount} members to projects using AI matching`,
+            assigned: totalAssignedCount,
+            remaining: memberSurveyData.length,
+            details: assignmentResults,
         };
     } catch (error) {
-        console.error("Error auto-assigning members:", error);
+        console.error("Error smart-assigning members:", error);
         return { success: false, message: (error as Error).message };
     }
 }

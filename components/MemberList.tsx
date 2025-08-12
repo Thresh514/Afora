@@ -12,6 +12,7 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { collection, query, where } from "firebase/firestore";
 import { db } from "@/firebase";
 import { useCollection } from "react-firebase-hooks/firestore";
+import { batchInQueryForHooks } from "@/lib/batchQuery";
 import {Users, Settings, UserPlus, Shuffle, FolderOpen, UserCheck, ArrowRight, Crown, Building2} from "lucide-react";
 import { toast } from "sonner";
 import {updateProjectMembers, removeProjectMember, autoAssignMembersToProjects, updateProjectTeamSize} from "@/actions/actions";
@@ -55,18 +56,43 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
     const [isTeamSettingsOpen, setIsTeamSettingsOpen] = useState(false);
     const [defaultTeamSize, setDefaultTeamSize] = useState(3);
 
-    const myQuery =
-        [...admins, ...members].length > 0
-            ? query(
+    // 使用自定义状态来处理批量查询，避免 Firebase IN 查询超过30个值的限制
+    const [results, setResults] = useState<any>(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<Error | null>(null);
+
+    // 获取用户数据的效果
+    useEffect(() => {
+        const fetchUserData = async () => {
+            const allUsers = [...admins, ...members].filter(Boolean);
+            
+            if (allUsers.length === 0) {
+                setResults(null);
+                setLoading(false);
+                setError(null);
+                return;
+            }
+
+            setLoading(true);
+            setError(null);
+
+            try {
+                const result = await batchInQueryForHooks(
                     collection(db, "users"),
-                    where(
-                        "__name__",
-                        "in",
-                        [...admins, ...members].filter(Boolean),
-                    ),
-                )
-            : null;
-    const [results, loading, error] = useCollection(myQuery);
+                    "__name__",
+                    allUsers
+                );
+                setResults(result);
+            } catch (err) {
+                console.error("Error fetching user data:", err);
+                setError(err as Error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchUserData();
+    }, [admins, members]); // 依赖于 admins 和 members 的变化
 
     // Get projects data
     const projects = useMemo(() => projectsData?.docs || [], [projectsData]);
@@ -77,7 +103,7 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
             const membersPfpData: { [email: string]: string } = {};
 
             if (results) {
-                results.docs.forEach((doc) => {
+                results.docs.forEach((doc: any) => {
                     const data = doc.data();
                     if (admins.includes(doc.id)) {
                         adminsPfpData[doc.id] = data.userImage;
@@ -151,7 +177,9 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
 
     const handleAutoAssign = useCallback(async () => {
         try {
-            const result = await autoAssignMembersToProjects(orgId);
+            console.log("🚀 Starting smart assignment with defaultTeamSize:", defaultTeamSize);
+            const result = await autoAssignMembersToProjects(orgId, defaultTeamSize);
+            console.log("📊 Assignment result:", result);
 
             if (result.success) {
                 toast.success(result.message);
@@ -163,7 +191,7 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
             console.error("Error auto-assigning members:", error);
             toast.error("Failed to auto-assign members");
         }
-    }, [orgId]);
+    }, [orgId, defaultTeamSize]);
 
     const handleMemberMove = useCallback(
         async (

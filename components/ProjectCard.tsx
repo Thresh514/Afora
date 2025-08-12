@@ -80,7 +80,7 @@ const ProjectCard = ({
                             <div className="flex justify-between items-start">
                                 <div className="flex items-center gap-1 text-white/80 text-sm">
                                     <Users className="h-3 w-3" />
-                                    <span>{memberCount}</span>
+                                    <span>{memberCount + 1}</span>
                                 </div>
                             </div>
                             <h2 className="text-xl font-bold text-white mb-1 group-hover:text-white/90 transition-colors">

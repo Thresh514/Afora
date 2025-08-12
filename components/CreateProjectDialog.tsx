@@ -47,7 +47,8 @@ export default function CreateProjectDialog({
         startTransition(async () => {
             try {
                 // 1. 创建项目
-                const result = await createProject(orgId, newProjectTitle.trim());
+                const teamSizeNum = teamSize && parseInt(teamSize) > 0 ? parseInt(teamSize) : undefined;
+                const result = await createProject(orgId, newProjectTitle.trim(), [], teamSizeNum);
                 if (!result.success) {
                     toast.error(result.message || "Failed to create team");
                     return;

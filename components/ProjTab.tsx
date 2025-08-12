@@ -2,6 +2,7 @@
 import { db } from "@/firebase";
 import { Project, Task, Organization } from "@/types/types";
 import {collection, getDocs, query, where, doc} from "firebase/firestore";
+import { batchInQuery } from "@/lib/batchQuery";
 import React, { useEffect, useState, useTransition } from "react";
 import { useCollection, useDocument } from "react-firebase-hooks/firestore";
 import { Button } from "./ui/button";
@@ -62,11 +63,11 @@ const ProjTab = ({
                     .filter(Boolean);
                 if (projectIds.length > 0) {
                     try {
-                        const projectDocs = await getDocs(
-                            query(
-                                collection(db, "projects"),
-                                where("__name__", "in", projectIds),
-                            ),
+                        // 使用批量查询来避免 Firebase IN 查询超过30个值的限制
+                        const projectDocs = await batchInQuery(
+                            collection(db, "projects"),
+                            "__name__",
+                            projectIds
                         );
                         const projects = projectDocs.docs.map(
                             (doc) => ({
