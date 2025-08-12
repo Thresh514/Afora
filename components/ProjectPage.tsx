@@ -66,12 +66,14 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
     // Define the 'newStageTitle' state
     const [newStageTitle, setNewStageTitle] = useState("");
 
-    // check if user is admin
+    // check if user is team member (admin or regular member can create stages)
     useEffect(() => {
         if (user?.primaryEmailAddress?.emailAddress && projData) {
             const userEmail = user.primaryEmailAddress.emailAddress;
             const admins = projData.data()?.admins || [];
-            setIsAdmin(admins.includes(userEmail));
+            const members = projData.data()?.members || [];
+            const isTeamMember = admins.includes(userEmail) || members.includes(userEmail);
+            setIsAdmin(isTeamMember); // Use isAdmin variable to represent team member permissions
         }
     }, [user, projData]);
 
@@ -637,7 +639,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                                                                     </HoverCardTrigger>
                                                                                     <HoverCardContent className="p-2 bg-gray-800 text-white rounded-md shadow-lg">
                                                                                         <p className="text-sm">
-                                                                                            {isAdmin ? "此阶段已锁定。帮助团队成员完成他们的任务！" : "此阶段已锁定。请等待管理员解锁。"}
+                                                                                            {isAdmin ? "此阶段已锁定。帮助团队成员完成他们的任务！" : "此阶段已锁定。请等待团队成员解锁。"}
                                                                                         </p>
                                                                                     </HoverCardContent>
                                                                                 </HoverCard>

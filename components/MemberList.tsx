@@ -41,6 +41,7 @@ interface ProjectTeam {
     projectId: string;
     projectTitle: string;
     members: string[];
+    admins?: string[];
     teamSize: number;
 }
 
@@ -125,12 +126,15 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
         }
 
         return projects.map((proj): ProjectTeam => {
-            const projectData = proj.data();
+            const projectData = proj.data() as any;
             return {
                 projectId: projectData.projId || proj.id,
                 projectTitle: projectData.title || "Untitled Project",
                 members: Array.isArray(projectData.members)
                     ? projectData.members
+                    : [],
+                admins: Array.isArray(projectData.admins)
+                    ? projectData.admins
                     : [],
                 teamSize:
                     typeof projectData.teamSize === "number"
@@ -827,7 +831,7 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
                                     {selectedProjectData?.projectTitle}
                                 </h3>
                                 <p className="text-sm text-gray-500">
-                                    {selectedProjectData?.members.length}/
+                                    {(selectedProjectData?.members.length || 0) + (selectedProjectData?.admins?.length || 0)}/
                                     {selectedProjectData?.teamSize} team members
                                 </p>
                             </div>

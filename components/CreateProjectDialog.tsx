@@ -46,9 +46,22 @@ export default function CreateProjectDialog({
 
         startTransition(async () => {
             try {
-                // 1. 创建项目
-                const teamSizeNum = teamSize && parseInt(teamSize) > 0 ? parseInt(teamSize) : undefined;
-                const result = await createProject(orgId, newProjectTitle.trim(), [], teamSizeNum);
+                // 1. 获取组织数据并准备管理员列表
+                const orgData = org?.data();
+                if (!orgData) {
+                    toast.error("Group data not found");
+                    return;
+                }
+
+                // 自动将所有管理员添加到项目中
+                const adminMembers = orgData.admins || [];
+                console.log("Adding admins to project:", adminMembers);
+
+                // 创建项目并包含所有管理员
+                const memberCountToMatch = teamSize && parseInt(teamSize) > 0 ? parseInt(teamSize) : 0;
+                // 计算总团队大小：admin数量 + 要匹配的成员数量  
+                const totalTeamSize = memberCountToMatch > 0 ? adminMembers.length + memberCountToMatch : undefined;
+                const result = await createProject(orgId, newProjectTitle.trim(), [], totalTeamSize, adminMembers);
                 if (!result.success) {
                     toast.error(result.message || "Failed to create team");
                     return;
@@ -60,18 +73,30 @@ export default function CreateProjectDialog({
                     return;
                 }
 
-                // 2. 如果选择了团队匹配，则进行匹配
+                // 2. 如果选择了团队匹配，则匹配普通成员（管理员已自动包含）
                 if (teamSize && parseInt(teamSize) > 0) {
                     try {
-                        const orgData = org?.data();
-                        if (!orgData) {
-                            toast.error("Group data not found");
+                        // 匹配用户指定数量的普通成员
+                        const memberList = orgData.members || [];
+                        const adminsCount = adminMembers.length;
+                        
+                        console.log(`Member count to match: ${memberCountToMatch}, Admins: ${adminsCount}, Total will be: ${memberCountToMatch + adminsCount}`);
+                        
+                        if (memberCountToMatch === 0) {
+                            toast.success(`Team created with ${adminsCount} admin(s) only.`);
+                            setNewProjectTitle("");
+                            setTeamSize("3");
+                            setIsOpen(false);
+                            onProjectCreated?.();
                             return;
                         }
-
-                        const memberList = orgData.members || [];
+                        
                         if (memberList.length === 0) {
-                            toast.warning("No members found in group");
+                            toast.success(`Team created with ${adminsCount} admin(s). No members available for matching.`);
+                            setNewProjectTitle("");
+                            setTeamSize("3");
+                            setIsOpen(false);
+                            onProjectCreated?.();
                             return;
                         }
 
@@ -87,8 +112,8 @@ export default function CreateProjectDialog({
 
                         const userData = await Promise.all(userDataPromise);
 
-                        // 调用匹配API
-                        const matchingResult = await matching(teamSize, projQuestions, userData);
+                        // 调用匹配API，匹配指定数量的成员
+                        const matchingResult = await matching(memberCountToMatch, projQuestions, userData);
                         console.log("Matching result:", matchingResult);
 
                         // 解析匹配结果并更新项目成员
@@ -98,25 +123,25 @@ export default function CreateProjectDialog({
                                 // 使用第一个匹配的团队
                                 const selectedGroup = parsedResult.groups[0];
                                 if (selectedGroup && selectedGroup.length > 0) {
-                                    // 更新项目成员
+                                    // 更新项目成员（只添加匹配的普通成员，管理员已在admins字段中）
                                     await updateProjectMembers(projectId, selectedGroup);
-                                    toast.success(`Team created with ${selectedGroup.length} matched members!`);
+                                    toast.success(`Team created! ${adminsCount} admin(s) + ${selectedGroup.length} matched member(s) = ${adminsCount + selectedGroup.length} total members`);
                                 } else {
-                                    toast.success("Team created successfully!");
+                                    toast.success(`Team created with ${adminsCount} admin(s).`);
                                 }
                             } else {
-                                toast.success("Team created successfully!");
+                                toast.success(`Team created with ${adminsCount} admin(s).`);
                             }
                         } catch (parseError) {
                             console.error("Error parsing matching result:", parseError);
-                            toast.success("Team created successfully!");
+                            toast.success(`Team created with ${adminsCount} admin(s).`);
                         }
                     } catch (matchingError) {
                         console.error("Error in team matching:", matchingError);
                         toast.success("Team created successfully!");
                     }
                 } else {
-                    toast.success("Team created successfully!");
+                    toast.success(`Team created with ${adminMembers.length} admin(s).`);
                 }
 
                 setNewProjectTitle("");
@@ -130,9 +155,10 @@ export default function CreateProjectDialog({
         });
     };
 
-    if (userRole !== "admin") {
-        return null;
-    }
+    // All team members can create projects, so remove admin-only restriction
+    // if (userRole !== "admin") {
+    //     return null;
+    // }
 
     if (loading) {
         return <Button disabled>Loading...</Button>;
@@ -183,7 +209,7 @@ export default function CreateProjectDialog({
                     <div className="flex flex-col gap-2">
                         <Label htmlFor="team-size" className="text-sm font-medium flex items-center gap-2">
                             <Users className="h-4 w-4" />
-                            Team Size (Optional)
+                            Member Count (Optional)
                         </Label>
                         <Input
                             id="team-size"
@@ -192,11 +218,11 @@ export default function CreateProjectDialog({
                             max="10"
                             value={teamSize}
                             onChange={(e) => setTeamSize(e.target.value)}
-                            placeholder="Enter team size (1-10)"
+                            placeholder="Enter member count (1-10)"
                             className="w-full"
                         />
                         <p className="text-xs text-muted-foreground">
-                            Leave empty to create team without member matching
+                            Number of regular members to match (admins are automatically included)
                         </p>
                     </div>
                 </div>

@@ -505,6 +505,7 @@ export async function createProject(
     projectTitle: string,
     members: string[] = [],
     teamSize?: number,
+    admins: string[] = [],
 ) {
     const { sessionClaims } = await auth();
 
@@ -561,7 +562,7 @@ export async function createProject(
             orgId: orgId,
             title: projectTitle.trim(),
             members: members,
-            admins: [userId],
+            admins: admins.length > 0 ? admins : [userId], // Use provided admins or fallback to creator
             createdAt: Timestamp.now(),
         };
         
@@ -724,17 +725,20 @@ export async function updateStagesTasks(
                 batch.set(taskRef, {
                     title: task.task_name,
                     description: task.task_description,
-                    assignee: "",
+                    assignee: task.assigned_member || "", // Use AI-assigned member
+                    assignment_reason: task.assignment_reason || "", // Store assignment reasoning
                     id: taskRef.id,
                     order: taskIndex,
                     soft_deadline: task.soft_deadline,
                     hard_deadline: task.hard_deadline,
                     isCompleted: false,
-                    // 任务池相关字段
-                    status: "available",
+                    // 任务池相关字段 - if assigned, mark as assigned
+                    status: task.assigned_member ? "assigned" : "available",
                     points: 10,
                     completion_percentage: 0,
                     canBeReassigned: true,
+                    // Add assigned timestamp if task is pre-assigned
+                    ...(task.assigned_member && { assigned_at: Timestamp.now() }),
                 });
             });
         });

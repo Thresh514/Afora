@@ -20,6 +20,7 @@ import {
     Project,
     projQuestions,
     teamCharterQuestions,
+    TeamCompatibilityAnalysis,
 } from "@/types/types";
 import { db } from "@/firebase";
 import { useDocument } from "react-firebase-hooks/firestore";

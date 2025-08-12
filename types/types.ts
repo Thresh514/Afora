@@ -194,6 +194,7 @@ export type Task = {
     soft_deadline: string;
     hard_deadline: string;
     assignee: string;
+    assignment_reason?: string; // AI-generated reason for task assignment based on member capabilities
     order: number;
     isCompleted: boolean;
     completion_percentage?: number; // Task completion percentage (0-100)
@@ -214,6 +215,8 @@ export type GeneratedTasks = {
             task_description: string; // The detailed description of the task
             soft_deadline: string;
             hard_deadline: string;
+            assigned_member: string; // Email address of the assigned team member
+            assignment_reason: string; // Reason for the assignment based on capabilities and interests
         }[];
     }[];
 };

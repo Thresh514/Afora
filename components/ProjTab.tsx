@@ -273,16 +273,13 @@ const ProjTab = ({
                 {/* Actions */}
                 <div className="p-4 border-t border-gray-200 bg-gray-50">
                     <div className="space-y-2">
-                        {userRole === "admin" && (
-                            <>
-                                <CreateProjectDialog 
-                                    orgId={orgId} 
-                                    totalProjects={totalProjects}
-                                    userRole={userRole as "admin" | "member"}
-                                    onProjectCreated={handleProjectCreated} 
-                                />
-                            </>
-                        )}
+                        {/* All team members can create projects */}
+                        <CreateProjectDialog 
+                            orgId={orgId} 
+                            totalProjects={totalProjects}
+                            userRole={userRole as "admin" | "member"}
+                            onProjectCreated={handleProjectCreated} 
+                        />
                     </div>
                 </div>
             </div>
@@ -361,6 +358,7 @@ const ProjTab = ({
                                                     projId={proj.projId}
                                                     projectName={proj.title}
                                                     members={proj.members}
+                                                    admins={proj.admins}
                                                     tasks={projectTasks[proj.projId] || []}
                                                     backgroundImage=""
                                                 />

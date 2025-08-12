@@ -3,4 +3,6 @@ export declare function generateTask(
     userResponses,
     charterQuestions,
     teamCharterResponses,
+    teamMembers,
+    memberCapabilities,
 );

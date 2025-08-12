@@ -10,6 +10,7 @@ interface ProjectCardProps {
     projId: string;
     orgId: string;
     members?: string[];
+    admins?: string[];
 }
 
 const ProjectCard = ({
@@ -18,9 +19,10 @@ const ProjectCard = ({
     projectName = "Sample Team",
     tasks = [],
     members = [],
+    admins = [],
 }: ProjectCardProps) => {
     // Calculate actual values based on real data
-    const memberCount = members.length;
+    const memberCount = members.length + admins.length;
     const taskCount = tasks.length;
     const completedTasks = tasks.filter((task) => task.isCompleted).length;
     const progress =
@@ -80,7 +82,7 @@ const ProjectCard = ({
                             <div className="flex justify-between items-start">
                                 <div className="flex items-center gap-1 text-white/80 text-sm">
                                     <Users className="h-3 w-3" />
-                                    <span>{memberCount + 1}</span>
+                                    <span>{memberCount}</span>
                                 </div>
                             </div>
                             <h2 className="text-xl font-bold text-white mb-1 group-hover:text-white/90 transition-colors">
