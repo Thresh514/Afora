@@ -9,11 +9,12 @@ import { Button } from "./ui/button";
 import { updateProjects } from "@/actions/actions";
 import { toast } from "sonner";
 import ProjectCard from "./ProjectCard";
-import {Folder, Users, Briefcase} from "lucide-react";
+import {Folder, Users, Briefcase, Loader2} from "lucide-react";
 import { Badge } from "./ui/badge";
 import { Card, CardContent } from "./ui/card";
 import { Separator } from "./ui/separator";
 import CreateProjectDialog from "./CreateProjectDialog";
+import LoadingOverlay from "./LoadingOverlay";
 
 type MatchingOutput = {
     groupSize: number;
@@ -186,7 +187,13 @@ const ProjTab = ({
         : userProjList;
 
     return (
-        <div className="flex h-auto bg-gradient-to-br from-gray-50 to-purple-50 rounded-lg overflow-hidden py-12">
+        <>
+            <LoadingOverlay 
+                isVisible={isPending}
+                message="Processing Team Groups..."
+                description="Applying new team group configuration, please wait..."
+            />
+            <div className="flex h-auto bg-gradient-to-br from-gray-50 to-purple-50 rounded-lg overflow-hidden py-12">
             {/* Left Sidebar */}
             <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
                 {/* Header */}
@@ -317,7 +324,14 @@ const ProjTab = ({
                         </div>
                         <div className="flex justify-end space-x-4">
                             <Button disabled={isPending} onClick={handleAccept}>
-                                {isPending ? "Accepting..." : "Accept Groups"}
+                                {isPending ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Accepting Groups...
+                                    </>
+                                ) : (
+                                    "Accept Groups"
+                                )}
                             </Button>
                             <Button
                                 variant="secondary"
@@ -386,6 +400,7 @@ const ProjTab = ({
                 </div>
             </div>
         </div>
+        </>
     );
 };
 

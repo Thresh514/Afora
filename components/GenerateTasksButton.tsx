@@ -30,6 +30,7 @@ import { useState, useTransition } from "react";
 import { generateTask } from "@/ai_scripts/generateTask";
 import { Loader2 } from "lucide-react";
 import { updateStagesTasks } from "@/actions/actions";
+import LoadingOverlay from "./LoadingOverlay";
 
 const GenerateTasksButton = ({
     orgId,
@@ -151,9 +152,23 @@ const GenerateTasksButton = ({
     };
     return (
         <>
+            <LoadingOverlay 
+                isVisible={isPending && !generatedOutput}
+                message="Generating Project Roadmap..."
+                description="Analyzing team structure and project requirements, please wait..."
+            />
             <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild>
-                    <Button>Generate Tasks</Button>
+                    <Button disabled={isPending}>
+                        {isPending ? (
+                            <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Generating...
+                            </>
+                        ) : (
+                            "Generate Tasks"
+                        )}
+                    </Button>
                 </DialogTrigger>
                 <DialogContent>
                     <DialogHeader>
@@ -263,7 +278,14 @@ const GenerateTasksButton = ({
                                 disabled={isPending}
                                 onClick={handleGenerateTasks}
                             >
-                                {isPending ? "Generating..." : "Generate"}
+                                {isPending ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Generating Roadmap...
+                                    </>
+                                ) : (
+                                    "Generate"
+                                )}
                             </Button>
                         )}
                     </DialogFooter>

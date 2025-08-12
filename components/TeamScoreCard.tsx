@@ -9,6 +9,7 @@ import { analyzeTeamCompatibility } from "@/ai_scripts/analyzeTeamCompatibility"
 import { appQuestions, projQuestions, TeamCompatibilityAnalysis, TeamScoreCardProps } from "@/types/types";
 import { getProjectMembersResponses, saveTeamAnalysis, getProjectTeamCharter } from "@/actions/actions";
 import { toast } from "sonner";
+import LoadingOverlay from "./LoadingOverlay";
 
 interface MemberData {
     email: string;
@@ -198,7 +199,13 @@ const TeamScoreCard = ({
     };
 
     return (
-        <div className="space-y-6">
+        <>
+            <LoadingOverlay 
+                isVisible={isPending}
+                message="Analyzing Team Compatibility..."
+                description="Evaluating team dynamics and collaboration potential, please wait..."
+            />
+            <div className="space-y-6">
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -224,12 +231,14 @@ const TeamScoreCard = ({
                                 disabled={isPending}
                                 size="lg"
                             >
-                                {isPending && (
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                {isPending ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Analyzing...
+                                    </>
+                                ) : (
+                                    "Start Team Analysis"
                                 )}
-                                {isPending
-                                    ? "Analyzing..."
-                                    : "Start Team Analysis"}
                             </Button>
                             <p className="text-sm text-muted-foreground mt-2">
                                 Current team member count: {members.length}
@@ -244,10 +253,14 @@ const TeamScoreCard = ({
                                     variant="outline"
                                     size="sm"
                                 >
-                                    {isPending && (
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    {isPending ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            Refreshing...
+                                        </>
+                                    ) : (
+                                        "Refresh Analysis"
                                     )}
-                                    Refresh Analysis
                                 </Button>
                             </div>
 
@@ -467,6 +480,7 @@ const TeamScoreCard = ({
                 </CardContent>
             </Card>
         </div>
+        </>
     );
 };
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useTransition } from "react";
 import { useUser } from "@clerk/nextjs";
 import { collection } from "firebase/firestore";
 import { useCollection } from "react-firebase-hooks/firestore";
@@ -8,7 +8,7 @@ import { db } from "@/firebase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import SubmissionCard from "@/components/SubmissionCard";
 import { Separator } from "@/components/ui/separator";
-import { MessageSquare, Edit3, Target, CheckCircle2 } from "lucide-react";
+import { MessageSquare, Edit3, Target, CheckCircle2, Loader2 } from "lucide-react";
 import CommentBox from "@/components/CommentBox";
 import { Comment, Task } from "@/types/types";
 import CommentView from "@/components/CommentView";
@@ -38,6 +38,7 @@ function TaskMainContent({
 }: TaskMainContentProps) {
     const { user } = useUser();
     const router = useRouter();
+    const [isPending, startTransition] = useTransition();
 
     const [completionPercentage, setCompletionPercentage] = useState([0]);
     const [tempCompletionPercentage, setTempCompletionPercentage] = useState([
@@ -303,33 +304,42 @@ function TaskMainContent({
                               // 未分配，显示"接受任务"按钮
                               <div className="">
                                 <Button
-                                  onClick={async () => {
+                                  onClick={() => {
                                     if (!user?.primaryEmailAddress?.emailAddress) {
                                       toast.error("Please login first");
                                       return;
                                     }
-                                    try {
-                                      const result = await assignTask(
-                                        projId,
-                                        stageId,
-                                        taskId,
-                                        user.primaryEmailAddress.emailAddress
-                                      );
-                                      if (result.success) {
-                                        toast.success("Task accepted!");
-                                        if (router.refresh) router.refresh();
-                                      } else {
-                                        toast.error(result.message || "Accept task failed");
+                                    startTransition(async () => {
+                                      try {
+                                        const result = await assignTask(
+                                          projId,
+                                          stageId,
+                                          taskId,
+                                          user.primaryEmailAddress.emailAddress
+                                        );
+                                        if (result.success) {
+                                          toast.success("Task accepted!");
+                                          if (router.refresh) router.refresh();
+                                        } else {
+                                          toast.error(result.message || "Accept task failed");
+                                        }
+                                      } catch {
+                                        toast.error("Accept task failed");
                                       }
-                                    } catch {
-                                      toast.error("Accept task failed");
-                                    }
+                                    });
                                   }}
-                                  disabled={taskLocked}
+                                  disabled={taskLocked || isPending}
                                   variant="default"
                                   className="w-full"
                                 >
-                                  Accept Task
+                                  {isPending ? (
+                                    <>
+                                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                      Accepting...
+                                    </>
+                                  ) : (
+                                    "Accept Task"
+                                  )}
                                 </Button>
                               </div>
                         ) : (

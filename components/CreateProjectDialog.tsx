@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Plus, Users } from "lucide-react";
+import { Plus, Users, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -21,6 +21,7 @@ import { db } from "@/firebase";
 import { useDocument } from "react-firebase-hooks/firestore";
 import { doc, getDoc } from "firebase/firestore";
 import { toast } from "sonner";
+import LoadingOverlay from "./LoadingOverlay";
 
 interface CreateProjectDialogProps {
     orgId: string;
@@ -83,7 +84,7 @@ export default function CreateProjectDialog({
                         console.log(`Member count to match: ${memberCountToMatch}, Admins: ${adminsCount}, Total will be: ${memberCountToMatch + adminsCount}`);
                         
                         if (memberCountToMatch === 0) {
-                            toast.success(`Team created with ${adminsCount} admin(s) only.`);
+                            toast.success("Team created successfully!");
                             setNewProjectTitle("");
                             setTeamSize("3");
                             setIsOpen(false);
@@ -92,7 +93,7 @@ export default function CreateProjectDialog({
                         }
                         
                         if (memberList.length === 0) {
-                            toast.success(`Team created with ${adminsCount} admin(s). No members available for matching.`);
+                            toast.success("Team created successfully!");
                             setNewProjectTitle("");
                             setTeamSize("3");
                             setIsOpen(false);
@@ -125,23 +126,23 @@ export default function CreateProjectDialog({
                                 if (selectedGroup && selectedGroup.length > 0) {
                                     // 更新项目成员（只添加匹配的普通成员，管理员已在admins字段中）
                                     await updateProjectMembers(projectId, selectedGroup);
-                                    toast.success(`Team created! ${adminsCount} admin(s) + ${selectedGroup.length} matched member(s) = ${adminsCount + selectedGroup.length} total members`);
+                                    toast.success("Team created successfully!");
                                 } else {
-                                    toast.success(`Team created with ${adminsCount} admin(s).`);
+                                    toast.success("Team created successfully!");
                                 }
                             } else {
-                                toast.success(`Team created with ${adminsCount} admin(s).`);
+                                toast.success("Team created successfully!");
                             }
                         } catch (parseError) {
                             console.error("Error parsing matching result:", parseError);
-                            toast.success(`Team created with ${adminsCount} admin(s).`);
+                            toast.success("Team created successfully!");
                         }
                     } catch (matchingError) {
                         console.error("Error in team matching:", matchingError);
                         toast.success("Team created successfully!");
                     }
                 } else {
-                    toast.success(`Team created with ${adminMembers.length} admin(s).`);
+                    toast.success("Team created successfully!");
                 }
 
                 setNewProjectTitle("");
@@ -169,7 +170,13 @@ export default function CreateProjectDialog({
     }
 
     return (
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <>
+            <LoadingOverlay 
+                isVisible={isPending}
+                message="Creating Team..."
+                description="Matching optimal team member combinations, please wait..."
+            />
+            <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
                 <Button
                     className={`w-full ${
@@ -237,10 +244,18 @@ export default function CreateProjectDialog({
                         onClick={handleCreateProject}
                         disabled={isPending || !newProjectTitle.trim()}
                     >
-                        {isPending ? "Creating..." : "Create Team"}
+                        {isPending ? (
+                            <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Creating Team...
+                            </>
+                        ) : (
+                            "Create Team"
+                        )}
                     </Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
+        </>
     );
 } 
