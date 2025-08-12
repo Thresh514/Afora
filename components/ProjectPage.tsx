@@ -146,6 +146,16 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
         doc(db, "projects", projId),
     );
 
+    // 当teamCharterData加载完成后，设置responses的初始值
+    useEffect(() => {
+        if (teamCharterData && !loading && !error) {
+            const savedResponses = teamCharterData.data()?.teamCharterResponse || [];
+            if (savedResponses.length > 0) {
+                setResponses(savedResponses);
+            }
+        }
+    }, [teamCharterData, loading, error]);
+
     const stages: Stage[] = useMemo(() => {
         return (
             stagesData?.docs
@@ -197,11 +207,11 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                 if (!teamCharterData || loading || error) return;
                 await setTeamCharter(projId, responses);
                 toast.success("Team Charter saved successfully!");
+                setIsOpen(false); // 只在保存成功时关闭对话框
             } catch (e) {
                 console.log(e);
                 toast.error("Failed to save Team Charter.");
             }
-            setIsOpen(false);
         });
 
     const handleEditSave = () => {

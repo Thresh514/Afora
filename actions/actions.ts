@@ -2340,14 +2340,21 @@ export async function autoAssignMembersToProjects(orgId: string, teamSize?: numb
                 if (userDoc.exists) {
                     const userData = userDoc.data();
                     
-                    // Get user's platform survey response data
-                    const onboardingSurveyResponses = userData?.onboardingSurveyResponse || [];
+                    // 检查用户是否允许参与匹配
+                    const allowMatching = userData?.allowMatching !== false; // 默认true，除非明确设置为false
                     
-                    memberSurveyData.push({
-                        email: memberEmail,
-                        name: userData?.fullName || memberEmail,
-                        onboardingSurveyResponses: onboardingSurveyResponses,
-                    });
+                    if (allowMatching) {
+                        // Get user's platform survey response data
+                        const onboardingSurveyResponses = userData?.onboardingSurveyResponse || [];
+                        
+                        memberSurveyData.push({
+                            email: memberEmail,
+                            name: userData?.fullName || memberEmail,
+                            onboardingSurveyResponses: onboardingSurveyResponses,
+                        });
+                    } else {
+                        console.log(`User ${memberEmail} has opted out of matching`);
+                    }
                 }
             } catch (error) {
                 console.error(`Failed to get survey data for ${memberEmail}:`, error);
@@ -2369,11 +2376,14 @@ export async function autoAssignMembersToProjects(orgId: string, teamSize?: numb
         const projectsNeedingMembers = projects
             .map(project => {
                 const currentMembers = (project.members as string[]) || [];
+                const currentAdmins = ((project as any).admins as string[]) || [];
+                // 合并成员和管理员，确保管理员的技能也被考虑
+                const allCurrentMembers = [...new Set([...currentMembers, ...currentAdmins])];
                 const projectTeamSize = project.teamSize || teamSize || 3; // Use project config > passed parameter > default
-                const spotsAvailable = projectTeamSize - currentMembers.length;
+                const spotsAvailable = projectTeamSize - allCurrentMembers.length;
                 return {
                     ...project,
-                    currentMembers,
+                    currentMembers: allCurrentMembers, // 使用包含管理员的完整成员列表
                     projectTeamSize,
                     spotsAvailable
                 };
@@ -2489,9 +2499,13 @@ export async function autoAssignMembersToProjects(orgId: string, teamSize?: numb
                         const membersToAdd: string[] = bestGroup.slice(0, actualAllocationSize);
                         
                         if (membersToAdd.length > 0) {
-                            const updatedMembers = [...project.currentMembers, ...membersToAdd];
+                            // 获取当前项目的实际members和admins，只更新members字段
+                            const projectDoc = await adminDb.collection("projects").doc(project.id).get();
+                            const projectData = projectDoc.data();
+                            const currentMembers = (projectData?.members as string[]) || [];
+                            const updatedMembers = [...currentMembers, ...membersToAdd];
 
-                            // Update the project members
+                            // Update the project members (只更新普通成员，不影响管理员)
                             await adminDb.collection("projects").doc(project.id).update({
                                 members: updatedMembers,
                             });
@@ -3354,6 +3368,59 @@ export async function getTeamAnalysis(projId: string) {
         };
     } catch (error) {
         console.error("Error getting team analysis:", error);
+        return { success: false, message: (error as Error).message };
+    }
+}
+
+/**
+ * 更新用户匹配偏好设置
+ * 控制用户是否参与AI匹配算法
+ */
+export async function updateUserMatchingPreference(
+    allowMatching: boolean,
+) {
+    const { userId } = await auth();
+    if (!userId) {
+        throw new Error("Unauthorized");
+    }
+
+    try {
+        await adminDb.collection("users").doc(userId).set(
+            {
+                allowMatching: allowMatching,
+                matchingPreferenceUpdatedAt: new Date().toISOString(),
+            },
+            { merge: true },
+        );
+        return { success: true };
+    } catch (error) {
+        console.error("Error updating matching preference:", error);
+        return { success: false, message: (error as Error).message };
+    }
+}
+
+/**
+ * 获取用户匹配偏好设置
+ */
+export async function getUserMatchingPreference() {
+    const { userId } = await auth();
+    if (!userId) {
+        throw new Error("Unauthorized");
+    }
+
+    try {
+        const userDoc = await adminDb.collection("users").doc(userId).get();
+        if (!userDoc.exists) {
+            return { success: true, allowMatching: true }; // 默认允许匹配
+        }
+        
+        const userData = userDoc.data();
+        return { 
+            success: true, 
+            allowMatching: userData?.allowMatching !== false // 默认true，除非明确设置为false
+        };
+    } catch (error) {
+        console.error("Error getting matching preference:", error);
         return { success: false, message: (error as Error).message };
     }
 }
