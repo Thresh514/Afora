@@ -29,10 +29,10 @@ export default function CronInitializer() {
  * 启动本地定时任务
  */
 function startLocalCron() {
-  const INTERVAL_MS = 5 * 60 * 1000; // 5 分钟
+  const INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 小时（1天）
   // const INTERVAL_MS = 30 * 1000; // 测试用：30 秒
   
-  console.log(`⏰ 设置定时任务：每 ${INTERVAL_MS / 1000 / 60} 分钟执行一次`);
+  console.log(`⏰ 设置定时任务：每 ${INTERVAL_MS / 1000 / 60 / 60 / 24} 天执行一次`);
   
   // 立即执行一次
   executeCronTask();
