@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { updateUserMatchingPreference, getUserMatchingPreference } from "@/actions/actions";
 import { db } from "@/firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
-import { useState, useTransition, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -32,7 +32,6 @@ type ProfileInputs = {
 
 function SettingPage() {
     const { user } = useUser();
-    const [isPending, startTransition] = useTransition();
     const [allowMatching, setAllowMatching] = useState<boolean>(true);
     const [matchingLoading, setMatchingLoading] = useState<boolean>(true);
     const [allowTaskAssignment, setAllowTaskAssignment] = useState<boolean>(true);

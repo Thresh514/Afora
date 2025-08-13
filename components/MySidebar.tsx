@@ -3,10 +3,10 @@
 import { Settings, Mail, Calendar } from "lucide-react";
 import { useCollection } from "react-firebase-hooks/firestore";
 import { useUser } from "@clerk/nextjs";
-import { collection, DocumentData, query, where } from "firebase/firestore";
+import { collection, DocumentData, QuerySnapshot } from "firebase/firestore";
 import { db } from "@/firebase";
 import { batchInQueryForHooks } from "@/lib/batchQuery";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
     Sidebar,
@@ -45,7 +45,7 @@ function MySidebar() {
     const [orgMap, setOrgMap] = useState<Map<string, string>>(new Map());
 
     // 使用自定义状态来处理批量查询，避免 Firebase IN 查询超过30个值的限制
-    const [value, setValue] = useState<any>(null);
+    const [value, setValue] = useState<QuerySnapshot<DocumentData> | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<Error | null>(null);
 
