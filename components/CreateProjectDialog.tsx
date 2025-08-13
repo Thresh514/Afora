@@ -33,7 +33,6 @@ interface CreateProjectDialogProps {
 export default function CreateProjectDialog({
     orgId,
     totalProjects,
-    userRole,
     onProjectCreated,
 }: CreateProjectDialogProps) {
     const [isOpen, setIsOpen] = useState(false);

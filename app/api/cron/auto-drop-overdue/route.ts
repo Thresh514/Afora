@@ -30,7 +30,6 @@ export async function POST(request: NextRequest) {
     console.log('✅ Cron job completed:', result);
     
     return NextResponse.json({
-      success: true,
       ...result,
       timestamp: new Date().toISOString()
     });

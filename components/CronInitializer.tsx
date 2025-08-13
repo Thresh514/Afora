@@ -42,7 +42,7 @@ function startLocalCron() {
   
   // 将 interval 存储到 window 对象，以便其他地方可以清理
   if (typeof window !== 'undefined') {
-    (window as any).cronInterval = interval;
+    (window as Window & { cronInterval?: NodeJS.Timeout }).cronInterval = interval;
   }
 }
 

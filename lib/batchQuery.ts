@@ -5,6 +5,7 @@ import {
     DocumentData, 
     QuerySnapshot,
     CollectionReference,
+    QueryConstraint,
 } from 'firebase/firestore';
 
 /**
@@ -21,7 +22,7 @@ export async function batchInQuery(
     collectionRef: CollectionReference<DocumentData>,
     fieldPath: string,
     values: string[],
-    additionalConstraints: any[] = []
+    additionalConstraints: QueryConstraint[] = []
 ): Promise<QuerySnapshot<DocumentData>> {
     const BATCH_SIZE = 30;
     const filteredValues = values.filter(Boolean); // 过滤掉空值
@@ -74,7 +75,7 @@ export async function batchInQuery(
         size: allDocs.length,
         metadata: results[0]?.metadata || { hasPendingWrites: false, fromCache: false },
         query: results[0]?.query,
-        forEach: (callback: (doc: any) => void) => {
+        forEach: (callback: (doc: DocumentData) => void) => {
             allDocs.forEach(callback);
         },
         // 添加缺失的方法
@@ -99,7 +100,7 @@ export async function batchInQueryForHooks(
     collectionRef: CollectionReference<DocumentData>,
     fieldPath: string,
     values: string[],
-    additionalConstraints: any[] = []
+    additionalConstraints: QueryConstraint[] = []
 ): Promise<QuerySnapshot<DocumentData> | null> {
     try {
         if (!values || values.length === 0) {

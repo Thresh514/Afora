@@ -315,7 +315,7 @@ function TaskMainContent({
                                           projId,
                                           stageId,
                                           taskId,
-                                          user.primaryEmailAddress.emailAddress
+                                          user.primaryEmailAddress?.emailAddress || ""
                                         );
                                         if (result.success) {
                                           toast.success("Task accepted!");

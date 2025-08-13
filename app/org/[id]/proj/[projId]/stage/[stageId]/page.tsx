@@ -89,7 +89,6 @@ function StagePage() {
         );
     }, [tasksData]);
 
-    const [isOpen, setIsOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [bountyBoardOpen, setBountyBoardOpen] = useState(false);
 
@@ -162,7 +161,7 @@ function StagePage() {
             toast.success("Task created successfully!");
         } catch (error) {
             console.error("Error creating task:", error);
-            toast.error("Failed to create task: " + error.message);
+            toast.error("Failed to create task: " + (error as Error).message);
         }
     };
 

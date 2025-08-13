@@ -9,9 +9,8 @@ import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/c
 import { Separator } from "@/components/ui/separator";
 import InviteUserToOrganization from "./InviteUserToOrganization";
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { collection, query, where } from "firebase/firestore";
+import { collection, QuerySnapshot, DocumentData } from "firebase/firestore";
 import { db } from "@/firebase";
-import { useCollection } from "react-firebase-hooks/firestore";
 import { batchInQueryForHooks } from "@/lib/batchQuery";
 import {Users, Settings, UserPlus, Shuffle, FolderOpen, UserCheck, ArrowRight, Crown, Building2} from "lucide-react";
 import { toast } from "sonner";
@@ -30,6 +29,7 @@ interface MemberListProps {
                 projId?: string;
                 title?: string;
                 members?: string[];
+                admins?: string[];
                 teamSize?: number;
             };
         }>;
@@ -58,7 +58,7 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
     const [defaultTeamSize, setDefaultTeamSize] = useState(3);
 
     // 使用自定义状态来处理批量查询，避免 Firebase IN 查询超过30个值的限制
-    const [results, setResults] = useState<any>(null);
+    const [results, setResults] = useState<QuerySnapshot<DocumentData> | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<Error | null>(null);
 
@@ -104,7 +104,7 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
             const membersPfpData: { [email: string]: string } = {};
 
             if (results) {
-                results.docs.forEach((doc: any) => {
+                results.docs.forEach((doc) => {
                     const data = doc.data();
                     if (admins.includes(doc.id)) {
                         adminsPfpData[doc.id] = data.userImage;
@@ -126,7 +126,7 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
         }
 
         return projects.map((proj): ProjectTeam => {
-            const projectData = proj.data() as any;
+            const projectData = proj.data();
             return {
                 projectId: projectData.projId || proj.id,
                 projectTitle: projectData.title || "Untitled Project",
