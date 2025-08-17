@@ -6,10 +6,10 @@ import { batchInQuery } from "@/lib/batchQuery";
 import React, { useEffect, useState, useTransition } from "react";
 import { useCollection, useDocument } from "react-firebase-hooks/firestore";
 import { Button } from "./ui/button";
-import { updateProjects } from "@/actions/actions";
+import { updateProjects, autoAssignMembersToProjects } from "@/actions/actions";
 import { toast } from "sonner";
 import ProjectCard from "./ProjectCard";
-import {Folder, Users, Briefcase, Loader2} from "lucide-react";
+import {Folder, Users, Briefcase, Loader2, Shuffle} from "lucide-react";
 import { Badge } from "./ui/badge";
 import { Card, CardContent } from "./ui/card";
 import { Separator } from "./ui/separator";
@@ -36,6 +36,7 @@ const ProjTab = ({
     const [output, setOutput] = useState("");
     const [parsedOutput, setParsedOutput] = useState<MatchingOutput | null>(null);
     const [projectTasks, setProjectTasks] = useState<{[key: string]: Task[]}>({});
+    const [defaultTeamSize] = useState(3); // Default team size for smart matching
 
     const adminQ = query(collection(db, "projects"), where("orgId", "==", orgId));
     const [allProjects] = useCollection(adminQ);
@@ -173,6 +174,31 @@ const ProjTab = ({
         setRefreshTrigger((prev: number) => prev + 1);
     };
 
+    const handleSmartMatching = async () => {
+        if (userRole !== "admin") {
+            toast.error("Only admins can use smart matching");
+            return;
+        }
+        
+        startTransition(async () => {
+            try {
+                console.log("🚀 Starting smart assignment with defaultTeamSize:", defaultTeamSize);
+                const result = await autoAssignMembersToProjects(orgId, defaultTeamSize);
+                console.log("📊 Assignment result:", result);
+
+                if (result.success) {
+                    toast.success(result.message);
+                    setRefreshTrigger((prev: number) => prev + 1);
+                } else {
+                    toast.error(result.message || "Failed to auto-assign members");
+                }
+            } catch (error) {
+                console.error("Error auto-assigning members:", error);
+                toast.error("Failed to auto-assign members");
+            }
+        });
+    };
+
     const totalProjects = allProjects?.docs.length || 0;
     const activeProjects = userRole === "admin" 
         ? (allProjects?.docs || []).filter(proj => (proj.data() as Project).members?.length > 0).length
@@ -287,6 +313,19 @@ const ProjTab = ({
                             userRole={userRole as "admin" | "member"}
                             onProjectCreated={handleProjectCreated} 
                         />
+                        
+                        {/* Smart Matching - Only for admins */}
+                        {userRole === "admin" && (
+                            <Button
+                                onClick={handleSmartMatching}
+                                disabled={isPending || (orgData ? (orgData.members?.length || 0) === 0 : true)}
+                                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
+                                size="sm"
+                            >
+                                <Shuffle className="h-4 w-4 mr-2" />
+                                {isPending ? "Processing..." : "Smart Matching"}
+                            </Button>
+                        )}
                     </div>
                 </div>
             </div>

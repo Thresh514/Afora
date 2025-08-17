@@ -2127,6 +2127,82 @@ export async function updateProjectTeamSize(projId: string, teamSize: number) {
     }
 }
 
+// delete project
+export async function deleteProject(projId: string) {
+    const { userId } = await auth();
+    if (!userId) {
+        throw new Error("Unauthorized");
+    }
+
+    try {
+        const projectRef = adminDb.collection("projects").doc(projId);
+        const projectDoc = await projectRef.get();
+
+        if (!projectDoc.exists) {
+            throw new Error("Project not found");
+        }
+
+        const projectData = projectDoc.data();
+        const orgId = projectData?.orgId;
+
+        const batch = adminDb.batch();
+
+        // Delete all stages and their tasks
+        const stagesSnapshot = await projectRef.collection("stages").get();
+        for (const stageDoc of stagesSnapshot.docs) {
+            const tasksSnapshot = await stageDoc.ref.collection("tasks").get();
+            for (const taskDoc of tasksSnapshot.docs) {
+                batch.delete(taskDoc.ref);
+            }
+            batch.delete(stageDoc.ref);
+        }
+
+        // Delete the project document
+        batch.delete(projectRef);
+
+        // Remove project reference from organization
+        if (orgId) {
+            const orgProjsSnapshot = await adminDb
+                .collection("organizations")
+                .doc(orgId)
+                .collection("projs")
+                .where("projId", "==", projId)
+                .get();
+            
+            orgProjsSnapshot.docs.forEach((doc) => {
+                batch.delete(doc.ref);
+            });
+        }
+
+        // Remove project references from all users
+        const allMembers = [...(projectData?.members || []), ...(projectData?.admins || [])];
+        const uniqueMembers = [...new Set(allMembers)];
+        
+        for (const memberEmail of uniqueMembers) {
+            try {
+                const userProjRef = adminDb
+                    .collection("users")
+                    .doc(memberEmail)
+                    .collection("projs")
+                    .doc(projId);
+                batch.delete(userProjRef);
+            } catch (error) {
+                console.warn(`Failed to remove project reference for user ${memberEmail}:`, error);
+            }
+        }
+
+        await batch.commit();
+
+        return {
+            success: true,
+            message: "Project deleted successfully",
+        };
+    } catch (error) {
+        console.error("Error deleting project:", error);
+        return { success: false, message: (error as Error).message };
+    }
+}
+
 // Backtracking algorithm to find optimal allocation strategy
 function findOptimalAllocationWithBacktracking(projects: any[], availableMembers: number) {
     // Generate all possible allocation scenarios

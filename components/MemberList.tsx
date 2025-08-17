@@ -12,9 +12,9 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { collection, QuerySnapshot, DocumentData } from "firebase/firestore";
 import { db } from "@/firebase";
 import { batchInQueryForHooks } from "@/lib/batchQuery";
-import {Users, Settings, UserPlus, Shuffle, FolderOpen, UserCheck, ArrowRight, Crown, Building2} from "lucide-react";
+import {Users, Settings, UserPlus, FolderOpen, UserCheck, ArrowRight, Crown, Building2} from "lucide-react";
 import { toast } from "sonner";
-import {updateProjectMembers, removeProjectMember, autoAssignMembersToProjects, updateProjectTeamSize} from "@/actions/actions";
+import {updateProjectMembers, removeProjectMember, updateProjectTeamSize} from "@/actions/actions";
 import Image from "next/image";
 
 interface MemberListProps {
@@ -179,23 +179,7 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
 
     const unassignedMembers = calculatedUnassignedMembers;
 
-    const handleAutoAssign = useCallback(async () => {
-        try {
-            console.log("🚀 Starting smart assignment with defaultTeamSize:", defaultTeamSize);
-            const result = await autoAssignMembersToProjects(orgId, defaultTeamSize);
-            console.log("📊 Assignment result:", result);
 
-            if (result.success) {
-                toast.success(result.message);
-                // 不需要刷新页面，数据会自动更新
-            } else {
-                toast.error(result.message || "Failed to auto-assign members");
-            }
-        } catch (error) {
-            console.error("Error auto-assigning members:", error);
-            toast.error("Failed to auto-assign members");
-        }
-    }, [orgId, defaultTeamSize]);
 
     const handleMemberMove = useCallback(
         async (
@@ -731,82 +715,6 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
                             )}
                         </div>
                     )}
-                </div>
-
-                {/* Actions */}
-                <div className="p-4 border-t border-gray-200 bg-gray-50">
-                    <div className="space-y-2">
-                        {userRole === "admin" && (
-                            <>
-                                <Dialog
-                                    open={isTeamSettingsOpen}
-                                    onOpenChange={setIsTeamSettingsOpen}
-                                >
-                                    <DialogTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            className="w-full"
-                                            size="sm"
-                                        >
-                                            <Settings className="h-4 w-4 mr-2" />
-                                            Team Settings
-                                        </Button>
-                                    </DialogTrigger>
-                                    <DialogContent>
-                                        <DialogHeader>
-                                            <DialogTitle>
-                                                Team Settings
-                                            </DialogTitle>
-                                            <DialogDescription>
-                                                Configure team sizes and
-                                                assignment settings.
-                                            </DialogDescription>
-                                        </DialogHeader>
-                                        <div className="grid gap-4 py-4">
-                                            <div className="flex flex-col gap-2">
-                                                <label className="text-sm font-medium">
-                                                    Default Team Size
-                                                </label>
-                                                <Input
-                                                    type="number"
-                                                    min="1"
-                                                    max="20"
-                                                    value={defaultTeamSize}
-                                                    onChange={(e) =>
-                                                        setDefaultTeamSize(
-                                                            parseInt(
-                                                                e.target.value,
-                                                            ) || 3,
-                                                        )
-                                                    }
-                                                />
-                                            </div>
-                                        </div>
-                                        <DialogFooter>
-                                            <Button
-                                                onClick={() =>
-                                                    setIsTeamSettingsOpen(false)
-                                                }
-                                            >
-                                                Close
-                                            </Button>
-                                        </DialogFooter>
-                                    </DialogContent>
-                                </Dialog>
-
-                                <Button
-                                    onClick={handleAutoAssign}
-                                    disabled={unassignedMembers.length === 0}
-                                    className="w-full"
-                                    size="sm"
-                                >
-                                    <Shuffle className="h-4 w-4 mr-2" />
-                                    Smart Matching
-                                </Button>
-                            </>
-                        )}
-                        
-                    </div>
                 </div>
             </div>
 
