@@ -2338,6 +2338,293 @@ function findOptimalAllocation(projects: any[], availableMembers: number) {
     return [...canFillCompletely, ...cannotFillCompletely];
 }
 
+// Preview smart assignment results without actually assigning
+export async function previewSmartAssignment(orgId: string, teamSize?: number) {
+    const { userId } = await auth();
+    if (!userId) {
+        throw new Error("Unauthorized");
+    }
+
+    try {
+        // Get the organization information
+        const orgDoc = await adminDb
+            .collection("organizations")
+            .doc(orgId)
+            .get();
+        if (!orgDoc.exists) {
+            throw new Error("Organization not found");
+        }
+
+        const orgData = orgDoc.data();
+        const allMembers = [
+            ...(orgData?.members || []),
+            ...(orgData?.admins || []),
+        ];
+
+        // Get all the projects in the organization
+        const projectsSnapshot = await adminDb
+            .collection("projects")
+            .where("orgId", "==", orgId)
+            .get();
+
+        if (projectsSnapshot.empty) {
+            throw new Error("No projects found in this organization");
+        }
+
+        const projects = projectsSnapshot.docs.map((doc) => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                members: data.members || [],
+                title: data.title || "",
+                teamSize: data.teamSize || teamSize,
+                admins: data.admins || [],
+                ...data,
+            };
+        });
+
+        // Calculate the current assigned members
+        const assignedMembers = new Set();
+        projects.forEach((project) => {
+            const projectMembers = (project.members as string[]) || [];
+            projectMembers.forEach((member: string) =>
+                assignedMembers.add(member),
+            );
+        });
+
+        // Get the unassigned members
+        const unassignedMembers = allMembers.filter(
+            (member) => !assignedMembers.has(member),
+        );
+
+        if (unassignedMembers.length === 0) {
+            return {
+                success: false,
+                message: "No unassigned members to assign",
+                preview: []
+            };
+        }
+
+        // Get member survey data for unassigned members
+        const memberSurveyData: any[] = [];
+        for (const member of unassignedMembers) {
+            try {
+                const memberDoc = await adminDb
+                    .collection("users")
+                    .doc(member)
+                    .get();
+                if (memberDoc.exists) {
+                    const memberData = memberDoc.data();
+                    memberSurveyData.push({
+                        email: member,
+                        skills: memberData?.skills || [],
+                        workStyles: memberData?.workStyles || [],
+                        goals: memberData?.goals || [],
+                        availability: memberData?.availability || [],
+                    });
+                }
+            } catch (error) {
+                console.error(`Error fetching data for member ${member}:`, error);
+                memberSurveyData.push({
+                    email: member,
+                    skills: [],
+                    workStyles: [],
+                    goals: [],
+                    availability: [],
+                });
+            }
+        }
+
+        // Calculate project requirements
+        const projectsNeedingMembers = projects
+            .map(project => {
+                const currentMembers = (project.members as string[]) || [];
+                const currentAdmins = ((project as any).admins as string[]) || [];
+                const allCurrentMembers = [...new Set([...currentMembers, ...currentAdmins])];
+                const projectTeamSize = project.teamSize || teamSize || 3;
+                const spotsAvailable = projectTeamSize - allCurrentMembers.length;
+                return {
+                    ...project,
+                    currentMembers: allCurrentMembers,
+                    projectTeamSize,
+                    spotsAvailable
+                };
+            })
+            .filter(project => project.spotsAvailable > 0);
+
+        if (projectsNeedingMembers.length === 0) {
+            return {
+                success: false,
+                message: "All projects are already full",
+                preview: []
+            };
+        }
+
+        const totalSpotsNeeded = projectsNeedingMembers.reduce((sum, project) => sum + project.spotsAvailable, 0);
+        const availableMembers = memberSurveyData.length;
+        
+        // Optimal allocation strategy: prioritize larger projects
+        let optimalAllocation;
+        if (availableMembers >= totalSpotsNeeded) {
+            // If enough members, all projects can be filled completely - sort by project size descending
+            optimalAllocation = projectsNeedingMembers.sort((a, b) => b.spotsAvailable - a.spotsAvailable);
+        } else {
+            // Not enough members, use backtracking algorithm for optimal allocation
+            optimalAllocation = findOptimalAllocationWithBacktracking(projectsNeedingMembers, availableMembers);
+        }
+
+        // Run AI matching for each project to get actual smart assignments
+        const preview = [];
+        let remainingMembers = [...memberSurveyData]; // Create a copy
+
+        for (const project of optimalAllocation) {
+            if (project.spotsAvailable > 0 && remainingMembers.length > 0) {
+                try {
+                    // Get existing project members' information
+                    const existingMembersData = [];
+                    for (const memberEmail of project.currentMembers) {
+                        try {
+                            const userDoc = await adminDb
+                                .collection("users")
+                                .doc(memberEmail)
+                                .get();
+                            
+                            if (userDoc.exists) {
+                                const userData = userDoc.data();
+                                const onboardingSurveyResponses = userData?.onboardingSurveyResponse || [];
+                                existingMembersData.push({
+                                    email: memberEmail,
+                                    name: userData?.fullName || memberEmail,
+                                    onboardingSurveyResponses: onboardingSurveyResponses,
+                                });
+                            }
+                        } catch (error) {
+                            console.error(`Failed to get data for existing member ${memberEmail}:`, error);
+                        }
+                    }
+
+                    // Prepare AI matching input data
+                    const matchingInput: string[] = remainingMembers.map(member => {
+                        const responses = member.onboardingSurveyResponses || [];
+                        return `User: ${member.email}, Name: ${member.name}, Survey Responses: ${JSON.stringify(responses)}`;
+                    });
+                    
+                    // Prepare existing members information
+                    const existingMembersInfo = existingMembersData.map(member => {
+                        const responses = member.onboardingSurveyResponses || [];
+                        return `Existing Member: ${member.email}, Name: ${member.name}, Survey Responses: ${JSON.stringify(responses)}`;
+                    });
+
+                    // Calculate actual allocation size
+                    const plannedAllocation = (project as any).plannedAllocation || project.spotsAvailable;
+                    const actualAllocationSize = Math.min(plannedAllocation, remainingMembers.length);
+
+                    // Call AI matching API
+                    let matchingResultRaw;
+                    if (existingMembersInfo.length > 0) {
+                        const matchingModule = await import("@/ai_scripts/matching");
+                        const { matchingWithExistingTeam } = matchingModule as any;
+                        matchingResultRaw = await matchingWithExistingTeam(
+                            actualAllocationSize,
+                            ["What is your primary area of expertise and main professional skills?", 
+                             "What industries or fields are you currently most interested in some levels of skills and experiences?", 
+                             "What future roles or job titles are you aiming for?"],
+                            matchingInput,
+                            existingMembersInfo
+                        );
+                    } else {
+                        const { matching } = await import("@/ai_scripts/matching");
+                        matchingResultRaw = await matching(
+                            actualAllocationSize,
+                            ["What is your primary area of expertise and main professional skills?", 
+                             "What industries or fields are you currently most interested in some levels of skills and experiences?", 
+                             "What future roles or job titles are you aiming for?"],
+                            matchingInput
+                        );
+                    }
+                    
+                    // Parse JSON string
+                    let matchingResult;
+                    try {
+                        matchingResult = typeof matchingResultRaw === 'string' 
+                            ? JSON.parse(matchingResultRaw) 
+                            : matchingResultRaw;
+                    } catch (parseError) {
+                        console.error(`Failed to parse AI matching result:`, parseError);
+                        throw new Error("Failed to parse AI matching result");
+                    }
+
+                    // Check AI matching result
+                    let groups = null;
+                    if (matchingResult?.success && matchingResult.data?.groups) {
+                        groups = matchingResult.data.groups;
+                    } else if (matchingResult?.groups) {
+                        groups = matchingResult.groups;
+                    } else if (Array.isArray(matchingResult)) {
+                        groups = matchingResult;
+                    }
+
+                    let assignedEmails: string[] = [];
+                    if (groups && groups.length > 0) {
+                        // Take the first best matched group
+                        const bestGroup = groups[0];
+                        assignedEmails = Array.isArray(bestGroup) ? bestGroup : bestGroup.members || [];
+                        
+                        // Remove assigned members from remaining pool
+                        remainingMembers = remainingMembers.filter(member => 
+                            !assignedEmails.includes(member.email)
+                        );
+                    }
+
+                    preview.push({
+                        projectId: project.id,
+                        projectTitle: project.title,
+                        currentMembers: project.currentMembers,
+                        spotsAvailable: project.spotsAvailable,
+                        proposedNewMembers: assignedEmails,
+                        aiMatchingScore: matchingResult?.score || null,
+                        matchingReasoning: matchingResult?.reasoning || "AI matching completed"
+                    });
+
+                } catch (error) {
+                    console.error(`AI matching failed for project ${project.id}:`, error);
+                    // Fallback to simple assignment for this project
+                    const fallbackMembers = remainingMembers
+                        .slice(0, Math.min(project.spotsAvailable, remainingMembers.length))
+                        .map(member => member.email);
+                    
+                    remainingMembers = remainingMembers.filter(member => 
+                        !fallbackMembers.includes(member.email)
+                    );
+
+                    preview.push({
+                        projectId: project.id,
+                        projectTitle: project.title,
+                        currentMembers: project.currentMembers,
+                        spotsAvailable: project.spotsAvailable,
+                        proposedNewMembers: fallbackMembers,
+                        aiMatchingScore: null,
+                        matchingReasoning: "Fallback assignment (AI matching failed)"
+                    });
+                }
+            }
+        }
+
+        return {
+            success: true,
+            message: `Smart matching completed: ${memberSurveyData.length - remainingMembers.length} members assigned to ${preview.length} projects`,
+            preview,
+            totalUnassigned: memberSurveyData.length,
+            totalProjectsNeedingMembers: projectsNeedingMembers.length,
+            totalAssigned: memberSurveyData.length - remainingMembers.length,
+            remainingUnassigned: remainingMembers.length
+        };
+    } catch (error) {
+        console.error("Error previewing smart assignment:", error);
+        return { success: false, message: (error as Error).message, preview: [] };
+    }
+}
+
 // Smart assign organization members to projects using AI matching
 export async function autoAssignMembersToProjects(orgId: string, teamSize?: number) {
     const { userId } = await auth();
