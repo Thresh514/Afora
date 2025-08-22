@@ -16,6 +16,7 @@ import { Card, CardContent } from "./ui/card";
 import { Separator } from "./ui/separator";
 import ErrorDisplay, { ErrorInfo, showErrorToast } from "./ErrorDisplay";
 import CreateProjectDialog from "./CreateProjectDialog";
+import AddNewTeamDialog from "./AddNewTeamDialog";
 import LoadingOverlay from "./LoadingOverlay";
 import {
     AlertDialog,
@@ -604,12 +605,12 @@ const ProjTab = ({
                 {/* Actions */}
                 <div className="p-4 border-t border-gray-200 bg-gray-50">
                     <div className="space-y-2">
-                        {/* All team members can create projects */}
-                        <CreateProjectDialog 
-                            orgId={orgId} 
+                        
+                        {/* Add New Team - Direct invitation without AI matching */}
+                        <AddNewTeamDialog 
+                            orgId={orgId}
+                            onTeamCreated={handleProjectCreated}
                             totalProjects={totalProjects}
-                            userRole={userRole as "admin" | "member"}
-                            onProjectCreated={handleProjectCreated} 
                         />
                         
                         {/* Smart Matching - Only for admins */}

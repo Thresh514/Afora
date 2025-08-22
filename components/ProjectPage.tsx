@@ -31,6 +31,7 @@ import { Badge } from "@/components/ui/badge";
 import ErrorDisplay, { ErrorInfo, showErrorToast } from "./ErrorDisplay";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import TeamScoreCard from "@/components/TeamScoreCard";
+import ProjOnboarding from "./ProjOnboarding";
 
 interface ProjectStats {
     totalTasks: number;
@@ -337,6 +338,15 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
 
     return (
         <div className="flex flex-col w-full h-full bg-gray-100">
+            {/* ProjOnboarding Survey Check */}
+            <ProjOnboarding 
+                orgId={id} 
+                projId={projId}
+                onDismiss={() => {
+                    // Survey dismissed, continue with normal page
+                }}
+            />
+            
             {/* Header Section - similar to organization page background image style */}
             <div className="relative">
                 <div
