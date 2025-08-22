@@ -105,7 +105,7 @@ const TaskManagement = ({
                                     >
                                         <CardHeader className="pb-3">
                                             <div className="flex items-start justify-between">
-                                                <div className="flex items-start gap-3 flex-1">
+                                                <div className="flex items-start gap-3 flex-1 container">
                                                     <div
                                                         className={`mt-1 ${task.isCompleted ? "text-green-500" : "text-yellow-500"}`}
                                                     >

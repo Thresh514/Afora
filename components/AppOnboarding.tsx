@@ -19,6 +19,7 @@ import { db } from "@/firebase";
 import { useDocument } from "react-firebase-hooks/firestore";
 import { doc } from "firebase/firestore";
 import { useUser } from "@clerk/nextjs";
+import { Input } from "./ui/input";
 
 const AppOnboarding = () => {
     const [selectedTags, setSelectedTags] = useState<string[][]>([]);
@@ -79,6 +80,7 @@ const AppOnboarding = () => {
     const [userData, loading, error] = useDocument(
         userEmail ? doc(db, "users", userEmail) : null,
     );
+    const [searchQuery, setSearchQuery] = useState<string>("");
     if (loading) return;
     if (error) return <div> Onboarding error: {error.message}</div>;
     if (!userData || userData.data()?.onboardingSurveyResponse) {
@@ -113,10 +115,21 @@ const AppOnboarding = () => {
                             <AlertDialogTitle>
                                 {appHeader[page - 1]}
                             </AlertDialogTitle>
+
+                            <Input
+                                placeholder="Search industries..."
+                                className="flex-grow"
+                                value={searchQuery || ""}
+                                onChange={(e) =>
+                                    setSearchQuery(e.target.value)
+                                }
+                            />
+
+
                             <p>{`Q${page}: ${appQuestions[page - 1]}`}</p>
 
                             <div className="flex flex-wrap gap-2 max-h-64 overflow-y-auto">
-                                {appTags.map((tag) => (
+                                {appTags.filter(v => v.toLowerCase().indexOf(searchQuery.toLowerCase()) !== -1).map((tag) => (
                                     <Button
                                         key={tag}
                                         variant={
