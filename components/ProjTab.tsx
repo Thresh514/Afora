@@ -6,16 +6,15 @@ import { batchInQuery } from "@/lib/batchQuery";
 import React, { useEffect, useState, useTransition } from "react";
 import { useCollection, useDocument } from "react-firebase-hooks/firestore";
 import { Button } from "./ui/button";
-import { updateProjects, autoAssignMembersToProjects, previewSmartAssignment, removeProjectMember, addProjectMember } from "@/actions/actions";
+import { updateProjects, previewSmartAssignment, removeProjectMember, addProjectMember } from "@/actions/actions";
 import { toast } from "sonner";
 import ProjectCard from "./ProjectCard";
-import {Folder, Users, Briefcase, Loader2, Shuffle, ArrowRightLeft, X} from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import {Folder, Users, Briefcase, Loader2, Shuffle, ArrowRightLeft} from "lucide-react";
+import { motion } from "framer-motion";
 import { Badge } from "./ui/badge";
 import { Card, CardContent } from "./ui/card";
 import { Separator } from "./ui/separator";
 import ErrorDisplay, { ErrorInfo, showErrorToast } from "./ErrorDisplay";
-import CreateProjectDialog from "./CreateProjectDialog";
 import AddNewTeamDialog from "./AddNewTeamDialog";
 import LoadingOverlay from "./LoadingOverlay";
 import {
@@ -51,11 +50,27 @@ const ProjTab = ({
     
     // Smart Matching Preview Dialog State
     const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false);
-    const [previewData, setPreviewData] = useState<any>(null);
+    const [previewData, setPreviewData] = useState<{
+        success: boolean;
+        message: string;
+        preview: Array<{
+            projectId: string;
+            projectTitle: string;
+            currentMembers: string[];
+            spotsAvailable: number;
+            proposedNewMembers: string[];
+            aiMatchingScore: number | null;
+            matchingReasoning: string;
+        }>;
+        totalUnassigned?: number;
+        totalProjectsNeedingMembers?: number;
+        totalAssigned?: number;
+        remainingUnassigned?: number;
+    } | null>(null);
     const [isPreviewLoading, setIsPreviewLoading] = useState(false);
     
     // Member Transfer State (integrated with Smart Matching)
-    const [transferLoading, setTransferLoading] = useState(false);
+    const [transferLoading] = useState(false);
     const [draggedMember, setDraggedMember] = useState<{email: string, name: string, fromProject: string} | null>(null);
     const [dragOverProject, setDragOverProject] = useState<string | null>(null);
     
@@ -235,7 +250,7 @@ const ProjTab = ({
                 const errorInfo: ErrorInfo = {
                     type: "smart_matching",
                     message: result.message || "Failed to generate assignment preview",
-                    details: (result as any).debug ? JSON.stringify((result as any).debug, null, 2) : undefined,
+                    details: (result as { debug?: unknown }).debug ? JSON.stringify((result as { debug?: unknown }).debug, null, 2) : undefined,
                     timestamp: new Date(),
                     canRetry: true,
                     onRetry: handleSmartMatching,
@@ -399,106 +414,7 @@ const ProjTab = ({
         setDraggedMember(null);
     };
 
-    // This is the original function for direct database updates (used outside of preview dialog)
-    const handleMemberTransfer = async (memberEmail: string, fromProjectId: string, toProjectId: string) => {
-        setTransferLoading(true);
-        try {
-            // ... (keep original implementation for direct updates)
-            const targetProject = displayProjects.find(p => p.projId === toProjectId);
-            const isAlreadyInTarget = 
-                (targetProject?.members?.includes(memberEmail)) || 
-                (targetProject?.admins?.includes(memberEmail));
-            
-            if (isAlreadyInTarget) {
-                showErrorToast({
-                    type: "smart_matching",
-                    message: "Member is already in this project",
-                    canRetry: false
-                });
-                return;
-            }
 
-            const sourceProject = displayProjects.find(p => p.projId === fromProjectId);
-            const isAdminInSource = sourceProject?.admins?.includes(memberEmail);
-
-            if (fromProjectId === "unassigned") {
-                const isAlreadyAssigned = displayProjects.some(project => 
-                    project.members?.includes(memberEmail)
-                );
-                
-                if (isAlreadyAssigned) {
-                    showErrorToast({
-                        type: "smart_matching",
-                        message: "This member is already assigned to another project. Move them first.",
-                        canRetry: false
-                    });
-                    return;
-                }
-
-                const addResult = await addProjectMember(toProjectId, memberEmail, "member");
-                if (!addResult.success) {
-                    showErrorToast({
-                        type: "smart_matching",
-                        message: "Failed to add member to project",
-                        details: addResult.message,
-                        canRetry: true
-                    });
-                    return;
-                }
-            } else {
-                if (isAdminInSource) {
-                    const addResult = await addProjectMember(toProjectId, memberEmail, "admin");
-                    if (!addResult.success) {
-                        showErrorToast({
-                            type: "smart_matching",
-                            message: "Failed to add admin to project",
-                            details: addResult.message,
-                            canRetry: true
-                        });
-                        return;
-                    }
-                } else {
-                    const removeResult = await removeProjectMember(fromProjectId, memberEmail);
-                    if (!removeResult.success) {
-                        showErrorToast({
-                            type: "smart_matching",
-                            message: "Failed to remove member from source project",
-                            details: removeResult.message,
-                            canRetry: true
-                        });
-                        return;
-                    }
-
-                    const addResult = await addProjectMember(toProjectId, memberEmail, "member");
-                    if (!addResult.success) {
-                        await addProjectMember(fromProjectId, memberEmail, "member");
-                        showErrorToast({
-                            type: "smart_matching",
-                            message: "Failed to add member to destination project",
-                            details: addResult.message,
-                            canRetry: true
-                        });
-                        return;
-                    }
-                }
-            }
-
-            const actionType = isAdminInSource ? "copied" : "moved";
-            toast.success(`Member ${actionType} successfully!`);
-            setRefreshTrigger((prev: number) => prev + 1);
-            setDraggedMember(null);
-        } catch (error) {
-            console.error("Error transferring member:", error);
-            showErrorToast({
-                type: "smart_matching",
-                message: "Failed to transfer member",
-                details: error instanceof Error ? error.message : String(error),
-                canRetry: true
-            });
-        } finally {
-            setTransferLoading(false);
-        }
-    };
 
     const totalProjects = allProjects?.docs.length || 0;
     const activeProjects = userRole === "admin" 
@@ -796,7 +712,7 @@ const ProjTab = ({
                     </AlertDialogTitle>
                     <AlertDialogDescription>
                         Review the AI-suggested assignments and fine-tune by dragging members between projects. 
-                        Click "Confirm Assignment" to apply all changes.
+                        Click &quot;Confirm Assignment&quot; to apply all changes.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 
@@ -832,7 +748,7 @@ const ProjTab = ({
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {displayProjects.map((project) => {
                                     // Find AI preview data for this project
-                                    const aiPreview = previewData.preview?.find((p: any) => p.projectId === project.projId);
+                                    const aiPreview = previewData.preview?.find((p) => p.projectId === project.projId);
                                     const proposedNewMembers = aiPreview?.proposedNewMembers || [];
                                     
                                     // Calculate effective members/admins including preview changes

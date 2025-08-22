@@ -204,7 +204,7 @@ const ProjectCard = ({
                     <AlertDialogHeader>
                         <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete the project "{projectName}" and all its stages and tasks.
+                            This action cannot be undone. This will permanently delete the project &quot;{projectName}&quot; and all its stages and tasks.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

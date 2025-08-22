@@ -222,7 +222,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                 }
 
                 // Validate responses
-                const emptyResponses = responses.filter((response, index) => 
+                const emptyResponses = responses.filter((response) => 
                     !response || response.trim().length === 0
                 );
                 
@@ -293,20 +293,20 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
     const handleEditSave = () => {
         try {
             const stageUpdates: Stage[] = [];
-            reorderedStages.forEach((stage, index) => {
+            reorderedStages.forEach((stage, _index) => {
                 const originalStage = stages.find((s) => s.id === stage.id);
                 // id = -1 for adding a new stage
                 // push change for new stages
                 if (!originalStage) {
-                    stageUpdates.push({ ...stage, order: index });
+                    stageUpdates.push({ ...stage, order: _index });
                 } else if (
-                    stage.order !== index ||
+                    stage.order !== _index ||
                     (originalStage && stage.title !== originalStage.title)
                 ) {
                     // only commit changes on order change and renaming
                     stageUpdates.push({
                         ...stage,
-                        order: index,
+                        order: _index,
                         title: stage.title,
                     });
                 }

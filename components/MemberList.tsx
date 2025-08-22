@@ -1,10 +1,8 @@
 "use client";
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter} from "@/components/ui/dialog";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import InviteUserToOrganization from "./InviteUserToOrganization";
@@ -12,7 +10,7 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { collection, QuerySnapshot, DocumentData } from "firebase/firestore";
 import { db } from "@/firebase";
 import { batchInQueryForHooks } from "@/lib/batchQuery";
-import {Users, Settings, UserPlus, FolderOpen, UserCheck, ArrowRight, Crown, Building2} from "lucide-react";
+import {Users, UserPlus, FolderOpen, UserCheck, ArrowRight, Crown, Building2} from "lucide-react";
 import { toast } from "sonner";
 import {updateProjectMembers, removeProjectMember, updateProjectTeamSize} from "@/actions/actions";
 import Image from "next/image";
@@ -45,7 +43,7 @@ interface ProjectTeam {
     teamSize: number;
 }
 
-const MemberList = ({admins, members, userRole, orgId, projectsData, currentUserEmail}: MemberListProps) => {
+const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}: MemberListProps) => {
     const [adminsPfp, setAdminsPfp] = useState<{ [email: string]: string }>({});
     const [membersPfp, setMembersPfp] = useState<{ [email: string]: string }>(
         {},
@@ -54,8 +52,7 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
     const [selectedView, setSelectedView] = useState<"overview" | "projects">(
         userRole === "admin" ? "overview" : "projects",
     );
-    const [isTeamSettingsOpen, setIsTeamSettingsOpen] = useState(false);
-    const [defaultTeamSize, setDefaultTeamSize] = useState(3);
+    const [defaultTeamSize] = useState(3);
 
     // 使用自定义状态来处理批量查询，避免 Firebase IN 查询超过30个值的限制
     const [results, setResults] = useState<QuerySnapshot<DocumentData> | null>(null);

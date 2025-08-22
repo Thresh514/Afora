@@ -187,16 +187,18 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
 
 // Toast 版本的错误显示
 export const showErrorToast = (error: ErrorInfo) => {
-    const { toast } = require("sonner");
-    const typeInfo = getErrorTypeInfo(error.type);
-    
-    toast.error(typeInfo.title, {
-        description: error.message,
-        duration: 8000,
-        action: error.canRetry && error.onRetry ? {
-            label: "Retry",
-            onClick: error.onRetry
-        } : undefined
+    // 动态导入 sonner 以避免 SSR 问题
+    import("sonner").then(({ toast }) => {
+        const typeInfo = getErrorTypeInfo(error.type);
+        
+        toast.error(typeInfo.title, {
+            description: error.message,
+            duration: 8000,
+            action: error.canRetry && error.onRetry ? {
+                label: "Retry",
+                onClick: error.onRetry
+            } : undefined
+        });
     });
 };
 
