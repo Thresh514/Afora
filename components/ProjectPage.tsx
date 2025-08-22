@@ -28,8 +28,10 @@ import { updateStatus } from "@/lib/store/features/stageStatus/stageStatusSlice"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import ErrorDisplay, { ErrorInfo, showErrorToast } from "./ErrorDisplay";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import TeamScoreCard from "@/components/TeamScoreCard";
+import ProjOnboarding from "./ProjOnboarding";
 
 interface ProjectStats {
     totalTasks: number;
@@ -47,6 +49,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
     const [responses, setResponses] = useState<string[]>([]);
     const [isOpen, setIsOpen] = useState(false);
     const [isTeamCharterOpen, setIsTeamCharterOpen] = useState(false);
+    const [charterSaveError, setCharterSaveError] = useState<ErrorInfo | null>(null);
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [isEditing, setIsEditing] = useState(false);
@@ -201,36 +204,109 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
             return <div>Error: {projError.message}</div>;
         }
 
-    const handleTeamCharterSave = () =>
+    const handleTeamCharterSave = () => {
+        setCharterSaveError(null);
         startTransition(async () => {
             try {
-                if (!teamCharterData || loading || error) return;
-                await setTeamCharter(projId, responses);
-                toast.success("Team Charter saved successfully!");
-                setIsOpen(false); // 只在保存成功时关闭对话框
+                if (!teamCharterData || loading || error) {
+                    const errorInfo: ErrorInfo = {
+                        type: "team_charter",
+                        message: "Unable to load team charter data. Please refresh the page and try again.",
+                        canRetry: true,
+                        onRetry: handleTeamCharterSave,
+                        onDismiss: () => setCharterSaveError(null)
+                    };
+                    setCharterSaveError(errorInfo);
+                    showErrorToast(errorInfo);
+                    return;
+                }
+
+                // Validate responses
+                const emptyResponses = responses.filter((response) => 
+                    !response || response.trim().length === 0
+                );
+                
+                if (emptyResponses.length > 0) {
+                    const errorInfo: ErrorInfo = {
+                        type: "team_charter",
+                        message: `Please complete all ${teamCharterQuestions.length} questions before saving. ${emptyResponses.length} questions are still empty.`,
+                        details: `Missing responses for questions: ${emptyResponses.map((_, index) => index + 1).join(", ")}`,
+                        canRetry: false,
+                        onDismiss: () => setCharterSaveError(null)
+                    };
+                    setCharterSaveError(errorInfo);
+                    showErrorToast(errorInfo);
+                    return;
+                }
+
+                const result = await setTeamCharter(projId, responses);
+                
+                if (result.success) {
+                    toast.success("Team Charter saved successfully!");
+                    setIsOpen(false);
+                    setCharterSaveError(null);
+                } else {
+                    const errorInfo: ErrorInfo = {
+                        type: "team_charter",
+                        message: result.message || "Failed to save team charter",
+                        timestamp: new Date(),
+                        canRetry: true,
+                        onRetry: handleTeamCharterSave,
+                        onDismiss: () => setCharterSaveError(null)
+                    };
+                    setCharterSaveError(errorInfo);
+                    showErrorToast(errorInfo);
+                }
             } catch (e) {
-                console.log(e);
-                toast.error("Failed to save Team Charter.");
+                console.error("Team charter save error:", e);
+                
+                let errorMessage = "Failed to save Team Charter";
+                let errorDetails = String(e);
+                
+                if (e instanceof Error) {
+                    errorMessage = e.message;
+                    errorDetails = e.stack || e.message;
+                }
+                
+                if (errorMessage.includes("Unauthorized")) {
+                    errorMessage = "You don't have permission to save this team charter. Please contact an admin.";
+                } else if (errorMessage.includes("network")) {
+                    errorMessage = "Network error. Please check your connection and try again.";
+                }
+                
+                const errorInfo: ErrorInfo = {
+                    type: "team_charter",
+                    message: errorMessage,
+                    details: errorDetails,
+                    timestamp: new Date(),
+                    canRetry: true,
+                    onRetry: handleTeamCharterSave,
+                    onDismiss: () => setCharterSaveError(null)
+                };
+                
+                setCharterSaveError(errorInfo);
+                showErrorToast(errorInfo);
             }
         });
+    };
 
     const handleEditSave = () => {
         try {
             const stageUpdates: Stage[] = [];
-            reorderedStages.forEach((stage, index) => {
+            reorderedStages.forEach((stage, _index) => {
                 const originalStage = stages.find((s) => s.id === stage.id);
                 // id = -1 for adding a new stage
                 // push change for new stages
                 if (!originalStage) {
-                    stageUpdates.push({ ...stage, order: index });
+                    stageUpdates.push({ ...stage, order: _index });
                 } else if (
-                    stage.order !== index ||
+                    stage.order !== _index ||
                     (originalStage && stage.title !== originalStage.title)
                 ) {
                     // only commit changes on order change and renaming
                     stageUpdates.push({
                         ...stage,
-                        order: index,
+                        order: _index,
                         title: stage.title,
                     });
                 }
@@ -262,6 +338,15 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
 
     return (
         <div className="flex flex-col w-full h-full bg-gray-100">
+            {/* ProjOnboarding Survey Check */}
+            <ProjOnboarding 
+                orgId={id} 
+                projId={projId}
+                onDismiss={() => {
+                    // Survey dismissed, continue with normal page
+                }}
+            />
+            
             {/* Header Section - similar to organization page background image style */}
             <div className="relative">
                 <div
@@ -523,6 +608,39 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                                             Fill out this charter to kick off your team! 🚀
                                                         </AlertDialogDescription>
                                                     </AlertDialogHeader>
+                                                    
+                                                    {/* Team Charter Error Display */}
+                                                    {charterSaveError && (
+                                                        <ErrorDisplay 
+                                                            error={charterSaveError} 
+                                                            className="mb-4"
+                                                        />
+                                                    )}
+                                                    
+                                                    {/* TEST BUTTON - Remove after testing */}
+                                                    {process.env.NODE_ENV === "development" && (
+                                                        <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                                            <p className="text-xs text-yellow-700 mb-2 font-medium">🧪 Dev Test:</p>
+                                                            <button
+                                                                onClick={() => {
+                                                                    const errorInfo: ErrorInfo = {
+                                                                        type: "team_charter",
+                                                                        message: "Test Team Charter Error - Missing required fields",
+                                                                        details: "Questions 1, 3, and 7 are still empty. Please complete all questions.",
+                                                                        timestamp: new Date(),
+                                                                        canRetry: true,
+                                                                        onRetry: () => setCharterSaveError(null),
+                                                                        onDismiss: () => setCharterSaveError(null)
+                                                                    };
+                                                                    setCharterSaveError(errorInfo);
+                                                                }}
+                                                                className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                                                            >
+                                                                Test Team Charter Error
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                    
                                                     <div className="overflow-y-auto max-h-96">
                                                         <form className="space-y-8 p-2">
                                                             {/* Group questions by section */}

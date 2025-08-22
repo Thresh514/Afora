@@ -1,10 +1,8 @@
 "use client";
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter} from "@/components/ui/dialog";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import InviteUserToOrganization from "./InviteUserToOrganization";
@@ -12,9 +10,9 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { collection, QuerySnapshot, DocumentData } from "firebase/firestore";
 import { db } from "@/firebase";
 import { batchInQueryForHooks } from "@/lib/batchQuery";
-import {Users, Settings, UserPlus, Shuffle, FolderOpen, UserCheck, ArrowRight, Crown, Building2} from "lucide-react";
+import {Users, UserPlus, FolderOpen, UserCheck, ArrowRight, Crown, Building2} from "lucide-react";
 import { toast } from "sonner";
-import {updateProjectMembers, removeProjectMember, autoAssignMembersToProjects, updateProjectTeamSize} from "@/actions/actions";
+import {updateProjectMembers, removeProjectMember, updateProjectTeamSize} from "@/actions/actions";
 import Image from "next/image";
 
 interface MemberListProps {
@@ -45,7 +43,7 @@ interface ProjectTeam {
     teamSize: number;
 }
 
-const MemberList = ({admins, members, userRole, orgId, projectsData, currentUserEmail}: MemberListProps) => {
+const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}: MemberListProps) => {
     const [adminsPfp, setAdminsPfp] = useState<{ [email: string]: string }>({});
     const [membersPfp, setMembersPfp] = useState<{ [email: string]: string }>(
         {},
@@ -54,8 +52,7 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
     const [selectedView, setSelectedView] = useState<"overview" | "projects">(
         userRole === "admin" ? "overview" : "projects",
     );
-    const [isTeamSettingsOpen, setIsTeamSettingsOpen] = useState(false);
-    const [defaultTeamSize, setDefaultTeamSize] = useState(3);
+    const [defaultTeamSize] = useState(3);
 
     // 使用自定义状态来处理批量查询，避免 Firebase IN 查询超过30个值的限制
     const [results, setResults] = useState<QuerySnapshot<DocumentData> | null>(null);
@@ -179,23 +176,7 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
 
     const unassignedMembers = calculatedUnassignedMembers;
 
-    const handleAutoAssign = useCallback(async () => {
-        try {
-            console.log("🚀 Starting smart assignment with defaultTeamSize:", defaultTeamSize);
-            const result = await autoAssignMembersToProjects(orgId, defaultTeamSize);
-            console.log("📊 Assignment result:", result);
 
-            if (result.success) {
-                toast.success(result.message);
-                // 不需要刷新页面，数据会自动更新
-            } else {
-                toast.error(result.message || "Failed to auto-assign members");
-            }
-        } catch (error) {
-            console.error("Error auto-assigning members:", error);
-            toast.error("Failed to auto-assign members");
-        }
-    }, [orgId, defaultTeamSize]);
 
     const handleMemberMove = useCallback(
         async (
@@ -731,82 +712,6 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
                             )}
                         </div>
                     )}
-                </div>
-
-                {/* Actions */}
-                <div className="p-4 border-t border-gray-200 bg-gray-50">
-                    <div className="space-y-2">
-                        {userRole === "admin" && (
-                            <>
-                                <Dialog
-                                    open={isTeamSettingsOpen}
-                                    onOpenChange={setIsTeamSettingsOpen}
-                                >
-                                    <DialogTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            className="w-full"
-                                            size="sm"
-                                        >
-                                            <Settings className="h-4 w-4 mr-2" />
-                                            Team Settings
-                                        </Button>
-                                    </DialogTrigger>
-                                    <DialogContent>
-                                        <DialogHeader>
-                                            <DialogTitle>
-                                                Team Settings
-                                            </DialogTitle>
-                                            <DialogDescription>
-                                                Configure team sizes and
-                                                assignment settings.
-                                            </DialogDescription>
-                                        </DialogHeader>
-                                        <div className="grid gap-4 py-4">
-                                            <div className="flex flex-col gap-2">
-                                                <label className="text-sm font-medium">
-                                                    Default Team Size
-                                                </label>
-                                                <Input
-                                                    type="number"
-                                                    min="1"
-                                                    max="20"
-                                                    value={defaultTeamSize}
-                                                    onChange={(e) =>
-                                                        setDefaultTeamSize(
-                                                            parseInt(
-                                                                e.target.value,
-                                                            ) || 3,
-                                                        )
-                                                    }
-                                                />
-                                            </div>
-                                        </div>
-                                        <DialogFooter>
-                                            <Button
-                                                onClick={() =>
-                                                    setIsTeamSettingsOpen(false)
-                                                }
-                                            >
-                                                Close
-                                            </Button>
-                                        </DialogFooter>
-                                    </DialogContent>
-                                </Dialog>
-
-                                <Button
-                                    onClick={handleAutoAssign}
-                                    disabled={unassignedMembers.length === 0}
-                                    className="w-full"
-                                    size="sm"
-                                >
-                                    <Shuffle className="h-4 w-4 mr-2" />
-                                    Smart Matching
-                                </Button>
-                            </>
-                        )}
-                        
-                    </div>
                 </div>
             </div>
 

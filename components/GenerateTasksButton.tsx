@@ -30,6 +30,7 @@ import { generateTask } from "@/ai_scripts/generateTask";
 import { Loader2 } from "lucide-react";
 import { updateStagesTasks } from "@/actions/actions";
 import LoadingOverlay from "./LoadingOverlay";
+import ErrorDisplay, { ErrorInfo, showErrorToast } from "./ErrorDisplay";
 
 const GenerateTasksButton = ({
     orgId,
@@ -44,6 +45,7 @@ const GenerateTasksButton = ({
     const [proj, loading, error] = useDocument(doc(db, "projects", projId));
     const [isPending, startTransition] = useTransition();
     const [generatedOutput, setGeneratedOutput] = useState<GeneratedTasks>();
+    const [taskGenerationError, setTaskGenerationError] = useState<ErrorInfo | null>(null);
     if (loading) {
         return;
     }
@@ -125,28 +127,73 @@ const GenerateTasksButton = ({
                 compatibility_score: 80,
             }));
 
-            startTransition(async () =>
-                generateTask(
-                    projQuestions,
-                    userData,
-                    teamCharterQuestions,
-                    teamCharterResponses,
-                    teamMembers,
-                    memberCapabilities
-                )
-                    .then((output: string) => {
-                        console.log("API Response:", output);
-                        const parsed: GeneratedTasks = JSON.parse(output);
-                        setGeneratedOutput(parsed);
-                    })
-                    .catch((error: Error) => {
-                        console.error("Error:", error);
-                        toast.error(error.message);
-                    }),
-            );
+            setTaskGenerationError(null);
+            startTransition(async () => {
+                try {
+                    const output = await generateTask(
+                        projQuestions,
+                        userData,
+                        teamCharterQuestions,
+                        teamCharterResponses,
+                        teamMembers,
+                        memberCapabilities
+                    );
+                    
+                    console.log("API Response:", output);
+                    const parsed: GeneratedTasks = JSON.parse(output);
+                    setGeneratedOutput(parsed);
+                    setTaskGenerationError(null);
+                } catch (error) {
+                    console.error("Task generation error:", error);
+                    
+                    let errorMessage = "Failed to generate tasks";
+                    let errorDetails = String(error);
+                    
+                    if (error instanceof Error) {
+                        errorMessage = error.message;
+                        errorDetails = error.stack || error.message;
+                    }
+                    
+                    // Parse specific error types
+                    if (errorMessage.includes("Missing required project information")) {
+                        errorMessage = "Please complete all required project information in the team charter";
+                    } else if (errorMessage.includes("team charter is empty")) {
+                        errorMessage = "Team charter must be completed before generating tasks";
+                    } else if (errorMessage.includes("Team members information is required")) {
+                        errorMessage = "Please ensure all team members have completed their surveys";
+                    } else if (errorMessage.includes("API")) {
+                        errorMessage = "AI service is temporarily unavailable. Please try again later.";
+                    }
+                    
+                    const errorInfo: ErrorInfo = {
+                        type: "task_generation",
+                        message: errorMessage,
+                        details: errorDetails,
+                        timestamp: new Date(),
+                        canRetry: true,
+                        onRetry: handleGenerateTasks,
+                        onDismiss: () => setTaskGenerationError(null)
+                    };
+                    
+                    setTaskGenerationError(errorInfo);
+                    showErrorToast(errorInfo);
+                }
+            });
         } catch (error) {
             console.error("Error preparing team data:", error);
-            toast.error("Failed to prepare team data for task generation");
+            
+            const errorInfo: ErrorInfo = {
+                type: "task_generation",
+                message: "Failed to prepare team data for task generation",
+                details: error instanceof Error ? error.stack || error.message : String(error),
+                timestamp: new Date(),
+                canRetry: true,
+                onRetry: handleGenerateTasks,
+                onDismiss: () => setTaskGenerationError(null)
+            };
+            
+            setTaskGenerationError(errorInfo);
+            showErrorToast(errorInfo);
         }
     };
     return (
@@ -169,7 +216,7 @@ const GenerateTasksButton = ({
                         )}
                     </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Generate Tasks</DialogTitle>
                         {generatedOutput ? (
@@ -183,6 +230,38 @@ const GenerateTasksButton = ({
                             </DialogDescription>
                         )}
                     </DialogHeader>
+                    
+                    {/* Task Generation Error Display */}
+                    {taskGenerationError && !generatedOutput && (
+                        <ErrorDisplay 
+                            error={taskGenerationError} 
+                            className="mb-4"
+                        />
+                    )}
+                    
+                    {/* TEST BUTTON - Remove after testing */}
+                    {process.env.NODE_ENV === "development" && !generatedOutput && (
+                        <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <p className="text-xs text-yellow-700 mb-2 font-medium">🧪 Dev Test:</p>
+                            <button
+                                onClick={() => {
+                                    const errorInfo: ErrorInfo = {
+                                        type: "task_generation",
+                                        message: "Test Task Generation Error - AI service temporarily unavailable",
+                                        details: "OpenAI API rate limit exceeded. Error: 429 - Too Many Requests",
+                                        timestamp: new Date(),
+                                        canRetry: true,
+                                        onRetry: () => setTaskGenerationError(null),
+                                        onDismiss: () => setTaskGenerationError(null)
+                                    };
+                                    setTaskGenerationError(errorInfo);
+                                }}
+                                className="text-xs px-2 py-1 bg-emerald-100 text-emerald-700 rounded hover:bg-emerald-200"
+                            >
+                                Test Task Generation Error
+                            </button>
+                        </div>
+                    )}
 
                     {generatedOutput && (
                         <Accordion type="single" collapsible className="w-full">

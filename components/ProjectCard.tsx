@@ -1,7 +1,22 @@
+"use client";
+
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FolderOpen, Users, ArrowRight } from "lucide-react";
+import { FolderOpen, Users, ArrowRight, MoreVertical, Trash } from "lucide-react";
 import { Task } from "@/types/types";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import {
+    AlertDialog,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useState, useTransition } from "react";
+import { deleteProject } from "@/actions/actions";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 interface ProjectCardProps {
     projectName: string;
@@ -21,6 +36,10 @@ const ProjectCard = ({
     members = [],
     admins = [],
 }: ProjectCardProps) => {
+    const router = useRouter();
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [isPending, startTransition] = useTransition();
+
     // Calculate actual values based on real data
     const memberCount = members.length + admins.length;
     const taskCount = tasks.length;
@@ -29,6 +48,25 @@ const ProjectCard = ({
         taskCount > 0
             ? Math.round((completedTasks / taskCount) * 100)
             : 0;
+
+    const handleDeleteProject = () => {
+        startTransition(async () => {
+            try {
+                const result = await deleteProject(projId);
+                if (result.success) {
+                    toast.success("Project deleted successfully!");
+                    setIsDeleteDialogOpen(false);
+                    // Refresh the page to update the project list
+                    router.refresh();
+                } else {
+                    toast.error(result.message || "Failed to delete project");
+                }
+            } catch (error) {
+                toast.error("Failed to delete project");
+                console.error("Delete project error:", error);
+            }
+        });
+    };
 
     // Color schemes based on project name - softer colors
     const getProjectTheme = (name: string) => {
@@ -84,6 +122,38 @@ const ProjectCard = ({
                                     <Users className="h-3 w-3" />
                                     <span>{memberCount}</span>
                                 </div>
+                                
+                                {/* Three dot menu */}
+                                <DropdownMenu.Root>
+                                    <DropdownMenu.Trigger asChild>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-6 w-6 p-0 text-white/70 hover:text-white hover:bg-white/20"
+                                            onClick={(e) => e.preventDefault()}
+                                        >
+                                            <MoreVertical className="h-4 w-4" />
+                                        </Button>
+                                    </DropdownMenu.Trigger>
+                                    <DropdownMenu.Portal>
+                                        <DropdownMenu.Content
+                                            align="start"
+                                            side="left"
+                                            className="z-50 min-w-[8rem] overflow-hidden rounded-md border border-slate-100 bg-white p-1 shadow-md animate-in slide-in-from-right-2"
+                                        >
+                                            <DropdownMenu.Item
+                                                className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-red-50 text-red-600 data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    setIsDeleteDialogOpen(true);
+                                                }}
+                                            >
+                                                <Trash className="mr-2 h-4 w-4" />
+                                                Delete Project
+                                            </DropdownMenu.Item>
+                                        </DropdownMenu.Content>
+                                    </DropdownMenu.Portal>
+                                </DropdownMenu.Root>
                             </div>
                             <h2 className="text-xl font-bold text-white mb-1 group-hover:text-white/90 transition-colors">
                                 {projectName}
@@ -127,6 +197,34 @@ const ProjectCard = ({
                     </Button>
                 </CardContent>
             </Card>
+            
+            {/* Delete Project Dialog */}
+            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the project &quot;{projectName}&quot; and all its stages and tasks.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setIsDeleteDialogOpen(false)}
+                            disabled={isPending}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={handleDeleteProject}
+                            disabled={isPending}
+                        >
+                            {isPending ? "Deleting..." : "Delete"}
+                        </Button>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </a>
     );
 };

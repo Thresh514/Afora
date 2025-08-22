@@ -14,7 +14,7 @@ import { useUser } from "@clerk/nextjs";
 import { Textarea } from "./ui/textarea";
 import TimeSlotSelector from "./TimeSlotSelector";
 
-// 格式化时间表数据的函数
+// Format time slots data function
 const formatTimeSlots = (selectedSlots: Set<string>): string => {
     const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
     const TIME_SLOTS = Array.from({ length: 48 }, (_, i) => {
@@ -23,7 +23,7 @@ const formatTimeSlots = (selectedSlots: Set<string>): string => {
         return `${hour.toString().padStart(2, "0")}:${minute}`;
     });
 
-    // 按天分组选中的时间槽
+    // Group selected time slots by day
     const slotsByDay: { [key: string]: number[] } = {};
     
     selectedSlots.forEach(slotKey => {
@@ -36,7 +36,7 @@ const formatTimeSlots = (selectedSlots: Set<string>): string => {
         slotsByDay[dayName].push(slotIndex);
     });
 
-    // 将每个天的时间槽排序并合并连续时间段
+    // Sort time slots for each day and merge consecutive time periods
     const formattedSchedule: { [key: string]: string[] } = {};
     
     Object.keys(slotsByDay).forEach(day => {
@@ -52,11 +52,11 @@ const formatTimeSlots = (selectedSlots: Set<string>): string => {
             const currentSlot = sortedSlots[i];
             const prevSlot = sortedSlots[i - 1];
             
-            // 检查是否是连续的时间槽（相邻的slotIndex）
+            // Check if it's a consecutive time slot (adjacent slotIndex)
             if (currentSlot - prevSlot === 1) {
                 endSlot = currentSlot;
             } else {
-                // 不连续，保存当前时间段
+                // Not consecutive, save current time period
                 const startTime = TIME_SLOTS[startSlot];
                 const endTime = TIME_SLOTS[endSlot];
                 
@@ -70,7 +70,7 @@ const formatTimeSlots = (selectedSlots: Set<string>): string => {
             }
         }
         
-        // 处理最后一个时间段
+        // Handle the last time period
         const startTime = TIME_SLOTS[startSlot];
         const endTime = TIME_SLOTS[endSlot];
         
@@ -83,7 +83,7 @@ const formatTimeSlots = (selectedSlots: Set<string>): string => {
         formattedSchedule[day] = timeRanges;
     });
 
-    // 转换为易读的字符串格式
+    // Convert to readable string format
     const scheduleStrings = Object.keys(formattedSchedule).map(day => {
         const times = formattedSchedule[day];
         return `${day}: ${times.join(', ')}`;
@@ -92,7 +92,7 @@ const formatTimeSlots = (selectedSlots: Set<string>): string => {
     return scheduleStrings.join(' | ');
 };
 
-// 创建结构化JSON格式的时间表数据
+// Create structured JSON format schedule data
 const createStructuredSchedule = (selectedSlots: Set<string>): string => {
     const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
     const TIME_SLOTS = Array.from({ length: 48 }, (_, i) => {
@@ -101,7 +101,7 @@ const createStructuredSchedule = (selectedSlots: Set<string>): string => {
         return `${hour.toString().padStart(2, "0")}:${minute}`;
     });
 
-    // 按天分组选中的时间槽
+    // Group selected time slots by day
     const slotsByDay: { [key: string]: number[] } = {};
     
     selectedSlots.forEach(slotKey => {
@@ -114,7 +114,7 @@ const createStructuredSchedule = (selectedSlots: Set<string>): string => {
         slotsByDay[dayName].push(slotIndex);
     });
 
-    // 创建结构化数据
+    // Create structured data
     const structuredSchedule: { [key: string]: { timeRanges: string[], totalHours: number } } = {};
     
     Object.keys(slotsByDay).forEach(day => {
@@ -155,9 +155,9 @@ const createStructuredSchedule = (selectedSlots: Set<string>): string => {
             timeRanges.push(`${startTime}-${endTime}`);
         }
         
-        // 计算总小时数
+        // Calculate total hours
         const totalSlots = sortedSlots.length;
-        const totalHours = totalSlots * 0.5; // 每个slot是30分钟
+        const totalHours = totalSlots * 0.5; // Each slot is 30 minutes
         
         structuredSchedule[day] = {
             timeRanges,
@@ -168,42 +168,60 @@ const createStructuredSchedule = (selectedSlots: Set<string>): string => {
     return JSON.stringify(structuredSchedule);
 };
 
-// 调试函数：展示优化前后的对比
+// Debug function: show comparison before and after optimization
 const debugScheduleFormat = (selectedSlots: Set<string>) => {
     const oldFormat = Array.from(selectedSlots).join(", ");
     const newStructuredFormat = createStructuredSchedule(selectedSlots);
     const newReadableFormat = formatTimeSlots(selectedSlots);
     
-    console.log("=== 时间表格式优化对比 ===");
-    console.log("旧格式 (难读):", oldFormat);
-    console.log("新结构化格式 (JSON):", newStructuredFormat);
-    console.log("新易读格式:", newReadableFormat);
-    console.log("=== 结束对比 ===");
+    console.log("=== Schedule Format Optimization Comparison ===");
+    console.log("Old format (hard to read):", oldFormat);
+    console.log("New structured format (JSON):", newStructuredFormat);
+    console.log("New readable format:", newReadableFormat);
+    console.log("=== End Comparison ===");
 };
 
-const ProjOnboarding = ({ orgId }: { orgId: string }) => {
-const [responses, setResponses] = useState<string[]>([]);
-const [selectedSlots, setSelectedSlots] = useState<Set<string>>(new Set());
-const [isOpen, setIsOpen] = useState(false);
-const [page, setPage] = useState(0);
+interface ProjOnboardingProps {
+    orgId: string;
+    projId: string;
+    onDismiss?: () => void;
+}
+
+const ProjOnboarding = ({ orgId, projId, onDismiss }: ProjOnboardingProps) => {
+    const [responses, setResponses] = useState<string[]>([]);
+    const [selectedSlots, setSelectedSlots] = useState<Set<string>>(new Set());
+    const [isOpen, setIsOpen] = useState(false);
+    const [page, setPage] = useState(0);
+
+
+    const { user } = useUser();
+    const userEmail = user?.primaryEmailAddress?.emailAddress;
+
+    const [userData] = useDocument(
+        userEmail && orgId ? doc(db, "users", userEmail, "orgs", orgId) : null,
+    );
+
+    // Check if user has completed the survey
+    const hasCompletedSurvey = userData?.data()?.projOnboardingSurveyResponse;
 
     useEffect(() => {
-        // Open the dialog automatically when the component mounts
+        // Always show the dialog when component mounts, regardless of completion status
         setIsOpen(true);
         setPage(0);
         setResponses(Array(projQuestions.length).fill(""));
         setSelectedSlots(new Set());
-    }, []);
+
+    }, [projId]); // Re-trigger when projId changes
 
     const handleSubmit = async () => {
-        // 调试输出：展示格式优化效果
+        // Debug output: show format optimization effect
         debugScheduleFormat(selectedSlots);
         
-        // 使用结构化的JSON格式保存时间表数据
+        // Use structured JSON format to save schedule data
         const structuredSchedule = createStructuredSchedule(selectedSlots);
         const readableSchedule = formatTimeSlots(selectedSlots);
         
-        // 将结构化数据保存到最后一个问题，易读格式作为注释
+        // Save structured data to the last question, readable format as comment
         responses[projQuestions.length - 1] = `${structuredSchedule} | Readable: ${readableSchedule}`;
         
         const { success, message } = await setProjOnboardingSurvey(
@@ -213,28 +231,41 @@ const [page, setPage] = useState(0);
         if (success) {
             toast.success("Survey response received successfully!");
             setIsOpen(false);
+            onDismiss?.();
         } else {
             toast.error(message);
         }
     };
 
-    const { user } = useUser();
+    const handleSkip = () => {
+        setIsOpen(false);
+        onDismiss?.();
+        toast.info("Survey skipped. You can complete it later.");
+    };
 
-    const userEmail = user?.primaryEmailAddress?.emailAddress;
+    const handleDismiss = () => {
+        setIsOpen(false);
+        onDismiss?.();
+        toast.info("Survey dismissed. You can complete it later.");
+    };
 
-    const [userData] = useDocument(
-        userEmail && orgId ? doc(db, "users", userEmail, "orgs", orgId) : null,
-    );
-
-    if (!userData || userData.data()?.projOnboardingSurveyResponse) {
+    // Don't render if user has completed the survey and we're not forcing a re-show
+    if (hasCompletedSurvey && !isOpen) {
         return null;
     }
 
     return (
         <>
-            <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
-                {/* <AlertDialogOverlay className="bg-black bg-opacity-80 fixed inset-0" /> */}
-                {/* <AlertDialogTrigger>Open</AlertDialogTrigger> */}
+            <AlertDialog 
+                open={isOpen} 
+                onOpenChange={(open) => {
+                    // 在第一个问题时不允许关闭对话框
+                    if (page === 1 && !open) {
+                        return;
+                    }
+                    setIsOpen(open);
+                }}
+            >
                 <AlertDialogContent className="w-full max-w-2xl">
                     <Progress value={(page / projQuestions.length) * 100} />
 
@@ -244,9 +275,8 @@ const [page, setPage] = useState(0);
                                 Team Onboarding Survey
                             </AlertDialogTitle>
                             <AlertDialogDescription>
-                                Please take a minute to fill out this mandatory
-                                form. The information will be used for matching
-                                of teammates for your team.
+                                Please take a minute to fill out this form. The information will be used for matching
+                                of teammates for your team. You can skip this for now, but it will appear again next time.
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                     )}
@@ -279,18 +309,21 @@ const [page, setPage] = useState(0);
                     )}
 
                     <AlertDialogFooter>
-                        {/* <AlertDialogCancel onClick={() => setIsOpen(false)}>Cancel</AlertDialogCancel> */}
                         {page === 0 && (
-                            <Button onClick={() => setPage(page + 1)}>
-                                Start
-                            </Button>
+                            <div className="flex gap-2 w-full">
+                                <Button variant="outline" onClick={handleSkip} className="flex-1">
+                                    Skip for Now
+                                </Button>
+                                <Button onClick={() => setPage(page + 1)} className="flex-1">
+                                    Start Survey
+                                </Button>
+                            </div>
                         )}
                         {page > 0 && (
                             <>
                                 <Button
                                     variant="outline"
                                     onClick={() => setPage(page - 1)}
-                                    disabled={page === 1}
                                 >
                                     Back
                                 </Button>
@@ -299,9 +332,14 @@ const [page, setPage] = useState(0);
                                         Next
                                     </Button>
                                 ) : (
-                                    <Button onClick={handleSubmit}>
-                                        Submit
-                                    </Button>
+                                    <div className="flex gap-2">
+                                        <Button variant="outline" onClick={handleDismiss}>
+                                            Dismiss
+                                        </Button>
+                                        <Button onClick={handleSubmit}>
+                                            Submit
+                                        </Button>
+                                    </div>
                                 )}
                             </>
                         )}
