@@ -11,7 +11,7 @@ import { Project, Stage, teamCharterQuestions, TeamCompatibilityAnalysis } from 
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { CircleCheck, PencilLine, Save, Trophy, Target, BarChart3, Loader2, LockKeyhole, NotepadText, Trash2, UsersIcon, EditIcon, Plus } from "lucide-react";
+import { CircleCheck, PencilLine, Save, Trophy, Target, BarChart3, Loader2, LockKeyhole, NotepadText, Trash2, UsersIcon, EditIcon, Plus, MoreVertical } from "lucide-react";
 import { Reorder, useDragControls } from "framer-motion";
 import { toast } from "sonner";
 import GenerateTasksButton from "@/components/GenerateTasksButton";
@@ -29,9 +29,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import ErrorDisplay, { ErrorInfo, showErrorToast } from "./ErrorDisplay";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import TeamScoreCard from "@/components/TeamScoreCard";
 import ProjOnboarding from "./ProjOnboarding";
+import AddProjectMemberDialog from "./AddProjectMemberDialog";
+import ChangeRoleDialog from "./ChangeRoleDialog";
+import RemoveMemberDialog from "./RemoveMemberDialog";
+import { fixProjectAdmin } from "@/actions/actions";
 
 interface ProjectStats {
     totalTasks: number;
@@ -59,6 +70,11 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
     const [isAdmin, setIsAdmin] = useState(false);
     const [analysisLoading, setAnalysisLoading] = useState(true);
     const [analysisData, setAnalysisData] = useState<{analysis: TeamCompatibilityAnalysis, timestamp: Date} | null>(null);
+    
+    // State for member management dialogs
+    const [removeMemberDialogOpen, setRemoveMemberDialogOpen] = useState(false);
+    const [memberToRemove, setMemberToRemove] = useState<string | null>(null);
+
 
     const [projData, projLoading, projError] = useDocument(
         doc(db, "projects", projId),
@@ -71,14 +87,15 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
 
     // check if user is team member (admin or regular member can create stages)
     useEffect(() => {
-        if (user?.primaryEmailAddress?.emailAddress && projData) {
+        if (user?.primaryEmailAddress?.emailAddress && proj) {
             const userEmail = user.primaryEmailAddress.emailAddress;
-            const admins = projData.data()?.admins || [];
-            const members = projData.data()?.members || [];
-            const isTeamMember = admins.includes(userEmail) || members.includes(userEmail);
-            setIsAdmin(isTeamMember); // Use isAdmin variable to represent team member permissions
+            const admins = proj?.admins || [];
+            // const members = proj?.members || []; // Commented out for now
+            // const isTeamMember = admins.includes(userEmail) || members.includes(userEmail); // Commented out for now
+            const isUserAdmin = admins.includes(userEmail); // Check if user is actually an admin
+            setIsAdmin(isUserAdmin); // Only set isAdmin to true if user is actually an admin
         }
-    }, [user, projData]);
+    }, [user, proj]);
 
     useEffect(() => {
         // Redirect to login if the user is not authenticated
@@ -193,16 +210,16 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
         setStageStatus(newStageStatus);
     }, [stages, dispatch]);
 
-    
-        if (stagesLoading || projLoading) {
-            return <Skeleton className="w-full h-96" />;
-        }
-        if (stagesError) {
-            return <div>Error: {stagesError.message}</div>;
-        }
-        if (projError) {
-            return <div>Error: {projError.message}</div>;
-        }
+    // Early return for loading and error states
+    if (stagesLoading || projLoading) {
+        return <Skeleton className="w-full h-96" />;
+    }
+    if (stagesError) {
+        return <div>Error: {stagesError.message}</div>;
+    }
+    if (projError) {
+        return <div>Error: {projError.message}</div>;
+    }
 
     const handleTeamCharterSave = () => {
         setCharterSaveError(null);
@@ -335,6 +352,8 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
         ...(proj?.members || []),
         ...(proj?.admins || [])
     ];
+
+
 
     return (
         <div className="flex flex-col w-full h-full bg-gray-100">
@@ -934,39 +953,33 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                     </TabsContent>
 
                     <TabsContent value="team-analytics" className="space-y-6">
-                        {/* Team Score Analysis Section */}
-                        <Card>
-                            {analysisLoading ? (
-                                <div className="space-y-4">
-                                    <Skeleton className="h-8 w-full" />
-                                    <Skeleton className="h-32 w-full" />
-                                    <Skeleton className="h-32 w-full" />
-                                </div>
-                            ) : (
-                                <TeamScoreCard
-                                    orgId={id}
-                                    members={projectMembers}
-                                    projectFilter={projId}
-                                    initialAnalysis={analysisData?.analysis || null}
-                                    lastAnalysisTime={analysisData?.timestamp || null}
-                                />
-                            )}
-                        </Card>
-
                         {/* Team Members Section */}
                         <Card>
                             <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <UsersIcon className="h-5 w-5 text-blue-600" />
-                                    Team Members
-                                </CardTitle>
+                                <div className="flex items-center justify-between">
+                                    <CardTitle className="flex items-center gap-2">
+                                        <UsersIcon className="h-5 w-5 text-blue-600" />
+                                        Team Members
+                                    </CardTitle>
+                                    {isAdmin && (
+                                        <div className="flex items-center gap-2">
+                                            <AddProjectMemberDialog 
+                                                projId={projId}
+                                                onMemberAdded={() => {
+                                                    // Refresh the page to show new member
+                                                    window.location.reload();
+                                                }}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
                             </CardHeader>
                             <CardContent>
                                 {projectMembers && projectMembers.length > 0 ? (
                                     <div className="grid gap-3">
                                         {projectMembers.map(
                                             (member: string, index: number) => {
-                                                const isAdmin = proj?.admins?.includes(member) || false;
+                                                const isMemberAdmin = proj?.admins?.includes(member) || false;
                                                 return (
                                                     <div
                                                         key={index}
@@ -985,13 +998,57 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                                             </p>
                                                             <div className="flex items-center gap-2 mt-1">
                                                                 <Badge
-                                                                    variant={isAdmin ? "default" : "secondary"}
-                                                                    className={`text-xs ${isAdmin ? "bg-blue-600 text-white" : ""}`}
+                                                                    variant={isMemberAdmin ? "default" : "secondary"}
+                                                                    className={`text-xs ${isMemberAdmin ? "bg-blue-600 text-white" : ""}`}
                                                                 >
-                                                                    {isAdmin ? "Admin" : "Team Member"}
+                                                                    {isMemberAdmin ? "Admin" : "Team Member"}
                                                                 </Badge>
                                                             </div>
                                                         </div>
+                                                        {/* Only show dropdown menu for admins */}
+                                                        {isAdmin && (
+                                                            <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="h-8 w-8 p-0 hover:bg-gray-200"
+                                                                >
+                                                                    <MoreVertical className="h-4 w-4" />
+                                                                </Button>
+                                                            </DropdownMenuTrigger>
+                                                            <DropdownMenuContent align="end">
+                                                                <DropdownMenuItem asChild>
+                                                                    <ChangeRoleDialog
+                                                                        projId={projId}
+                                                                        memberEmail={member}
+                                                                        currentRole={isMemberAdmin ? "admin" : "member"}
+                                                                        onRoleChanged={() => {
+                                                                            // Refresh the page to show updated roles
+                                                                            window.location.reload();
+                                                                        }}
+                                                                        trigger={
+                                                                            <div className="flex items-center w-full px-2 py-1.5 text-sm cursor-pointer hover:bg-gray-100 rounded-sm">
+                                                                                <EditIcon className="h-4 w-4 mr-2" />
+                                                                                Change Role
+                                                                            </div>
+                                                                        }
+                                                                    />
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuSeparator />
+                                                                <DropdownMenuItem
+                                                                    className="text-red-600 focus:text-red-600"
+                                                                    onClick={() => {
+                                                                        setMemberToRemove(member);
+                                                                        setRemoveMemberDialogOpen(true);
+                                                                    }}
+                                                                >
+                                                                    <Trash2 className="h-4 w-4 mr-2" />
+                                                                    Remove Member
+                                                                </DropdownMenuItem>
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
+                                                        )}
                                                     </div>
                                                 );
                                             },
@@ -1009,6 +1066,25 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                     </div>
                                 )}
                             </CardContent>
+                        </Card>
+
+                        {/* Team Score Analysis Section */}
+                        <Card>
+                            {analysisLoading ? (
+                                <div className="space-y-4">
+                                    <Skeleton className="h-8 w-full" />
+                                    <Skeleton className="h-32 w-full" />
+                                    <Skeleton className="h-32 w-full" />
+                                </div>
+                            ) : (
+                                <TeamScoreCard
+                                    orgId={id}
+                                    members={projectMembers}
+                                    projectFilter={projId}
+                                    initialAnalysis={analysisData?.analysis || null}
+                                    lastAnalysisTime={analysisData?.timestamp || null}
+                                />
+                            )}
                         </Card>
                     </TabsContent>
                 </Tabs>
@@ -1080,6 +1156,18 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            {/* Remove Member Dialog */}
+            <RemoveMemberDialog
+                isOpen={removeMemberDialogOpen}
+                onOpenChange={setRemoveMemberDialogOpen}
+                projId={projId}
+                memberEmail={memberToRemove || ""}
+                onMemberRemoved={() => {
+                    // Refresh the page to show updated member list
+                    window.location.reload();
+                }}
+            />
         </div>
     );
 }

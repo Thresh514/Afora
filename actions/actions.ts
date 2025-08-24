@@ -1917,35 +1917,45 @@ export async function addProjectMember(
     userEmail: string,
     role: "admin" | "member" = "member",
 ) {
-    const { userId } = await auth();
-    if (!userId) {
-        throw new Error("Unauthorized");
-    }
-
     try {
-        const userDoc = await adminDb.collection("users").doc(userEmail).get();
-        if (!userDoc.exists) {
-            throw new Error("User not found");
+        const { userId } = await auth();
+        if (!userId) {
+            console.error("Auth failed: No userId");
+            return { success: false, message: "Unauthorized - Please sign in again" };
         }
 
+        console.log(`Adding member: ${userEmail} to project: ${projId} with role: ${role}`);
+
+        // Check if user exists
+        const userDoc = await adminDb.collection("users").doc(userEmail).get();
+        if (!userDoc.exists) {
+            console.error(`User not found: ${userEmail}`);
+            return { success: false, message: `User with email ${userEmail} not found` };
+        }
+
+        // Check if project exists
         const projectRef = adminDb.collection("projects").doc(projId);
         const projectDoc = await projectRef.get();
 
         if (!projectDoc.exists) {
-            throw new Error("Project not found");
+            console.error(`Project not found: ${projId}`);
+            return { success: false, message: "Project not found" };
         }
 
         const projectData = projectDoc.data();
         const currentMembers = projectData?.members || [];
         const currentAdmins = projectData?.admins || [];
 
+        // Check if user is already a member
         if (
             currentMembers.includes(userEmail) ||
             currentAdmins.includes(userEmail)
         ) {
-            throw new Error("User is already a member of this project");
+            console.error(`User already member: ${userEmail}`);
+            return { success: false, message: "User is already a member of this project" };
         }
 
+        // Add user to project
         if (role === "admin") {
             await projectRef.update({
                 admins: [...currentAdmins, userEmail],
@@ -1956,26 +1966,35 @@ export async function addProjectMember(
             });
         }
 
-        //add the project to the user's projs collection
-        await adminDb
-            .collection("users")
-            .doc(userEmail)
-            .collection("projs")
-            .doc(projId)
-            .set(
-                {
-                    orgId: projectData?.orgId,
-                },
-                { merge: true },
-            );
+        // Add project to user's projs collection
+        try {
+            await adminDb
+                .collection("users")
+                .doc(userEmail)
+                .collection("projs")
+                .doc(projId)
+                .set(
+                    {
+                        orgId: projectData?.orgId,
+                    },
+                    { merge: true },
+                );
+        } catch (error) {
+            console.error(`Failed to add project reference for user ${userEmail}:`, error);
+            // Don't fail the entire operation if this fails
+        }
 
+        console.log(`Successfully added ${userEmail} as ${role} to project ${projId}`);
         return {
             success: true,
             message: `User added as ${role} successfully`,
         };
     } catch (error) {
         console.error("Error adding project member:", error);
-        return { success: false, message: (error as Error).message };
+        return { 
+            success: false, 
+            message: error instanceof Error ? error.message : "An unexpected error occurred" 
+        };
     }
 }
 
@@ -2039,24 +2058,35 @@ export async function updateProjectMembers(
 
 // remove project member
 export async function removeProjectMember(projId: string, userEmail: string) {
-    const { userId } = await auth();
-    if (!userId) {
-        throw new Error("Unauthorized");
-    }
-
     try {
+        const { userId } = await auth();
+        if (!userId) {
+            console.error("Auth failed: No userId");
+            return { success: false, message: "Unauthorized - Please sign in again" };
+        }
+
+        console.log(`Removing member: ${userEmail} from project: ${projId}`);
+
+        // Check if project exists
         const projectRef = adminDb.collection("projects").doc(projId);
         const projectDoc = await projectRef.get();
 
         if (!projectDoc.exists) {
-            throw new Error("Project not found");
+            console.error(`Project not found: ${projId}`);
+            return { success: false, message: "Project not found" };
         }
 
         const projectData = projectDoc.data();
         const currentMembers = projectData?.members || [];
         const currentAdmins = projectData?.admins || [];
 
-        // remove the user from the members or admins list
+        // Check if user is actually a member
+        if (!currentMembers.includes(userEmail) && !currentAdmins.includes(userEmail)) {
+            console.error(`User not a member: ${userEmail}`);
+            return { success: false, message: "User is not a member of this project" };
+        }
+
+        // Remove user from the members or admins list
         const updatedMembers = currentMembers.filter(
             (email: string) => email !== userEmail,
         );
@@ -2069,7 +2099,7 @@ export async function removeProjectMember(projId: string, userEmail: string) {
             admins: updatedAdmins,
         });
 
-        // remove the project from the user's projs collection
+        // Remove the project from the user's projs collection
         try {
             await adminDb
                 .collection("users")
@@ -2082,15 +2112,139 @@ export async function removeProjectMember(projId: string, userEmail: string) {
                 `Failed to remove project reference for user ${userEmail}:`,
                 error,
             );
+            // Don't fail the entire operation if this fails
         }
 
+        console.log(`Successfully removed ${userEmail} from project ${projId}`);
         return {
             success: true,
             message: "User removed from project successfully",
         };
     } catch (error) {
         console.error("Error removing project member:", error);
-        return { success: false, message: (error as Error).message };
+        return { 
+            success: false, 
+            message: error instanceof Error ? error.message : "An unexpected error occurred" 
+        };
+    }
+}
+
+// change project member role
+export async function changeProjectMemberRole(
+    projId: string,
+    userEmail: string,
+    newRole: "admin" | "member"
+) {
+    try {
+        const { userId } = await auth();
+        if (!userId) {
+            console.error("Auth failed: No userId");
+            return { success: false, message: "Unauthorized - Please sign in again" };
+        }
+
+        console.log(`Changing role for: ${userEmail} in project: ${projId} to: ${newRole}`);
+
+        // Check if project exists
+        const projectRef = adminDb.collection("projects").doc(projId);
+        const projectDoc = await projectRef.get();
+
+        if (!projectDoc.exists) {
+            console.error(`Project not found: ${projId}`);
+            return { success: false, message: "Project not found" };
+        }
+
+        const projectData = projectDoc.data();
+        const currentMembers = projectData?.members || [];
+        const currentAdmins = projectData?.admins || [];
+
+        // Check if user is actually a member
+        if (!currentMembers.includes(userEmail) && !currentAdmins.includes(userEmail)) {
+            console.error(`User not a member: ${userEmail}`);
+            return { success: false, message: "User is not a member of this project" };
+        }
+
+        // Remove user from both lists first
+        const updatedMembers = currentMembers.filter(
+            (email: string) => email !== userEmail,
+        );
+        const updatedAdmins = currentAdmins.filter(
+            (email: string) => email !== userEmail,
+        );
+
+        // Add user to the appropriate list based on new role
+        if (newRole === "admin") {
+            updatedAdmins.push(userEmail);
+        } else {
+            updatedMembers.push(userEmail);
+        }
+
+        await projectRef.update({
+            members: updatedMembers,
+            admins: updatedAdmins,
+        });
+
+        console.log(`Successfully changed ${userEmail} role to ${newRole} in project ${projId}`);
+        return {
+            success: true,
+            message: `User role changed to ${newRole} successfully`,
+        };
+    } catch (error) {
+        console.error("Error changing project member role:", error);
+        return { 
+            success: false, 
+            message: (error as Error).message 
+        };
+    }
+}
+
+// Temporary fix: Add user as admin to existing project
+export async function fixProjectAdmin(
+    projId: string,
+    userEmail: string
+) {
+    try {
+        const { userId } = await auth();
+        if (!userId) {
+            console.error("Auth failed: No userId");
+            return { success: false, message: "Unauthorized - Please sign in again" };
+        }
+
+        console.log(`Fixing admin for project: ${projId}, adding user: ${userEmail}`);
+
+        // Check if project exists
+        const projectRef = adminDb.collection("projects").doc(projId);
+        const projectDoc = await projectRef.get();
+
+        if (!projectDoc.exists) {
+            console.error(`Project not found: ${projId}`);
+            return { success: false, message: "Project not found" };
+        }
+
+        const projectData = projectDoc.data();
+        const currentAdmins = projectData?.admins || [];
+
+        // Check if user is already an admin
+        if (currentAdmins.includes(userEmail)) {
+            console.log(`User ${userEmail} is already an admin`);
+            return { success: true, message: "User is already an admin" };
+        }
+
+        // Add user to admins array
+        await projectRef.update({
+            admins: [...currentAdmins, userEmail],
+        });
+
+        console.log(`Successfully added ${userEmail} as admin to project ${projId}`);
+        return {
+            success: true,
+            message: "User added as admin successfully",
+        };
+    } catch (error) {
+        console.error("Error fixing project admin:", error);
+        return { 
+            success: false, 
+            message: (error as Error).message 
+        };
     }
 }
 
