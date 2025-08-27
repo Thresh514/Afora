@@ -201,35 +201,20 @@ export const generateTask = async (
 
         // Extract project information from team charter responses
         const projectInfo = {
-            projectPurpose: teamCharterResponses[0] || "",
-            keyStakeholders: teamCharterResponses[1] || "",
-            productObjectives: teamCharterResponses[2] || "",
-        };
-
-        // Extract team information
-        const teamInfo = {
-            teamStructure: teamCharterResponses[3] || "",
-            communicationPreferences: teamCharterResponses[4] || "",
-            workingStyle: teamCharterResponses[5] || "",
+            projectPurpose: teamCharterResponses[0] || "", // Main mission/vision
+            keyMilestones: teamCharterResponses[1] || "", // Key milestones
+            targetDemographic: teamCharterResponses[2] || "", // Target demographic
         };
 
         // Extract timeline information
         const timelineInfo = {
-            projectDuration: teamCharterResponses[6] || "",
-            majorMilestones: teamCharterResponses[7] || "",
-            teamAvailability: teamCharterResponses[8] || "",
+            projectDuration: teamCharterResponses[3] || "", // Expected duration (weeks)
+            risksAndChallenges: teamCharterResponses[4] || "", // Risks and challenges
         };
 
-        // Extract additional information
-        const additionalInfo = {
-            successCriteria: teamCharterResponses[9] || "",
-            risksAndChallenges: teamCharterResponses[10] || "",
-            resourceRequirements: teamCharterResponses[11] || "",
-        };
-
-        // Validate inputs
-        if (!projectInfo.projectPurpose || !projectInfo.keyStakeholders || !projectInfo.productObjectives) {
-            throw new Error("Missing required project information.");
+        // Validate required inputs (questions 1, 2, and 4 are required)
+        if (!projectInfo.projectPurpose || !projectInfo.keyMilestones || !timelineInfo.projectDuration) {
+            throw new Error("Missing required project information. Please complete questions 1, 2, and 4 in the team charter.");
         }
 
         if (!teamCharterResponses || teamCharterResponses.length === 0) {
@@ -257,10 +242,10 @@ export const generateTask = async (
 
 Given the following information:
 - Project Purpose: ${projectInfo.projectPurpose}
-- Key Stakeholders: ${projectInfo.keyStakeholders}
-- Product Objectives: ${projectInfo.productObjectives}
+- Key Milestones: ${projectInfo.keyMilestones}
+- Target Demographic: ${projectInfo.targetDemographic}
 - Project Duration: ${timelineInfo.projectDuration}
-- Risks and Challenges: ${additionalInfo.risksAndChallenges}
+- Risks and Challenges: ${timelineInfo.risksAndChallenges}
 - Team Size: ${teamSize} members
 - Team Members Survey Responses: ${userResponses.join(", ")}
 
