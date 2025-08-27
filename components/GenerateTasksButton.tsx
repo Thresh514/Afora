@@ -46,7 +46,7 @@ const GenerateTasksButton = ({
     const [isPending, startTransition] = useTransition();
     const [generatedOutput, setGeneratedOutput] = useState<GeneratedTasks>();
     const [taskGenerationError, setTaskGenerationError] = useState<ErrorInfo | null>(null);
-    const [setShowErrorDialog] = useState(false);
+
     if (loading) {
         return;
     }
@@ -71,7 +71,6 @@ const GenerateTasksButton = ({
                 .then(() => {
                     toast.success("Tasks successfully updated!");
                     setOpen(false);
-                    setShowErrorDialog(false);
                 })
                 .catch((error: Error) => {
                     console.error("Error:", error);
@@ -97,7 +96,6 @@ const GenerateTasksButton = ({
                 onDismiss: () => setTaskGenerationError(null)
             };
             setTaskGenerationError(errorInfo);
-            setShowErrorDialog(true); // 显示错误弹窗
             showErrorToast(errorInfo);
             return;
         }
@@ -117,7 +115,6 @@ const GenerateTasksButton = ({
                     onDismiss: () => setTaskGenerationError(null)
                 };
                 setTaskGenerationError(errorInfo);
-                setShowErrorDialog(true);
                 showErrorToast(errorInfo);
                 return;
             }
@@ -171,7 +168,6 @@ const GenerateTasksButton = ({
                     const parsed: GeneratedTasks = JSON.parse(output);
                     setGeneratedOutput(parsed);
                     setTaskGenerationError(null);
-                    setShowErrorDialog(false); // 关闭错误弹窗
                 } catch (error) {
                     console.error("Task generation error:", error);
                     
@@ -205,7 +201,6 @@ const GenerateTasksButton = ({
                     };
                     
                     setTaskGenerationError(errorInfo);
-                    setShowErrorDialog(true); // 显示错误弹窗
                     showErrorToast(errorInfo);
                 }
             });
@@ -223,7 +218,6 @@ const GenerateTasksButton = ({
             };
             
             setTaskGenerationError(errorInfo);
-            setShowErrorDialog(true); // 显示错误弹窗
             showErrorToast(errorInfo);
         }
     };
@@ -240,7 +234,6 @@ const GenerateTasksButton = ({
                     // 当对话框关闭时，清除错误信息和生成输出
                     setTaskGenerationError(null);
                     setGeneratedOutput(undefined);
-                    setShowErrorDialog(false);
                 }
             }}>
                 <DialogTrigger asChild>
@@ -350,7 +343,6 @@ const GenerateTasksButton = ({
                                     onClick={() => {
                                         setGeneratedOutput(undefined);
                                         setTaskGenerationError(null);
-                                        setShowErrorDialog(false);
                                         setOpen(false);
                                     }}
                                 >
