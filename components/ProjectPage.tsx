@@ -28,21 +28,14 @@ import { updateStatus } from "@/lib/store/features/stageStatus/stageStatusSlice"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import ErrorDisplay, { ErrorInfo, showErrorToast } from "./ErrorDisplay";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { ErrorInfo, showErrorToast } from "./ErrorDisplay";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import TeamScoreCard from "@/components/TeamScoreCard";
 import ProjOnboarding from "./ProjOnboarding";
 import AddProjectMemberDialog from "./AddProjectMemberDialog";
 import ChangeRoleDialog from "./ChangeRoleDialog";
 import RemoveMemberDialog from "./RemoveMemberDialog";
-import { fixProjectAdmin } from "@/actions/actions";
 
 interface ProjectStats {
     totalTasks: number;

@@ -46,7 +46,7 @@ const GenerateTasksButton = ({
     const [isPending, startTransition] = useTransition();
     const [generatedOutput, setGeneratedOutput] = useState<GeneratedTasks>();
     const [taskGenerationError, setTaskGenerationError] = useState<ErrorInfo | null>(null);
-    const [showErrorDialog, setShowErrorDialog] = useState(false);
+    const [setShowErrorDialog] = useState(false);
     if (loading) {
         return;
     }
