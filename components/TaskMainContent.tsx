@@ -5,6 +5,7 @@ import { useUser } from "@clerk/nextjs";
 import { collection } from "firebase/firestore";
 import { useCollection } from "react-firebase-hooks/firestore";
 import { db } from "@/firebase";
+import { useParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import SubmissionCard from "@/components/SubmissionCard";
 import { Separator } from "@/components/ui/separator";
@@ -36,6 +37,8 @@ function TaskMainContent({
     task,
     taskLocked,
 }: TaskMainContentProps) {
+    const params = useParams();
+    const orgId = params.id as string;
     const { user } = useUser();
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
@@ -49,7 +52,7 @@ function TaskMainContent({
     const [isModifying, setIsModifying] = useState(false);
 
     const [publicComments, publicCommentsLoading, publicCommentsError] =
-        useCollection(collection(db, "projects", projId, "stages", stageId, "tasks", taskId, "public"));
+        useCollection(collection(db, "organizations", orgId, "projects", projId, "stages", stageId, "tasks", taskId, "public"));
 
     const sortedPublicComments = useMemo(() => {
         if (!publicComments) return [];
@@ -83,7 +86,7 @@ function TaskMainContent({
 
     const handleUpdateProgress = () => {
         if (!taskLocked) {
-            completeTaskWithProgress(projId, stageId, taskId, tempCompletionPercentage[0])
+            completeTaskWithProgress(projId, stageId, taskId, tempCompletionPercentage[0], orgId)
             setCompletionPercentage(tempCompletionPercentage);
             if (tempCompletionPercentage[0] === 100 && !isCompleted) {
                 setIsCompleted(true);
@@ -315,7 +318,8 @@ function TaskMainContent({
                                           projId,
                                           stageId,
                                           taskId,
-                                          user.primaryEmailAddress?.emailAddress || ""
+                                          user.primaryEmailAddress?.emailAddress || "",
+                                          orgId
                                         );
                                         if (result.success) {
                                           toast.success("Task accepted!");

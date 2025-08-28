@@ -114,14 +114,22 @@ function SettingPage() {
                 const orgsSnapshot = await getDocs(orgsQuery);
                 const isOrgAdmin = !orgsSnapshot.empty;
 
-                // Check if user is admin in any project
-                const projectsQuery = query(
-                    collection(db, "projects"),
-                    where("admins", "array-contains", userEmail)
-                );
+                // Check if user is admin in any project (check all organizations)
+                let isProjectAdmin = false;
+                const orgsSnapshot2 = await getDocs(collection(db, "organizations"));
                 
-                const projectsSnapshot = await getDocs(projectsQuery);
-                const isProjectAdmin = !projectsSnapshot.empty;
+                for (const orgDoc of orgsSnapshot2.docs) {
+                    const projectsSnapshot = await getDocs(
+                        query(
+                            collection(db, "organizations", orgDoc.id, "projects"),
+                            where("admins", "array-contains", userEmail)
+                        )
+                    );
+                    if (!projectsSnapshot.empty) {
+                        isProjectAdmin = true;
+                        break;
+                    }
+                }
 
                 setIsAdmin(isOrgAdmin || isProjectAdmin);
             } catch (error) {

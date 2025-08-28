@@ -42,7 +42,7 @@ const GenerateTasksButton = ({
     teamCharterResponses: string[];
 }) => {
     const [open, setOpen] = useState(false);
-    const [proj, loading, error] = useDocument(doc(db, "projects", projId));
+    const [proj, loading, error] = useDocument(doc(db, "organizations", orgId, "projects", projId));
     const [isPending, startTransition] = useTransition();
     const [generatedOutput, setGeneratedOutput] = useState<GeneratedTasks>();
     const [taskGenerationError, setTaskGenerationError] = useState<ErrorInfo | null>(null);
@@ -67,7 +67,7 @@ const GenerateTasksButton = ({
         }
 
         startTransition(async () => {
-            await updateStagesTasks(projId, generatedOutput)
+            await updateStagesTasks(projId, generatedOutput, orgId)
                 .then(() => {
                     toast.success("Tasks successfully updated!");
                     setOpen(false);

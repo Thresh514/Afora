@@ -43,7 +43,7 @@ interface ProjectTeam {
     teamSize: number;
 }
 
-const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}: MemberListProps) => {
+const MemberList = ({admins, members, userRole, orgId, projectsData, currentUserEmail}: MemberListProps) => {
     const [adminsPfp, setAdminsPfp] = useState<{ [email: string]: string }>({});
     const [membersPfp, setMembersPfp] = useState<{ [email: string]: string }>(
         {},
@@ -218,6 +218,7 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                     const result = await removeProjectMember(
                         fromProjectId,
                         memberEmail,
+                        orgId
                     );
                     if (!result.success) {
                         toast.error(
@@ -244,6 +245,7 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                         const result = await updateProjectMembers(
                             toProjectId,
                             updatedMembers,
+                            orgId
                         );
                         if (!result.success) {
                             toast.error(
@@ -269,6 +271,7 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                                         await updateProjectMembers(
                                             fromProjectId,
                                             restoreMembers,
+                                            orgId
                                         );
                                     }
                                 } catch (restoreError) {
@@ -295,13 +298,14 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                 toast.error("Failed to move member. Please try again.");
             }
         },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         [projectTeams],
     );
 
     const updateTeamSize = useCallback(
         async (projectId: string, newSize: number) => {
             try {
-                const result = await updateProjectTeamSize(projectId, newSize);
+                const result = await updateProjectTeamSize(projectId, newSize, orgId);
 
                 if (result.success) {
                     toast.success("Team size updated successfully!");
@@ -313,6 +317,7 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                 toast.error("Failed to update team size");
             }
         },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         [],
     );
 
@@ -414,6 +419,7 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                 </div>
             );
         },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         [adminsPfp, membersPfp, userRole, projectTeams, handleMemberMove],
     );
 

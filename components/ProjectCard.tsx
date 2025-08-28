@@ -52,7 +52,7 @@ const ProjectCard = ({
     const handleDeleteProject = () => {
         startTransition(async () => {
             try {
-                const result = await deleteProject(projId);
+                const result = await deleteProject(projId, orgId);
                 if (result.success) {
                     toast.success("Project deleted successfully!");
                     setIsDeleteDialogOpen(false);

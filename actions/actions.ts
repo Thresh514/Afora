@@ -12,8 +12,7 @@ import { storage } from "@/firebase";
 export async function createNewUser(
     userEmail: string,
     username: string,
-    userImage: string,
-) {
+    userImage: string) {
     const { userId } = await auth();
     if (!userId) {
         throw new Error("Unauthorized");
@@ -29,8 +28,7 @@ export async function createNewUser(
                 username: username,
                 userImage: userImage,
             },
-            { merge: true },
-        );
+            { merge: true });
     } catch (e) {
         return { success: false, message: (e as Error).message };
     }
@@ -38,8 +36,7 @@ export async function createNewUser(
 
 export async function createNewOrganization(
     orgName: string,
-    orgDescription: string,
-) {
+    orgDescription: string) {
     const x = await auth();
     const { userId, sessionClaims } = x; //await auth();
 
@@ -70,8 +67,7 @@ export async function createNewOrganization(
             } catch (clerkError) {
                 console.error(
                     "Failed to get user email from Clerk:",
-                    clerkError,
-                );
+                    clerkError);
             }
         }
 
@@ -83,8 +79,7 @@ export async function createNewOrganization(
         const validRegex = /^[a-zA-Z0-9.,'-]+$/;
         if (!validRegex.test(orgName)) {
             throw new Error(
-                "Organization name contains invalid characters. Only alphanumeric characters and punctuation (.,'-) are allowed.",
-            );
+                "Organization name contains invalid characters. Only alphanumeric characters and punctuation (.,'-) are allowed.");
             // I feel like  an organization should be able to contain spaces because that is so normal
             // Would there be a way to do this?
         }
@@ -150,8 +145,7 @@ export async function deleteOrg(orgId: string) {
 export async function inviteUserToOrg(
     orgId: string,
     email: string,
-    access: string,
-) {
+    access: string) {
     const { userId } = await auth();
     if (!userId) {
         throw new Error("Unauthorized");
@@ -255,15 +249,12 @@ export async function setUserOnboardingSurvey(selectedTags: string[][]) {
                     {
                         id: user?.id,
                         emailAddresses: user?.emailAddresses?.map(
-                            (ea) => ea.emailAddress,
-                        ),
+                            (ea) => ea.emailAddress),
                         primaryEmailAddress:
                             user?.primaryEmailAddress?.emailAddress,
                     },
                     null,
-                    2,
-                ),
-            );
+                    2));
 
             userEmail =
                 user?.emailAddresses?.[0]?.emailAddress ||
@@ -280,8 +271,7 @@ export async function setUserOnboardingSurvey(selectedTags: string[][]) {
     ) {
         console.error("setUserOnboardingSurvey failed: no valid email found");
         throw new Error(
-            `Unauthorized - no valid email found. Got: ${userEmail}`,
-        );
+            `Unauthorized - no valid email found. Got: ${userEmail}`);
     }
     try {
         const formatted = selectedTags.map((tags) => tags.join(","));
@@ -289,16 +279,14 @@ export async function setUserOnboardingSurvey(selectedTags: string[][]) {
         // Check if any of the formatted strings are empty
         if (formatted.some((tag) => tag === "")) {
             throw new Error(
-                "Please select at least one tag for each question!",
-            );
+                "Please select at least one tag for each question!");
         }
 
         await adminDb.collection("users").doc(userEmail).set(
             {
                 onboardingSurveyResponse: formatted,
             },
-            { merge: true },
-        );
+            { merge: true });
         return { success: true };
     } catch (error) {
         console.error(error);
@@ -308,8 +296,7 @@ export async function setUserOnboardingSurvey(selectedTags: string[][]) {
 
 export async function setProjOnboardingSurvey(
     orgId: string,
-    responses: string[],
-) {
+    responses: string[]) {
     const { userId, sessionClaims } = await auth();
 
     if (!userId) {
@@ -319,8 +306,7 @@ export async function setProjOnboardingSurvey(
     // 详细的调试信息 - 先看看 sessionClaims 里有什么
     console.log(
         "Debug setProjOnboardingSurvey - sessionClaims:",
-        JSON.stringify(sessionClaims, null, 2),
-    );
+        JSON.stringify(sessionClaims, null, 2));
 
     // 尝试多种方式获取用户邮箱
     let userEmail: string | undefined;
@@ -352,15 +338,12 @@ export async function setProjOnboardingSurvey(
                     {
                         id: user?.id,
                         emailAddresses: user?.emailAddresses?.map(
-                            (ea) => ea.emailAddress,
-                        ),
+                            (ea) => ea.emailAddress),
                         primaryEmailAddress:
                             user?.primaryEmailAddress?.emailAddress,
                     },
                     null,
-                    2,
-                ),
-            );
+                    2));
 
             userEmail =
                 user?.emailAddresses?.[0]?.emailAddress ||
@@ -389,8 +372,7 @@ export async function setProjOnboardingSurvey(
     ) {
         console.error("Authentication failed: no valid email found");
         throw new Error(
-            `Unauthorized - no valid email found. Got: ${userEmail}`,
-        );
+            `Unauthorized - no valid email found. Got: ${userEmail}`);
     }
 
     try {
@@ -401,8 +383,7 @@ export async function setProjOnboardingSurvey(
 
         console.log(
             "About to save to path:",
-            `users/${userEmail}/orgs/${orgId}`,
-        );
+            `users/${userEmail}/orgs/${orgId}`);
 
         await adminDb
             .collection("users")
@@ -413,8 +394,7 @@ export async function setProjOnboardingSurvey(
                 {
                     projOnboardingSurveyResponse: responses,
                 },
-                { merge: true },
-            );
+                { merge: true });
 
         console.log("Successfully saved survey response");
         return { success: true };
@@ -462,15 +442,20 @@ export async function updateProjects(orgId: string, groups: string[][]) {
     }
     try {
         groups.map(async (group, index) => {
-            const projectRef = await adminDb.collection("projects").add({
-                orgId: orgId,
-                title: `Project ${index + 1}`,
-                members: group,
-                admins: [userId],
-            });
+            // 新结构：在组织下创建项目
+            const projectRef = await adminDb
+                .collection("organizations")
+                .doc(orgId)
+                .collection("projects")
+                .add({
+                    title: `Project ${index + 1}`,
+                    members: group,
+                    admins: [userId],
+                });
 
             const projectId = projectRef.id;
-            await projectRef.update({ projId: projectId });
+            
+            // 在组织的项目子集合中添加引用
             await adminDb
                 .collection("organizations")
                 .doc(orgId)
@@ -479,6 +464,7 @@ export async function updateProjects(orgId: string, groups: string[][]) {
                     projId: projectId,
                     members: group,
                 });
+                
             group.map(async (user) => {
                 await adminDb
                     .collection("users")
@@ -489,8 +475,7 @@ export async function updateProjects(orgId: string, groups: string[][]) {
                         {
                             orgId: orgId,
                         },
-                        { merge: true },
-                    );
+                        { merge: true });
             });
         });
     } catch (error) {
@@ -505,8 +490,7 @@ export async function createProject(
     projectTitle: string,
     members: string[] = [],
     teamSize?: number,
-    admins: string[] = [],
-) {
+    admins: string[] = []) {
     const { sessionClaims } = await auth();
 
     // 尝试多种方式获取用户邮箱
@@ -559,7 +543,6 @@ export async function createProject(
 
         // 创建项目文档
         const projectData: any = {
-            orgId: orgId,
             title: projectTitle.trim(),
             members: members,
             admins: admins.length > 0 ? admins : [userId], // Use provided admins or fallback to creator
@@ -571,12 +554,14 @@ export async function createProject(
             projectData.teamSize = teamSize;
         }
         
-        const projectRef = await adminDb.collection("projects").add(projectData);
+        // 新结构：在组织下创建项目
+        const projectRef = await adminDb
+            .collection("organizations")
+            .doc(orgId)
+            .collection("projects")
+            .add(projectData);
 
         const projectId = projectRef.id;
-
-        // 更新项目文档添加 projId 字段
-        await projectRef.update({ projId: projectId });
 
         // 在组织的项目子集合中添加引用
         await adminDb
@@ -598,8 +583,7 @@ export async function createProject(
                 {
                     orgId: orgId,
                 },
-                { merge: true },
-            );
+                { merge: true });
 
         // 为所有成员添加项目引用
         for (const memberEmail of members) {
@@ -613,13 +597,11 @@ export async function createProject(
                         {
                             orgId: orgId,
                         },
-                        { merge: true },
-                    );
+                        { merge: true });
             } catch (error) {
                 console.error(
                     `Failed to add project reference for user ${memberEmail}:`,
-                    error,
-                );
+                    error);
             }
         }
 
@@ -637,7 +619,7 @@ export async function createProject(
 export async function setTeamCharter(
     projId: string,
     teamCharterResponse: string[],
-) {
+    orgId: string) {
     const { sessionClaims } = await auth();
 
     // 尝试多种方式获取用户邮箱
@@ -678,12 +660,11 @@ export async function setTeamCharter(
             throw new Error("Team charter cannot be empty!");
         }
 
-        await adminDb.collection("projects").doc(projId).set(
+        await adminDb.collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("projects").doc(projId).set(
             {
                 teamCharterResponse: teamCharterResponse,
             },
-            { merge: true },
-        );
+            { merge: true });
         return { success: true };
     } catch (error) {
         console.error(error);
@@ -694,7 +675,7 @@ export async function setTeamCharter(
 export async function updateStagesTasks(
     projId: string,
     structure: GeneratedTasks,
-): Promise<{ success: boolean; message?: string }> {
+    orgId: string): Promise<{ success: boolean; message?: string }> {
     const { userId } = await auth();
     if (!userId) {
         throw new Error("Unauthorized");
@@ -755,13 +736,15 @@ export async function setTaskComplete(
     stageId: string,
     taskId: string,
     isCompleted: boolean,
-) {
+    orgId: string) {
     const { userId } = await auth();
     if (!userId) {
         throw new Error("Unauthorized");
     }
     try {
         const taskRef = adminDb
+            .collection("organizations")
+            .doc(orgId)
             .collection("projects")
             .doc(projId)
             .collection("stages")
@@ -769,6 +752,8 @@ export async function setTaskComplete(
             .collection("tasks")
             .doc(taskId);
         const stageRef = adminDb
+            .collection("organizations")
+            .doc(orgId)
             .collection("projects")
             .doc(projId)
             .collection("stages")
@@ -799,8 +784,7 @@ export async function postComment(
     taskId: string,
     message: string,
     time: Timestamp,
-    uid: string,
-) {
+    uid: string, orgId: string) {
     const { userId } = await auth();
     if (!userId) {
         throw new Error("Unauthorized");
@@ -830,8 +814,7 @@ export async function postComment(
 export async function updateStages(
     projId: string,
     stageUpdates: Stage[],
-    stagesToDelete: string[],
-) {
+    stagesToDelete: string[], orgId: string) {
     const { userId } = await auth();
     if (!userId) {
         throw new Error("Unauthorized");
@@ -840,6 +823,8 @@ export async function updateStages(
     try {
         const batch = adminDb.batch();
         const projRef = adminDb
+            .collection("organizations")
+            .doc(orgId)
             .collection("projects")
             .doc(projId)
             .collection("stages");
@@ -859,8 +844,7 @@ export async function updateStages(
                 batch.set(
                     projRef.doc(stage.id),
                     { order: stage.order, title: stage.title },
-                    { merge: true },
-                );
+                    { merge: true });
             }
         });
 
@@ -884,6 +868,7 @@ export async function createTask(
     description: string,
     softDeadline: string,
     hardDeadline: string,
+    orgId: string,
     points: number
 ) {
     const { userId } = await auth();
@@ -893,6 +878,8 @@ export async function createTask(
 
     try {
         const taskRef = adminDb
+            .collection("organizations")
+            .doc(orgId)
             .collection("projects")
             .doc(projId)
             .collection("stages")
@@ -918,6 +905,8 @@ export async function createTask(
         await taskRef.set(defaultTask);
 
         const stageRef = adminDb
+            .collection("organizations")
+            .doc(orgId)
             .collection("projects")
             .doc(projId)
             .collection("stages")
@@ -938,8 +927,7 @@ export async function createTask(
 export async function deleteTask(
     projId: string,
     stageId: string,
-    taskId: string,
-) {
+    taskId: string, orgId: string) {
     const { userId } = await auth();
     if (!userId) {
         throw new Error("Unauthorized");
@@ -947,6 +935,8 @@ export async function deleteTask(
 
     try {
         const taskRef = adminDb
+            .collection("organizations")
+            .doc(orgId)
             .collection("projects")
             .doc(projId)
             .collection("stages")
@@ -954,6 +944,8 @@ export async function deleteTask(
             .collection("tasks")
             .doc(taskId);
         const stageRef = adminDb
+            .collection("organizations")
+            .doc(orgId)
             .collection("projects")
             .doc(projId)
             .collection("stages")
@@ -986,6 +978,7 @@ export async function updateTask(
     description: string,
     soft_deadline: string,
     hard_deadline: string,
+    orgId: string,
     points?: number,
     completion_percentage?: number
 ) {
@@ -1026,7 +1019,7 @@ export async function updateTask(
     }
 }
 
-export async function updateProjectTitle(projId: string, newTitle: string) {
+export async function updateProjectTitle(projId: string, newTitle: string, orgId: string) {
     const { userId } = await auth();
     if (!userId) {
         throw new Error("Unauthorized");
@@ -1037,12 +1030,11 @@ export async function updateProjectTitle(projId: string, newTitle: string) {
             throw new Error("Project title cannot be empty!");
         }
 
-        await adminDb.collection("projects").doc(projId).set(
+        await adminDb.collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("projects").doc(projId).set(
             {
                 title: newTitle,
             },
-            { merge: true },
-        );
+            { merge: true });
 
         return { success: true };
     } catch (error) {
@@ -1051,7 +1043,7 @@ export async function updateProjectTitle(projId: string, newTitle: string) {
     }
 }
 
-export async function getStageLockStatus(projId: string) {
+export async function getStageLockStatus(projId: string, orgId: string) {
     const { userId } = await auth();
     if (!userId) {
         throw new Error("Unauthorized");
@@ -1093,8 +1085,7 @@ export async function searchPexelsImages(searchQuery: string) {
         });
 
         const imageUrls = response.data.photos.map(
-            (photo: any) => photo.src.original,
-        );
+            (photo: any) => photo.src.original);
         return { success: true, urls: imageUrls };
     } catch (error) {
         console.error(error);
@@ -1117,8 +1108,7 @@ export async function setBgImage(orgId: string, imageUrl: string) {
             {
                 backgroundImage: imageUrl,
             },
-            { merge: true },
-        );
+            { merge: true });
 
         return { success: true };
     } catch (error) {
@@ -1128,7 +1118,7 @@ export async function setBgImage(orgId: string, imageUrl: string) {
 }
 
 
-export async function getProjectMembersResponses(projId: string) {
+export async function getProjectMembersResponses(projId: string, orgId: string) {
     const { userId } = await auth();
     if (!userId) {
         throw new Error("Unauthorized");
@@ -1224,13 +1214,11 @@ export async function getProjectMembersResponses(projId: string) {
                     console.error(`Error getting responses for ${memberEmail}:`, error);
                     return null;
                 }
-            }),
-        );
+            }));
 
         // Filter out null values
         const validResponses = memberResponses.filter(
-            (response) => response !== null,
-        );
+            (response) => response !== null);
 
         return { success: true, data: validResponses };
     } catch (error) {
@@ -1245,8 +1233,7 @@ export async function assignTask(
     projId: string,
     stageId: string,
     taskId: string,
-    assigneeEmail: string,
-) {
+    assigneeEmail: string, orgId: string) {
     const { userId } = await auth();
     if (!userId) {
         throw new Error("Unauthorized");
@@ -1274,6 +1261,8 @@ export async function assignTask(
 
         // 验证任务是否存在和可分配
         const taskRef = adminDb
+            .collection("organizations")
+            .doc(orgId)
             .collection("projects")
             .doc(projId)
             .collection("stages")
@@ -1319,8 +1308,7 @@ export async function completeTaskWithProgress(
     projId: string,
     stageId: string,
     taskId: string,
-    completionPercentage: number = 100,
-) {
+    completionPercentage: number = 100, orgId: string) {
     const { userId, sessionClaims } = await auth();
 
     if (!userId) {
@@ -1363,8 +1351,7 @@ export async function completeTaskWithProgress(
         userEmail.trim().length === 0
     ) {
         throw new Error(
-            `Unauthorized - no valid email found. Got: ${userEmail}`,
-        );
+            `Unauthorized - no valid email found. Got: ${userEmail}`);
     }
 
     try {
@@ -1373,6 +1360,8 @@ export async function completeTaskWithProgress(
         }
 
         const taskRef = adminDb
+            .collection("organizations")
+            .doc(orgId)
             .collection("projects")
             .doc(projId)
             .collection("stages")
@@ -1410,10 +1399,12 @@ export async function completeTaskWithProgress(
         if (isCompleted) {
             // 更新阶段统计
             const stageRef = adminDb
-                .collection("projects")
-                .doc(projId)
-                .collection("stages")
-                .doc(stageId);
+            .collection("organizations")
+            .doc(orgId)
+            .collection("projects")
+            .doc(projId)
+            .collection("stages")
+            .doc(stageId);
 
             const stageDoc = await stageRef.get();
             const stageData = stageDoc.data();
@@ -1446,8 +1437,7 @@ export async function submitTask(
     projId: string,
     stageId: string,
     taskId: string,
-    content: string,
-) {
+    content: string, orgId: string) {
     const { userId, sessionClaims } = await auth();
 
     if (!userId) {
@@ -1490,8 +1480,7 @@ export async function submitTask(
         userEmail.trim().length === 0
     ) {
         throw new Error(
-            `Unauthorized - no valid email found. Got: ${userEmail}`,
-        );
+            `Unauthorized - no valid email found. Got: ${userEmail}`);
     }
 
     try {
@@ -1500,6 +1489,8 @@ export async function submitTask(
         }
 
         const taskRef = adminDb
+            .collection("organizations")
+            .doc(orgId)
             .collection("projects")
             .doc(projId)
             .collection("stages")
@@ -1539,8 +1530,7 @@ export async function submitTask(
 export async function getTaskSubmissions(
     projId: string,
     stageId: string,
-    taskId: string,
-) {
+    taskId: string, orgId: string) {
     const { userId } = await auth();
     if (!userId) {
         throw new Error("Unauthorized");
@@ -1548,7 +1538,7 @@ export async function getTaskSubmissions(
 
     try {
         const submissionsSnapshot = await adminDb
-            .collection("projects").doc(projId)
+            .collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("projects").doc(projId)
             .collection("stages").doc(stageId)
             .collection("tasks").doc(taskId)
             .collection("submissions")
@@ -1580,7 +1570,7 @@ export async function getTaskSubmissions(
     }
 }
 
-export async function getOverdueTasks(projId: string) {
+export async function getOverdueTasks(projId: string, orgId: string) {
     const { userId } = await auth();
     if (!userId) {
         throw new Error("Unauthorized");
@@ -1633,7 +1623,7 @@ export async function getOverdueTasks(projId: string) {
     }
 }
 
-export async function getAvailableTasks(projId: string) {
+export async function getAvailableTasks(projId: string, orgId: string) {
     const { userId } = await auth();
     if (!userId) {
         throw new Error("Unauthorized");
@@ -1741,7 +1731,7 @@ export async function getUserScore(userEmail: string, projectId: string) {
     }
 }
 
-export async function getProjectLeaderboard(projId: string) {
+export async function getProjectLeaderboard(projId: string, orgId: string) {
     const { userId } = await auth();
     if (!userId) {
         throw new Error("Unauthorized");
@@ -1842,7 +1832,7 @@ export async function getProjectLeaderboard(projId: string) {
     }
 }
 
-export async function getProjectStats(projId: string) {
+export async function getProjectStats(projId: string, orgId: string) {
     const { userId } = await auth();
     if (!userId) {
         throw new Error("Unauthorized");
@@ -1916,6 +1906,7 @@ export async function addProjectMember(
     projId: string,
     userEmail: string,
     role: "admin" | "member" = "member",
+    orgId: string
 ) {
     try {
         const { userId } = await auth();
@@ -1934,7 +1925,7 @@ export async function addProjectMember(
         }
 
         // Check if project exists
-        const projectRef = adminDb.collection("projects").doc(projId);
+        const projectRef = adminDb.collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("projects").doc(projId);
         const projectDoc = await projectRef.get();
 
         if (!projectDoc.exists) {
@@ -1977,8 +1968,7 @@ export async function addProjectMember(
                     {
                         orgId: projectData?.orgId,
                     },
-                    { merge: true },
-                );
+                    { merge: true });
         } catch (error) {
             console.error(`Failed to add project reference for user ${userEmail}:`, error);
             // Don't fail the entire operation if this fails
@@ -2002,22 +1992,21 @@ export async function addProjectMember(
 export async function updateProjectMembers(
     projId: string,
     memberEmails: string[],
-) {
+    orgId: string) {
     const { userId } = await auth();
     if (!userId) {
         throw new Error("Unauthorized");
     }
 
     try {
-        const projectRef = adminDb.collection("projects").doc(projId);
+        const projectRef = adminDb.collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("projects").doc(projId);
         const projectDoc = await projectRef.get();
-
+        
         if (!projectDoc.exists) {
             throw new Error("Project not found");
         }
-
+        
         const projectData = projectDoc.data();
-        const orgId = projectData?.orgId;
 
         // update the project members list
         await projectRef.update({
@@ -2036,13 +2025,11 @@ export async function updateProjectMembers(
                         {
                             orgId: orgId,
                         },
-                        { merge: true },
-                    );
+                        { merge: true });
             } catch (error) {
                 console.error(
                     `Failed to add project reference for user ${memberEmail}:`,
-                    error,
-                );
+                    error);
             }
         }
 
@@ -2057,7 +2044,7 @@ export async function updateProjectMembers(
 }
 
 // remove project member
-export async function removeProjectMember(projId: string, userEmail: string) {
+export async function removeProjectMember(projId: string, userEmail: string, orgId: string) {
     try {
         const { userId } = await auth();
         if (!userId) {
@@ -2068,7 +2055,7 @@ export async function removeProjectMember(projId: string, userEmail: string) {
         console.log(`Removing member: ${userEmail} from project: ${projId}`);
 
         // Check if project exists
-        const projectRef = adminDb.collection("projects").doc(projId);
+        const projectRef = adminDb.collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("projects").doc(projId);
         const projectDoc = await projectRef.get();
 
         if (!projectDoc.exists) {
@@ -2088,11 +2075,9 @@ export async function removeProjectMember(projId: string, userEmail: string) {
 
         // Remove user from the members or admins list
         const updatedMembers = currentMembers.filter(
-            (email: string) => email !== userEmail,
-        );
+            (email: string) => email !== userEmail);
         const updatedAdmins = currentAdmins.filter(
-            (email: string) => email !== userEmail,
-        );
+            (email: string) => email !== userEmail);
 
         await projectRef.update({
             members: updatedMembers,
@@ -2110,8 +2095,7 @@ export async function removeProjectMember(projId: string, userEmail: string) {
         } catch (error) {
             console.error(
                 `Failed to remove project reference for user ${userEmail}:`,
-                error,
-            );
+                error);
             // Don't fail the entire operation if this fails
         }
 
@@ -2133,7 +2117,8 @@ export async function removeProjectMember(projId: string, userEmail: string) {
 export async function changeProjectMemberRole(
     projId: string,
     userEmail: string,
-    newRole: "admin" | "member"
+    newRole: "admin" | "member",
+    orgId: string
 ) {
     try {
         const { userId } = await auth();
@@ -2145,7 +2130,7 @@ export async function changeProjectMemberRole(
         console.log(`Changing role for: ${userEmail} in project: ${projId} to: ${newRole}`);
 
         // Check if project exists
-        const projectRef = adminDb.collection("projects").doc(projId);
+        const projectRef = adminDb.collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("projects").doc(projId);
         const projectDoc = await projectRef.get();
 
         if (!projectDoc.exists) {
@@ -2165,11 +2150,9 @@ export async function changeProjectMemberRole(
 
         // Remove user from both lists first
         const updatedMembers = currentMembers.filter(
-            (email: string) => email !== userEmail,
-        );
+            (email: string) => email !== userEmail);
         const updatedAdmins = currentAdmins.filter(
-            (email: string) => email !== userEmail,
-        );
+            (email: string) => email !== userEmail);
 
         // Add user to the appropriate list based on new role
         if (newRole === "admin") {
@@ -2200,7 +2183,8 @@ export async function changeProjectMemberRole(
 // Temporary fix: Add user as admin to existing project
 export async function fixProjectAdmin(
     projId: string,
-    userEmail: string
+    userEmail: string,
+    orgId: string
 ) {
     try {
         const { userId } = await auth();
@@ -2212,7 +2196,7 @@ export async function fixProjectAdmin(
         console.log(`Fixing admin for project: ${projId}, adding user: ${userEmail}`);
 
         // Check if project exists
-        const projectRef = adminDb.collection("projects").doc(projId);
+        const projectRef = adminDb.collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("projects").doc(projId);
         const projectDoc = await projectRef.get();
 
         if (!projectDoc.exists) {
@@ -2249,7 +2233,7 @@ export async function fixProjectAdmin(
 }
 
 // update project team size
-export async function updateProjectTeamSize(projId: string, teamSize: number) {
+export async function updateProjectTeamSize(projId: string, teamSize: number, orgId: string) {
     const { userId } = await auth();
     if (!userId) {
         throw new Error("Unauthorized");
@@ -2260,7 +2244,7 @@ export async function updateProjectTeamSize(projId: string, teamSize: number) {
             throw new Error("Team size must be between 1 and 20");
         }
 
-        const projectRef = adminDb.collection("projects").doc(projId);
+        const projectRef = adminDb.collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("projects").doc(projId);
         const projectDoc = await projectRef.get();
 
         if (!projectDoc.exists) {
@@ -2282,22 +2266,21 @@ export async function updateProjectTeamSize(projId: string, teamSize: number) {
 }
 
 // delete project
-export async function deleteProject(projId: string) {
+export async function deleteProject(projId: string, orgId: string) {
     const { userId } = await auth();
     if (!userId) {
         throw new Error("Unauthorized");
     }
 
     try {
-        const projectRef = adminDb.collection("projects").doc(projId);
+        const projectRef = adminDb.collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("projects").doc(projId);
         const projectDoc = await projectRef.get();
-
+        
         if (!projectDoc.exists) {
             throw new Error("Project not found");
         }
-
+        
         const projectData = projectDoc.data();
-        const orgId = projectData?.orgId;
 
         const batch = adminDb.batch();
 
@@ -2517,8 +2500,9 @@ export async function previewSmartAssignment(orgId: string, teamSize?: number) {
 
         // Get all the projects in the organization
         const projectsSnapshot = await adminDb
+            .collection("organizations")
+            .doc(orgId)
             .collection("projects")
-            .where("orgId", "==", orgId)
             .get();
 
         if (projectsSnapshot.empty) {
@@ -2542,14 +2526,12 @@ export async function previewSmartAssignment(orgId: string, teamSize?: number) {
         projects.forEach((project) => {
             const projectMembers = (project.members as string[]) || [];
             projectMembers.forEach((member: string) =>
-                assignedMembers.add(member),
-            );
+                assignedMembers.add(member));
         });
 
         // Get the unassigned members
         const unassignedMembers = allMembers.filter(
-            (member) => !assignedMembers.has(member),
-        );
+            (member) => !assignedMembers.has(member));
 
         if (unassignedMembers.length === 0) {
             return {
@@ -2818,7 +2800,8 @@ export async function autoAssignMembersToProjects(orgId: string, teamSize?: numb
                 id: doc.id,
                 members: data.members || [],
                 title: data.title || "",
-                teamSize: data.teamSize || teamSize, // Use project's own team size or passed parameter
+                teamSize: data.teamSize || teamSize,
+                admins: data.admins || [],
                 ...data,
             };
         });
@@ -2828,14 +2811,12 @@ export async function autoAssignMembersToProjects(orgId: string, teamSize?: numb
         projects.forEach((project) => {
             const projectMembers = (project.members as string[]) || [];
             projectMembers.forEach((member: string) =>
-                assignedMembers.add(member),
-            );
+                assignedMembers.add(member));
         });
 
         // Get the unassigned members
         const unassignedMembers = allMembers.filter(
-            (member) => !assignedMembers.has(member),
-        );
+            (member) => !assignedMembers.has(member));
 
         if (unassignedMembers.length === 0) {
             return {
@@ -3017,13 +2998,13 @@ export async function autoAssignMembersToProjects(orgId: string, teamSize?: numb
                         
                         if (membersToAdd.length > 0) {
                             // 获取当前项目的实际members和admins，只更新members字段
-                            const projectDoc = await adminDb.collection("projects").doc(project.id).get();
+                            const projectDoc = await adminDb.collection("organizations").doc(orgId).collection("projects").doc(project.id).get();
                             const projectData = projectDoc.data();
                             const currentMembers = (projectData?.members as string[]) || [];
                             const updatedMembers = [...currentMembers, ...membersToAdd];
 
                             // Update the project members (只更新普通成员，不影响管理员)
-                            await adminDb.collection("projects").doc(project.id).update({
+                            await adminDb.collection("organizations").doc(orgId).collection("projects").doc(project.id).update({
                                 members: updatedMembers,
                             });
 
@@ -3039,13 +3020,11 @@ export async function autoAssignMembersToProjects(orgId: string, teamSize?: numb
                                             {
                                                 orgId: orgId,
                                             },
-                                            { merge: true },
-                                        );
+                                            { merge: true });
                                 } catch (error) {
                                     console.error(
                                         `Failed to add project reference for user ${memberEmail}:`,
-                                        error,
-                                    );
+                                        error);
                                 }
                             }
 
@@ -3085,7 +3064,7 @@ export async function autoAssignMembersToProjects(orgId: string, teamSize?: numb
     }
 }
 
-export async function getProjectMembers(projId: string) {
+export async function getProjectMembers(projId: string, orgId: string) {
     const { userId } = await auth();
     if (!userId) {
         throw new Error("Unauthorized");
@@ -3140,8 +3119,7 @@ export async function saveTeamCompatibilityScore(
         technical_score: number;
         leadership_score: number;
         overall_score: number;
-    },
-) {
+    }) {
     const { userId } = await auth();
     if (!userId) {
         throw new Error("Unauthorized");
@@ -3178,8 +3156,7 @@ export async function saveTeamCompatibilityScore(
 
 export async function getTeamCompatibilityScores(
     orgId: string,
-    projectId?: string,
-) {
+    projectId?: string) {
     const { userId } = await auth();
     if (!userId) {
         throw new Error("Unauthorized");
@@ -3227,7 +3204,7 @@ export async function getTeamCompatibilityScores(
     }
 }
 
-export async function getProjectAnalytics(projId: string) {
+export async function getProjectAnalytics(projId: string, orgId: string) {
     const { userId } = await auth();
     if (!userId) {
         throw new Error("Unauthorized");
@@ -3262,8 +3239,7 @@ export async function getProjectAnalytics(projId: string) {
 
             const stageTasks = tasksSnapshot.docs;
             const stageCompletedTasks = stageTasks.filter(
-                (doc) => doc.data().isCompleted,
-            ).length;
+                (doc) => doc.data().isCompleted).length;
 
             totalTasks += stageTasks.length;
             completedTasks += stageCompletedTasks;
@@ -3343,7 +3319,7 @@ export async function getProjectAnalytics(projId: string) {
 
 // ================ 数据库迁移功能 ================
 
-export async function migrateTasksToTaskPool() {
+export async function migrateTasksToTaskPool(orgId: string) {
     const { userId } = await auth();
     if (!userId) {
         throw new Error("Unauthorized");
@@ -3354,7 +3330,7 @@ export async function migrateTasksToTaskPool() {
         let errors = [];
 
         // 获取所有项目
-        const projectsSnapshot = await adminDb.collection("projects").get();
+        const projectsSnapshot = await adminDb.collection("organizations").doc(orgId).collection("projects").get();
 
         for (const projectDoc of projectsSnapshot.docs) {
             const projId = projectDoc.id;
@@ -3362,6 +3338,8 @@ export async function migrateTasksToTaskPool() {
 
             // 获取项目的所有阶段
             const stagesSnapshot = await adminDb
+                .collection("organizations")
+                .doc(orgId)
                 .collection("projects")
                 .doc(projId)
                 .collection("stages")
@@ -3372,6 +3350,8 @@ export async function migrateTasksToTaskPool() {
 
                 // 获取阶段的所有任务
                 const tasksSnapshot = await adminDb
+                    .collection("organizations")
+                    .doc(orgId)
                     .collection("projects")
                     .doc(projId)
                     .collection("stages")
@@ -3468,7 +3448,7 @@ export async function migrateTasksToTaskPool() {
     }
 }
 
-export async function initializeUserScores(projId?: string) {
+export async function initializeUserScores(orgId: string, projId?: string) {
     const { userId } = await auth();
     if (!userId) {
         throw new Error("Unauthorized");
@@ -3480,7 +3460,7 @@ export async function initializeUserScores(projId?: string) {
         if (projId) {
             projectsToProcess.push(projId);
         } else {
-            const projectsSnapshot = await adminDb.collection("projects").get();
+            const projectsSnapshot = await adminDb.collection("organizations").doc(orgId).collection("projects").get();
             projectsToProcess = projectsSnapshot.docs.map((doc) => doc.id);
         }
 
@@ -3488,6 +3468,8 @@ export async function initializeUserScores(projId?: string) {
 
         for (const currentProjId of projectsToProcess) {
             const projectDoc = await adminDb
+                .collection("organizations")
+                .doc(orgId)
                 .collection("projects")
                 .doc(currentProjId)
                 .get();
@@ -3531,8 +3513,7 @@ export async function initializeUserScores(projId?: string) {
                 } catch (error) {
                     console.error(
                         `Error initializing score for ${userEmail}:`,
-                        error,
-                    );
+                        error);
                 }
             }
         }
@@ -3557,8 +3538,7 @@ async function updateUserScore(
     userEmail: string,
     projectId: string,
     points: number,
-    taskCompleted: boolean,
-) {
+    taskCompleted: boolean) {
     try {
         const scoresQuery = await adminDb
             .collection("user_scores")
@@ -3606,8 +3586,7 @@ async function updateUserScore(
 async function updateUserTaskStats(
     userEmail: string,
     projectId: string,
-    action: "assigned" | "completed" | "unassigned",
-) {
+    action: "assigned" | "completed" | "unassigned") {
     try {
         const scoresQuery = await adminDb
             .collection("user_scores")
@@ -3646,8 +3625,7 @@ async function updateUserTaskStats(
             case "unassigned":
                 updateData.tasks_assigned = Math.max(
                     0,
-                    currentData.tasks_assigned - 1,
-                );
+                    currentData.tasks_assigned - 1);
                 break;
         }
 
@@ -3660,8 +3638,7 @@ async function updateUserTaskStats(
 export async function unassignTask(
     projId: string,
     stageId: string,
-    taskId: string,
-) {
+    taskId: string, orgId: string) {
     const { userId } = await auth();
     if (!userId) {
         throw new Error("Unauthorized");
@@ -3669,6 +3646,8 @@ export async function unassignTask(
 
     try {
         const taskRef = adminDb
+            .collection("organizations")
+            .doc(orgId)
             .collection("projects")
             .doc(projId)
             .collection("stages")
@@ -3708,8 +3687,7 @@ export async function reassignTask(
     projId: string,
     stageId: string,
     taskId: string,
-    newAssigneeEmail: string,
-) {
+    newAssigneeEmail: string, orgId: string) {
     const { userId } = await auth();
     if (!userId) {
         throw new Error("Unauthorized");
@@ -3736,6 +3714,8 @@ export async function reassignTask(
         }
 
         const taskRef = adminDb
+            .collection("organizations")
+            .doc(orgId)
             .collection("projects")
             .doc(projId)
             .collection("stages")
@@ -3776,9 +3756,9 @@ export async function reassignTask(
 
 // ================ Team Analysis ================
 
-export async function getProjectTeamCharter(projId: string) {
+export async function getProjectTeamCharter(projId: string, orgId: string) {
     try {
-        const projectDoc = await adminDb.collection("projects").doc(projId).get();
+        const projectDoc = await adminDb.collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("projects").doc(projId).get();
         
         if (!projectDoc.exists) {
             return { success: false, message: "Project not found" };
@@ -3800,7 +3780,7 @@ export async function getProjectTeamCharter(projId: string) {
 export async function saveTeamAnalysis(
     projId: string,
     analysis: any,
-) {
+    orgId: string) {
     const { userId } = await auth();
     if (!userId) {
         throw new Error("Unauthorized");
@@ -3821,7 +3801,7 @@ export async function saveTeamAnalysis(
         await uploadBytes(storageRef, blob);
         
         // save metadata to Firestore
-        await adminDb.collection("projects").doc(projId).update({
+        await adminDb.collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("projects").doc(projId).update({
             lastTeamAnalysis: {
                 timestamp: new Date(),
                 filePath: filePath,
@@ -3838,7 +3818,7 @@ export async function saveTeamAnalysis(
     }
 }
 
-export async function getTeamAnalysis(projId: string) {
+export async function getTeamAnalysis(projId: string, orgId: string) {
     const { userId } = await auth();
     if (!userId) {
         throw new Error("Unauthorized");
@@ -3846,7 +3826,7 @@ export async function getTeamAnalysis(projId: string) {
 
     try {
         // fetch project document
-        const projectDoc = await adminDb.collection("projects").doc(projId).get();
+        const projectDoc = await adminDb.collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("projects").doc(projId).get();
         const projectData = projectDoc.data();
         
         if (!projectData?.lastTeamAnalysis?.filePath) {
@@ -3894,8 +3874,7 @@ export async function getTeamAnalysis(projId: string) {
  * 控制用户是否参与AI匹配算法
  */
 export async function updateUserMatchingPreference(
-    allowMatching: boolean,
-) {
+    allowMatching: boolean) {
     const { userId } = await auth();
     if (!userId) {
         throw new Error("Unauthorized");
@@ -3907,8 +3886,7 @@ export async function updateUserMatchingPreference(
                 allowMatching: allowMatching,
                 matchingPreferenceUpdatedAt: new Date().toISOString(),
             },
-            { merge: true },
-        );
+            { merge: true });
         return { success: true };
     } catch (error) {
         console.error("Error updating matching preference:", error);
@@ -3959,7 +3937,7 @@ export async function autoDropOverdueTasks() {
  * 内部版本：自动 drop 过期任务（供 cron job 使用）
  * 不需要用户认证，直接执行
  */
-export async function autoDropOverdueTasksInternal(executedBy: string = "system") {
+export async function autoDropOverdueTasksInternal(orgId: string, executedBy: string = "system") {
 
     const now = new Date();
     const currentISOString = now.toISOString();
@@ -3968,7 +3946,7 @@ export async function autoDropOverdueTasksInternal(executedBy: string = "system"
         console.log("🔍 开始检查过期任务...");
         
         // 获取所有项目
-        const projectsSnapshot = await adminDb.collection("projects").get();
+        const projectsSnapshot = await adminDb.collection("organizations").doc(orgId).collection("projects").get();
         const overdueTasks: { 
             ref: FirebaseFirestore.DocumentReference; 
             data: any;

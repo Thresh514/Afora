@@ -48,6 +48,8 @@ interface ProjectStats {
 }
 
 const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
+    // id 就是 orgId
+    const orgId = id;
     const { isSignedIn, isLoaded } = useAuth();
     const { user } = useUser();
     const [responses, setResponses] = useState<string[]>(new Array(teamCharterQuestions.length).fill(""));
@@ -71,7 +73,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
 
 
     const [projData, projLoading, projError] = useDocument(
-        doc(db, "projects", projId),
+        doc(db, "organizations", orgId, "projects", projId),
     );
     const proj = projData?.data() as Project;
     const [projTitle, setProjTitle] = useState(proj?.title || "");
@@ -102,13 +104,14 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
     const loadProjectStats = useCallback(async () => {
         try {
             // load project stats
-            const statsResult = await getProjectStats(projId);
+            const statsResult = await getProjectStats(projId, orgId);
             if (statsResult.success && statsResult.data) {
                 setProjectStats(statsResult.data);
             }
         } catch (error) {
             console.error("Error loading project stats:", error);
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [projId]);
 
     // load data
@@ -124,12 +127,12 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
             if (projId) {
                 try {
                     setAnalysisLoading(true);
-                    const projectDoc = await getDoc(doc(db, "projects", projId));
+                    const projectDoc = await getDoc(doc(db, "organizations", orgId, "projects", projId));
                     const projectData = projectDoc.data();
                     
                     if (projectData?.lastTeamAnalysis?.filePath) {
                         // if there is existing analysis, load it
-                        const result = await getTeamAnalysis(projId);
+                        const result = await getTeamAnalysis(projId, orgId);
                         if (result.success && result.data) {
                             setAnalysisData({
                                 analysis: result.data.analysis,
@@ -145,6 +148,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
             }
         };
         loadTeamAnalysis();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [projId]);
 
     useEffect(() => {
@@ -154,10 +158,10 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
     }, [proj, isEditing]);
 
     const [stagesData, stagesLoading, stagesError] = useCollection(
-        collection(db, "projects", projId, "stages"),
+        collection(db, "organizations", orgId, "projects", projId, "stages"),
     );
     const [teamCharterData, loading, error] = useDocument(
-        doc(db, "projects", projId),
+        doc(db, "organizations", orgId, "projects", projId),
     );
 
     // 当teamCharterData加载完成后，设置responses的初始值
@@ -259,7 +263,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
 
                 // Filter out undefined values and replace with empty strings to avoid Firestore errors
                 const cleanResponses = responses.map(response => response || "");
-                const result = await setTeamCharter(projId, cleanResponses);
+                const result = await setTeamCharter(projId, cleanResponses, orgId);
                 
                 if (result.success) {
                     toast.success("Team Charter saved successfully!");
@@ -341,10 +345,10 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                     ),
             );
             const stagesToDeleteIds = stagesToDelete.map((stage) => stage.id);
-            updateStages(projId, stageUpdates, stagesToDeleteIds);
+            updateStages(projId, stageUpdates, stagesToDeleteIds, orgId);
 
             if (proj && projTitle !== proj.title) {
-                updateProjectTitle(projId, projTitle);
+                updateProjectTitle(projId, projTitle, orgId);
             }
             toast.success("Roadmap & Stages updated successfully!");
         } catch (error) {
@@ -1003,6 +1007,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                         <div className="flex items-center gap-2">
                                             <AddProjectMemberDialog 
                                                 projId={projId}
+                                                orgId={orgId}
                                                 onMemberAdded={() => {
                                                     // Refresh the page to show new member
                                                     window.location.reload();
@@ -1061,6 +1066,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                                                         projId={projId}
                                                                         memberEmail={member}
                                                                         currentRole={isMemberAdmin ? "admin" : "member"}
+                                                                        orgId={orgId}
                                                                         onRoleChanged={() => {
                                                                             // Refresh the page to show updated roles
                                                                             window.location.reload();
@@ -1179,7 +1185,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                         order: reorderedStages.length,
                                         tasksCompleted: 0,
                                         totalTasks: 0
-                                    }], []);
+                                    }], [], orgId);
                                     toast.success("Stage added successfully!");
                                 } catch (error) {
                                     console.error("Error adding stage:", error);

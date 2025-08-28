@@ -25,7 +25,7 @@ function LeaderboardPage() {
     const loadRealData = useCallback(async () => {
         try {
             // 获取项目排行榜数据
-            const leaderboardResponse = await getProjectLeaderboard(projId);
+            const leaderboardResponse = await getProjectLeaderboard(projId, id);
             if (
                 leaderboardResponse.success &&
                 leaderboardResponse.leaderboard

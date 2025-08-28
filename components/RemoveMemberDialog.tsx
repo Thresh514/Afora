@@ -14,6 +14,7 @@ import { useTransition } from "react";
 import { removeProjectMember } from "@/actions/actions";
 import { toast } from "sonner";
 import { AlertTriangle } from "lucide-react";
+import { useParams } from "next/navigation";
 
 interface RemoveMemberDialogProps {
     isOpen: boolean;
@@ -30,12 +31,14 @@ export default function RemoveMemberDialog({
     memberEmail, 
     onMemberRemoved
 }: RemoveMemberDialogProps) {
+    const params = useParams();
+    const orgId = params.id as string;
     const [isPending, startTransition] = useTransition();
 
     const handleRemoveMember = async () => {
         startTransition(async () => {
             try {
-                const { success, message } = await removeProjectMember(projId, memberEmail);
+                const { success, message } = await removeProjectMember(projId, memberEmail,orgId);
 
                 if (success) {
                     onOpenChange(false);

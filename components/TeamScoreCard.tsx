@@ -10,6 +10,7 @@ import { appQuestions, projQuestions, TeamCompatibilityAnalysis, TeamScoreCardPr
 import { getProjectMembersResponses, saveTeamAnalysis, getProjectTeamCharter } from "@/actions/actions";
 import { toast } from "sonner";
 import LoadingOverlay from "./LoadingOverlay";
+import { useParams } from "next/navigation";
 
 interface MemberData {
     email: string;
@@ -23,6 +24,8 @@ const TeamScoreCard = ({
     initialAnalysis,
     lastAnalysisTime,
 }: TeamScoreCardProps) => {
+    const params = useParams();
+    const orgId = params.id as string;
     const [analysis, setAnalysis] = useState<TeamCompatibilityAnalysis | null>(initialAnalysis);
     const [isPending, startTransition] = useTransition();
     const [analysisTime, setAnalysisTime] = useState<Date | null>(lastAnalysisTime);
@@ -41,7 +44,7 @@ const TeamScoreCard = ({
                         toast.error("Team ID is required for analysis");
                         return;
                     }
-                    const membersData = await getProjectMembersResponses(projectFilter);
+                    const membersData = await getProjectMembersResponses(projectFilter, orgId);
 
                     if (
                         !membersData.success ||
@@ -53,7 +56,7 @@ const TeamScoreCard = ({
                         const memberResponses: string[] = [];
                         
                         // 获取 team charter 数据
-                        const teamCharterData = await getProjectTeamCharter(projectFilter);
+                        const teamCharterData = await getProjectTeamCharter(projectFilter, orgId);
                         const teamCharterResponse = teamCharterData.success ? teamCharterData.data : [];
                         
                         console.log("Team charter data (no members):", teamCharterResponse);
@@ -69,7 +72,7 @@ const TeamScoreCard = ({
                         
                         // 保存分析结果
                         if (projectFilter) {
-                            await saveTeamAnalysis(projectFilter, parsedResult);
+                            await saveTeamAnalysis(projectFilter, parsedResult, orgId);
                             setAnalysisTime(new Date());
                             toast.success("Team analysis completed and saved!");
                         } else {
@@ -113,7 +116,7 @@ const TeamScoreCard = ({
                     console.log("Member responses count:", memberResponses.length);
 
                     // 获取 team charter 数据
-                    const teamCharterData = await getProjectTeamCharter(projectFilter);
+                    const teamCharterData = await getProjectTeamCharter(projectFilter, orgId);
                     const teamCharterResponse = teamCharterData.success ? teamCharterData.data : [];
                     
                     console.log("Team charter data:", teamCharterResponse);
@@ -129,7 +132,7 @@ const TeamScoreCard = ({
 
                     // 保存分析结果
                     if (projectFilter) {
-                        await saveTeamAnalysis(projectFilter, parsedResult);
+                        await saveTeamAnalysis(projectFilter, parsedResult, orgId);
                         setAnalysisTime(new Date());
                         toast.success("Team analysis completed and saved!");
                     } else {

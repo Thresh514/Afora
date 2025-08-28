@@ -12,6 +12,7 @@ import { postComment } from "@/actions/actions";
 import { useTransition } from "react";
 import { Timestamp } from "firebase/firestore";
 import dynamic from 'next/dynamic';
+import { useParams } from "next/navigation";
 
 const TiptapEditor = dynamic(() => Promise.resolve(EditorContent), {
     ssr: false,
@@ -33,6 +34,8 @@ const CommentBox: React.FC<CommentBoxProps> = ({
     stageId,
     taskId,
 }) => {
+    const params = useParams();
+    const orgId = params.id as string;
     const { user } = useUser();
     const [isFocused, setIsFocused] = useState(false);
     const editorRef = useRef<HTMLDivElement>(null);
@@ -93,6 +96,7 @@ const CommentBox: React.FC<CommentBoxProps> = ({
                 content,
                 new Timestamp(Date.now() / 1000, 0),
                 user!.primaryEmailAddress!.toString(),
+                orgId
             )
                 .then(() => {
                     editor.commands.setContent('');

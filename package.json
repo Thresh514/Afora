@@ -7,7 +7,9 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "migrate": "tsx migrate-to-hierarchical-structure.ts",
+    "migrate:cleanup": "tsx migrate-to-hierarchical-structure.ts --cleanup"
   },
   "dependencies": {
     "@blocknote/core": "^0.16.0",

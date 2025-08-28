@@ -26,9 +26,13 @@ import TaskMainContent from "@/components/TaskMainContent";
 
 function TaskPage() {
     const params = useParams();
+    const id = params.id as string;
     const projId = params.projId as string;
     const stageId = params.stageId as string;
     const taskId = params.taskId as string;
+    
+    // id 就是 orgId
+    const orgId = id;
     
     const { isSignedIn, isLoaded } = useAuth();
     const { user } = useUser();
@@ -41,7 +45,7 @@ function TaskPage() {
     );
     const [taskLocked, setTaskLocked] = useState(false);
     const [stageData, stageLoading, stageError] = useDocument(
-        doc(db, "projects", projId, "stages", stageId),
+        doc(db, "organizations", orgId, "projects", projId, "stages", stageId),
     );
     const dispatch = useDispatch();
 
@@ -50,7 +54,7 @@ function TaskPage() {
         // check to make sure update lock status at least once
         // in case user jumps directly to this page without going through project page
         const fetchStageLockStatus = async () => {
-            const status: boolean[] = await getStageLockStatus(projId);
+            const status: boolean[] = await getStageLockStatus(projId, orgId);
             dispatch(updateStatus(status));
         };
         fetchStageLockStatus();
@@ -111,6 +115,7 @@ function TaskPage() {
                 description,
                 softDeadline,
                 hardDeadline,
+                orgId,
                 points,
                 0
             )
@@ -127,7 +132,7 @@ function TaskPage() {
 
 
     const [taskData, taskLoading, taskError] = useDocument(
-        doc(db, "projects", projId, "stages", stageId, "tasks", taskId),
+        doc(db, "organizations", orgId, "projects", projId, "stages", stageId, "tasks", taskId),
     );
     const task = taskData?.data() as Task;
 

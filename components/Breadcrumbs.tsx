@@ -58,12 +58,15 @@ function Breadcrumbs() {
     const orgDocRef = isOrgRoute ? doc(db, "organizations", segments[1]) : null;
     const [orgDoc] = useDocument(orgDocRef);
 
-    const projDocRef = isProjRoute ? doc(db, "projects", segments[3]) : null;
+    // Get orgId from segments
+    const orgId = isOrgRoute ? segments[1] : null;
+
+    const projDocRef = isProjRoute && orgId ? doc(db, "organizations", orgId, "projects", segments[3]) : null;
     const [projDoc] = useDocument(projDocRef);
 
     const stageDocRef =
-        isStageRoute
-            ? doc(db, "projects", segments[3], "stages", segments[5])
+        isStageRoute && orgId
+            ? doc(db, "organizations", orgId, "projects", segments[3], "stages", segments[5])
             : null;
     const [stageDoc] = useDocument(stageDocRef);
 

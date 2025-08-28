@@ -18,12 +18,14 @@ import { UserPlus } from "lucide-react";
 
 interface AddProjectMemberDialogProps {
     projId: string;
+    orgId: string;
     onMemberAdded?: () => void;
     trigger?: React.ReactNode;
 }
 
 export default function AddProjectMemberDialog({ 
     projId, 
+    orgId,
     onMemberAdded,
     trigger 
 }: AddProjectMemberDialogProps) {
@@ -41,7 +43,7 @@ export default function AddProjectMemberDialog({
 
         startTransition(async () => {
             try {
-                const { success, message } = await addProjectMember(projId, email.trim(), role);
+                const { success, message } = await addProjectMember(projId, email.trim(), role, orgId);
 
                 if (success) {
                     setIsOpen(false);

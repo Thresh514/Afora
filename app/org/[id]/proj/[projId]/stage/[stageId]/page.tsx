@@ -50,6 +50,9 @@ function StagePage() {
     const projId = params.projId as string;
     const stageId = params.stageId as string;
     
+    // id 就是 orgId
+    const orgId = id;
+    
     const { isSignedIn, isLoaded } = useAuth();
     const { user } = useUser();
     const router = useRouter();
@@ -70,10 +73,10 @@ function StagePage() {
 
     const [isPending, startTransition] = useTransition();
     const [stageData, stageLoading, stageError] = useDocument(
-        doc(db, "projects", projId, "stages", stageId),
+        doc(db, "organizations", orgId, "projects", projId, "stages", stageId),
     );
     const [tasksData, tasksLoading, tasksError] = useCollection(
-        collection(db, "projects", projId, "stages", stageId, "tasks"),
+        collection(db, "organizations", orgId, "projects", projId, "stages", stageId, "tasks"),
     );
 
     console.log("\n\n\nTASKS DATA\n\n");
@@ -105,7 +108,7 @@ function StagePage() {
     // fetch overdue tasks function 
     const fetchOverdueTasks = useCallback(async () => {
         try {
-            const overdueResult = await getOverdueTasks(projId);
+            const overdueResult = await getOverdueTasks(projId, orgId);
             if (overdueResult.success) {
                 setBackendOverdueTasks(overdueResult.tasks || []);
             }
@@ -157,7 +160,7 @@ function StagePage() {
         const points = parseInt((document.getElementById("task-points") as HTMLInputElement)?.value || "1");
 
         try {
-            await createTask(projId, stageId, title, description, softDeadline, hardDeadline, points);
+                            await createTask(projId, stageId, title, description, softDeadline, hardDeadline, orgId, points);
             toast.success("Task created successfully!");
         } catch (error) {
             console.error("Error creating task:", error);
@@ -167,7 +170,7 @@ function StagePage() {
 
     const handleDeleteTask = (taskId: string) => {
         startTransition(() => {
-            deleteTask(projId, stageId, taskId)
+            deleteTask(projId, stageId, taskId, orgId)
                 .then(() => {
                     toast.success("Task deleted successfully!");
                 })
@@ -193,7 +196,8 @@ function StagePage() {
                 projId,
                 stageId,
                 taskId,
-                userEmail
+                userEmail,
+                orgId
             );
             
             if (result.success) {
@@ -226,7 +230,8 @@ function StagePage() {
                 projId, 
                 stageId, 
                 currentTaskId, 
-                swapAssigneeEmail.trim()
+                swapAssigneeEmail.trim(),
+                orgId
             );
             
             if (result.success) {
@@ -242,7 +247,7 @@ function StagePage() {
 
     const handleDropTask = async (taskId: string) => {
         startTransition(async () => {
-            const result = await unassignTask(projId, stageId, taskId);
+            const result = await unassignTask(projId, stageId, taskId, orgId);
             
             if (result.success) {
                 toast.success("Task dropped successfully!");
@@ -583,7 +588,7 @@ function StagePage() {
                                     const points = parseInt((document.getElementById("task-points") as HTMLInputElement)?.value || "1");
 
                                     try {
-                                        await createTask(projId, stageId, title, description, softDeadline, hardDeadline, points);
+                                        await createTask(projId, stageId, title, description, softDeadline, hardDeadline, orgId, points);
                                         toast.success("Task created successfully!");
                                     } catch (error) {
                                         console.error("Error creating task:", error);

@@ -87,7 +87,7 @@ const ProjTab = ({
     // Error handling state
     const [smartMatchingError, setSmartMatchingError] = useState<ErrorInfo | null>(null);
 
-    const adminQ = query(collection(db, "projects"), where("orgId", "==", orgId));
+    const adminQ = query(collection(db, "organizations", orgId, "projects"));
     const [allProjects] = useCollection(adminQ);
     
     // 获取组织数据
@@ -116,7 +116,7 @@ const ProjTab = ({
                     try {
                         // 使用批量查询来避免 Firebase IN 查询超过30个值的限制
                         const projectDocs = await batchInQuery(
-                            collection(db, "projects"),
+                            collection(db, "organizations", orgId, "projects"),
                             "__name__",
                             projectIds
                         );
@@ -166,7 +166,7 @@ const ProjTab = ({
                 const projectId = projectDoc.id;
                 try {
                     const stagesQuery = query(
-                        collection(db, "projects", projectId, "stages")
+                        collection(db, "organizations", orgId, "projects", projectId, "stages")
                     );
                     const stagesSnapshot = await getDocs(stagesQuery);
                     
@@ -174,7 +174,7 @@ const ProjTab = ({
                     
                     for (const stageDoc of stagesSnapshot.docs) {
                         const tasksQuery = query(
-                            collection(db, "projects", projectId, "stages", stageDoc.id, "tasks")
+                            collection(db, "organizations", orgId, "projects", projectId, "stages", stageDoc.id, "tasks")
                         );
                         const tasksSnapshot = await getDocs(tasksQuery);
                         
@@ -196,6 +196,7 @@ const ProjTab = ({
         };
 
         fetchProjectTasks();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [allProjects, refreshTrigger]);
 
     const handleAccept = () => {
@@ -286,7 +287,7 @@ const ProjTab = ({
                 for (const [projectId, changes] of Object.entries(previewChanges)) {
                     // Remove members
                     for (const memberEmail of changes.removedMembers) {
-                        const removeResult = await removeProjectMember(projectId, memberEmail);
+                        const removeResult = await removeProjectMember(projectId, memberEmail,orgId);
                         if (!removeResult.success) {
                             console.error(`Failed to remove member ${memberEmail} from project ${projectId}`);
                         }
@@ -294,7 +295,7 @@ const ProjTab = ({
                     
                     // Remove admins
                     for (const adminEmail of changes.removedAdmins) {
-                        const removeResult = await removeProjectMember(projectId, adminEmail);
+                        const removeResult = await removeProjectMember(projectId, adminEmail,orgId);
                         if (!removeResult.success) {
                             console.error(`Failed to remove admin ${adminEmail} from project ${projectId}`);
                         }
@@ -302,7 +303,7 @@ const ProjTab = ({
                     
                     // Add members
                     for (const memberEmail of changes.addedMembers) {
-                        const addResult = await addProjectMember(projectId, memberEmail, "member");
+                        const addResult = await addProjectMember(projectId, memberEmail, "member",orgId);
                         if (!addResult.success) {
                             console.error(`Failed to add member ${memberEmail} to project ${projectId}`);
                         }
@@ -310,7 +311,7 @@ const ProjTab = ({
                     
                     // Add admins
                     for (const adminEmail of changes.addedAdmins) {
-                        const addResult = await addProjectMember(projectId, adminEmail, "admin");
+                        const addResult = await addProjectMember(projectId, adminEmail, "admin",orgId);
                         if (!addResult.success) {
                             console.error(`Failed to add admin ${adminEmail} to project ${projectId}`);
                         }

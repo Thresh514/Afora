@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { Plus, Users, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useParams } from "next/navigation";
 import {
     Dialog,
     DialogContent,
@@ -24,17 +25,17 @@ import { toast } from "sonner";
 import LoadingOverlay from "./LoadingOverlay";
 
 interface CreateProjectDialogProps {
-    orgId: string;
     totalProjects: number;
     userRole: "admin" | "member";
     onProjectCreated?: () => void;
 }
 
 export default function CreateProjectDialog({
-    orgId,
     totalProjects,
     onProjectCreated,
 }: CreateProjectDialogProps) {
+    const params = useParams();
+    const orgId = params.id as string;
     const [isOpen, setIsOpen] = useState(false);
     const [newProjectTitle, setNewProjectTitle] = useState("");
     const [teamSize, setTeamSize] = useState("3");
@@ -124,7 +125,7 @@ export default function CreateProjectDialog({
                                 const selectedGroup = parsedResult.groups[0];
                                 if (selectedGroup && selectedGroup.length > 0) {
                                     // 更新项目成员（只添加匹配的普通成员，管理员已在admins字段中）
-                                    await updateProjectMembers(projectId, selectedGroup);
+                                    await updateProjectMembers(projectId, selectedGroup, orgId);
                                     toast.success("Team created successfully!");
                                 } else {
                                     toast.success("Team created successfully!");

@@ -16,6 +16,7 @@ import { Button } from "./ui/button";
 import { removeProjectMember } from "@/actions/actions";
 import { toast } from "sonner";
 import { UserMinus, AlertTriangle } from "lucide-react";
+import { useParams } from "next/navigation";
 
 interface RemoveProjectMemberDialogProps {
     projId: string;
@@ -31,13 +32,15 @@ export default function RemoveProjectMemberDialog({
     onMemberRemoved,
     trigger 
 }: RemoveProjectMemberDialogProps) {
+    const params = useParams();
+    const orgId = params.id as string;
     const [isOpen, setIsOpen] = useState(false);
     const [isPending, startTransition] = useTransition();
 
     const handleRemoveMember = async () => {
         startTransition(async () => {
             try {
-                const { success, message } = await removeProjectMember(projId, memberEmail);
+                const { success, message } = await removeProjectMember(projId, memberEmail,orgId);
 
                 if (success) {
                     setIsOpen(false);

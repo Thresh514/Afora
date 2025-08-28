@@ -20,6 +20,7 @@ interface ChangeRoleDialogProps {
     projId: string;
     memberEmail: string;
     currentRole: "admin" | "member";
+    orgId: string;
     onRoleChanged?: () => void;
     trigger?: React.ReactNode;
 }
@@ -28,6 +29,7 @@ export default function ChangeRoleDialog({
     projId, 
     memberEmail, 
     currentRole,
+    orgId,
     onRoleChanged,
     trigger 
 }: ChangeRoleDialogProps) {
@@ -44,7 +46,7 @@ export default function ChangeRoleDialog({
 
         startTransition(async () => {
             try {
-                const { success, message } = await changeProjectMemberRole(projId, memberEmail, selectedRole);
+                const { success, message } = await changeProjectMemberRole(projId, memberEmail, selectedRole, orgId);
 
                 if (success) {
                     setIsOpen(false);
