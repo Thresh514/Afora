@@ -89,8 +89,6 @@ export async function createNewOrganization(
             createdAt: Timestamp.now(),
             title: orgName,
             description: orgDescription,
-            admins: [userEmail], // 使用邮箱而不是用户ID
-            members: [],
         });
 
         await adminDb
@@ -173,25 +171,13 @@ export async function inviteUserToOrg(
             throw new Error(`Organization with id ${orgId} not found`);
         }
 
-        // Check if the user is already a member of the organization
-        const organizationData = orgSnapshot.data();
-        const members = organizationData?.members || [];
-        const admins = organizationData?.admins || [];
-
-        if (members.includes(email) || admins.includes(email)) {
-            throw new Error(`User is already a member of the organization`);
-        }
-
-        // Add the user to the organization's members or admins array
-        await adminDb
-            .collection("organizations")
-            .doc(orgId)
-            .set(
-                access === "admin"
-                    ? { admins: [...admins, email] }
-                    : { members: [...members, email] }, // append the new email to the corresponding array
-                { merge: true }, // use merge to only update the members or admins field without overwriting the document
-            );
+        // TODO: Check if user is already a member of the organization
+        // This logic should be moved to user collection management
+        // Check users/{email}/orgs/{orgId} to see if user is already a member
+        
+        // TODO: Add user to organization membership
+        // This logic should be moved to user collection management
+        // Add/update users/{email}/orgs/{orgId} with role information
 
         await adminDb
             .collection("users")
@@ -2492,11 +2478,11 @@ export async function previewSmartAssignment(orgId: string, teamSize?: number) {
             throw new Error("Organization not found");
         }
 
-        const orgData = orgDoc.data();
-        const allMembers = [
-            ...(orgData?.members || []),
-            ...(orgData?.admins || []),
-        ];
+        // TODO: Get organization members from user collection
+        // This logic should be moved to user collection management
+        // Query users collection where users/{userId}/orgs/{orgId} exists
+        // const allMembers = await getOrganizationMembersFromUserCollection(orgId);
+        const allMembers: string[] = []; // Placeholder - needs implementation
 
         // Get all the projects in the organization
         const projectsSnapshot = await adminDb
@@ -2778,11 +2764,11 @@ export async function autoAssignMembersToProjects(orgId: string, teamSize?: numb
             throw new Error("Organization not found");
         }
 
-        const orgData = orgDoc.data();
-        const allMembers = [
-            ...(orgData?.members || []),
-            ...(orgData?.admins || []),
-        ];
+        // TODO: Get organization members from user collection
+        // This logic should be moved to user collection management
+        // Query users collection where users/{userId}/orgs/{orgId} exists
+        // const allMembers = await getOrganizationMembersFromUserCollection(orgId);
+        const allMembers: string[] = []; // Placeholder - needs implementation
 
         // Get all the projects in the organization
         const projectsSnapshot = await adminDb

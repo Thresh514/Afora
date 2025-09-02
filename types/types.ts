@@ -46,8 +46,6 @@ export type ProjectStats = {
 export type Organization = {
     title: string;
     description: string;
-    admins: string[];
-    members: string[];
     backgroundImage: string;
 };
 
@@ -409,10 +407,10 @@ export const projQuestions = [
 ];
 
 export const teamCharterQuestions = [
-    "What is the main mission/vision of the project?",
-    "List key project milestones",
-    "Target Demographic (Who are you building the product/service for)",
+    "What is the mission / vision of the project?",
+    "List key requirements / project milestones",
     "Expected project duration (in weeks)",
+    "Target Demographic (Who are you building the product / service for)",
     "Potential Risks, Challenges, and Constraints (Identify possible risks and challenges)",
 ];
 

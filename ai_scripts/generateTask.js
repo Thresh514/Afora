@@ -203,18 +203,18 @@ export const generateTask = async (
         const projectInfo = {
             projectPurpose: teamCharterResponses[0] || "", // Main mission/vision
             keyMilestones: teamCharterResponses[1] || "", // Key milestones
-            targetDemographic: teamCharterResponses[2] || "", // Target demographic
+            targetDemographic: teamCharterResponses[3] || "", // Target demographic
         };
 
         // Extract timeline information
         const timelineInfo = {
-            projectDuration: teamCharterResponses[3] || "", // Expected duration (weeks)
+            projectDuration: teamCharterResponses[2] || "", // Expected duration (weeks)
             risksAndChallenges: teamCharterResponses[4] || "", // Risks and challenges
         };
 
         // Validate required inputs (questions 1, 2, and 4 are required)
         if (!projectInfo.projectPurpose || !projectInfo.keyMilestones || !timelineInfo.projectDuration) {
-            throw new Error("Missing required project information. Please complete questions 1, 2, and 4 in the team charter.");
+            throw new Error("Missing required project information. Please complete questions 1, 2, and 3 in the team charter.");
         }
 
         if (!teamCharterResponses || teamCharterResponses.length === 0) {

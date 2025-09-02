@@ -1,59 +1,61 @@
-# Afora Firebase/Firestore API 文档
+# Afora Firebase/Firestore API Documentation
 
-## 概述
+## Overview
 
-Afora使用Firebase/Firestore作为数据库，Clerk作为身份验证系统，Next.js Server Actions处理业务逻辑。
+Afora uses Firebase/Firestore as the database, Clerk as the authentication system, and Next.js Server Actions to handle business logic.
 
-## Firestore 数据库结构
+## Firestore Database Structure
 
-### 集合结构设计
+### Collection Structure Design
 afora-firestore/
-├── users/ # 用户集合
-│ └── {userEmail}/ # 文档ID: 用户邮箱
+├── users/ # User collection
+│ └── {userEmail}/ # Document ID: User email
 │ ├── email: string
 │ ├── username: string
 │ ├── userImage: string
 │ ├── onboardingSurveyResponse: string[]
-│ ├── orgs/ # 子集合：用户所属组织
+│ ├── orgs/ # Subcollection: User's organizations
 │ │ └── {orgId}/
 │ │ ├── userId: string
 │ │ ├── role: "admin" | "member"
 │ │ ├── orgId: string
 │ │ └── projOnboardingSurveyResponse: string[]
-│ └── projs/ # 子集合：用户所属项目
+│ └── projs/ # Subcollection: User's projects
 │ └── {projId}/
 │ └── orgId: string
 │
-├── organizations/ # 组织集合
-│ └── {orgId}/ # 文档ID: 自动生成
+├── organizations/ # Organization collection
+│ └── {orgId}/ # Document ID: Auto-generated
 │ ├── title: string
 │ ├── description: string
-│ ├── admins: string[] # 管理员邮箱数组
-│ ├── members: string[] # 成员邮箱数组
 │ ├── backgroundImage?: string
 │ ├── createdAt: Timestamp
-│ └── projs/ # 子集合：组织项目
+│ └── projs/ # Subcollection: Organization projects
 │ └── {projId}/
 │ ├── projId: string
 │ └── members: string[]
+
+# Note: Organization member management has been migrated to user collection
+# Organization member information is now stored in users/{userEmail}/orgs/{orgId}
+# Contains fields: userId, role, orgId, createdAt
 │
-├── projects/ # 项目集合
-│ └── {projId}/ # 文档ID: 自动生成
+├── projects/ # Project collection
+│ └── {projId}/ # Document ID: Auto-generated
 │ ├── orgId: string
 │ ├── title: string
 │ ├── members: string[]
 │ ├── admins: string[]
 │ ├── teamCharterResponse?: string[]
 │ ├── createdAt: Timestamp
-│ └── stages/ # 子集合：项目阶段
-│ └── {stageId}/ # 文档ID: 自动生成
+│ └── stages/ # Subcollection: Project stages
+│ └── {stageId}/ # Document ID: Auto-generated
 │ ├── id: string
 │ ├── title: string
 │ ├── order: number
 │ ├── totalTasks: number
 │ ├── tasksCompleted: number
-│ └── tasks/ # 子集合：阶段任务
-│ └── {taskId}/ # 文档ID: 自动生成
+│ └── tasks/ # Subcollection: Stage tasks
+│ └── {taskId}/ # Document ID: Auto-generated
 │ ├── id: string
 │ ├── title: string
 │ ├── description: string
@@ -68,26 +70,26 @@ afora-firestore/
 │ ├── assigned_at?: Timestamp
 │ ├── completed_at?: Timestamp
 │ ├── can_be_reassigned: boolean
-│ ├── public/ # 子集合：公开评论
+│ ├── public/ # Subcollection: Public comments
 │ │ └── {commentId}/
 │ │ ├── msgId: string
 │ │ ├── message: string
 │ │ ├── time: Timestamp
 │ │ └── uid: string
-│ ├── private/ # 子集合：私有评论
+│ ├── private/ # Subcollection: Private comments
 │ │ └── {commentId}/
 │ │ ├── msgId: string
 │ │ ├── message: string
 │ │ ├── time: Timestamp
 │ │ └── uid: string
-│ └── submissions/ # 子集合：任务提交
+│ └── submissions/ # Subcollection: Task submissions
 │ └── {submissionId}/
 │ ├── user_email: string
 │ ├── content: string
 │ └── submitted_at: Timestamp
 │
-├── user_scores/ # 用户评分集合
-│ └── {scoreId}/ # 文档ID: 自动生成
+├── user_scores/ # User scores collection
+│ └── {scoreId}/ # Document ID: Auto-generated
 │ ├── user_email: string
 │ ├── project_id: string
 │ ├── total_points: number
@@ -97,8 +99,8 @@ afora-firestore/
 │ ├── streak: number
 │ └── last_updated: Timestamp
 │
-└── team_compatibility_scores/ # 团队兼容性评分集合
-└── {scoreId}/ # 文档ID: 自动生成
+└── team_compatibility_scores/ # Team compatibility scores collection
+└── {scoreId}/ # Document ID: Auto-generated
 ├── org_id: string
 ├── project_id?: string
 ├── user_email: string
@@ -111,36 +113,36 @@ afora-firestore/
 
 ## Server Actions API
 
-### 现有的 Actions (已在 actions/actions.ts 中)
+### Existing Actions (already in actions/actions.ts)
 
-#### 用户管理
+#### User Management
 - `createNewUser(userEmail, username, userImage)`
 - `setUserOnboardingSurvey(selectedTags)`
 
-#### 组织管理
+#### Organization Management
 - `createNewOrganization(orgName, orgDescription)`
 - `deleteOrg(orgId)`
 - `inviteUserToOrg(orgId, email, access)`
 - `getOrganizationMembersResponses(orgId)`
 - `setBgImage(orgId, imageUrl)`
 
-#### 项目管理
+#### Project Management
 - `updateProjects(orgId, groups)`
 - `setTeamCharter(projId, teamCharterResponse)`
 - `updateProjectTitle(projId, newTitle)`
 
-#### 任务管理
+#### Task Management
 - `createTask(projId, stageId, taskId, title, description, soft_deadline, hard_deadline, points)`
 - `deleteTask(projId, stageId, taskId)`
 - `updateTask(projId, stageId, taskId, title, description, soft_deadline, hard_deadline)`
 - `setTaskComplete(projId, stageId, taskId, isCompleted)`
 - `postComment(isPublic, projId, stageId, taskId, message, time, uid)`
 
-### 需要新增的 Actions
+### Actions to be Added
 
-#### 任务分配和完成
+#### Task Assignment and Completion
 ```typescript
-// 任务分配
+// Task assignment
 export async function assignTask(
   projId: string,
   stageId: string, 
@@ -148,7 +150,7 @@ export async function assignTask(
   assigneeEmail: string
 ): Promise<{success: boolean; message?: string}>
 
-// 任务完成（带进度）
+// Task completion (with progress)
 export async function completeTaskWithProgress(
   projId: string,
   stageId: string,
@@ -156,7 +158,7 @@ export async function completeTaskWithProgress(
   completionPercentage: number
 ): Promise<{success: boolean; points_earned?: number; message?: string}>
 
-// 任务提交
+// Task submission
 export async function submitTask(
   projId: string,
   stageId: string,
@@ -164,20 +166,20 @@ export async function submitTask(
   content: string
 ): Promise<{success: boolean; submission_id?: string; message?: string}>
 
-// 获取过期任务
+// Get overdue tasks
 export async function getOverdueTasks(
   projId: string
 ): Promise<{success: boolean; tasks?: any[]; message?: string}>
 ```
 
-#### 评分和排行
+#### Scoring and Leaderboards
 ```typescript
-// 获取项目排行榜
+// Get project leaderboard
 export async function getProjectLeaderboard(
   projId: string
 ): Promise<{success: boolean; leaderboard?: any[]; message?: string}>
 
-// 更新用户评分
+// Update user score
 export async function updateUserScore(
   userEmail: string,
   projectId: string, 
@@ -186,19 +188,19 @@ export async function updateUserScore(
 ): Promise<{success: boolean; new_total?: number; message?: string}>
 ```
 
-## 环境配置
+## Environment Configuration
 
 ```env
-# Firebase配置
+# Firebase configuration
 NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
 NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
 
-# Clerk身份验证
+# Clerk authentication
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
 CLERK_SECRET_KEY=your_clerk_secret_key
 
-# 外部API
+# External APIs
 PEXELS_API_KEY=your_pexels_api_key
 OPENAI_API_KEY=your_openai_api_key
 ```
@@ -207,13 +209,13 @@ OPENAI_API_KEY=your_openai_api_key
 ## 2. types/firebase-types.ts
 
 ```typescript
-// Firebase/Firestore 特定的 TypeScript 类型定义
+// Firebase/Firestore specific TypeScript type definitions
 
 import { Timestamp } from 'firebase/firestore';
 
-// ================ 扩展现有类型 ================
+// ================ Extend existing types ================
 
-// 基于现有的 Task 类型扩展
+// Extend based on existing Task type
 export interface FirestoreTask {
   id: string;
   title: string;
@@ -231,7 +233,7 @@ export interface FirestoreTask {
   can_be_reassigned: boolean;
 }
 
-// 用户评分
+// User scores
 export interface UserScore {
   id: string;
   user_email: string;
@@ -244,7 +246,7 @@ export interface UserScore {
   last_updated: Timestamp;
 }
 
-// 任务提交
+// Task submissions
 export interface TaskSubmission {
   id: string;
   task_id: string;
@@ -253,7 +255,7 @@ export interface TaskSubmission {
   submitted_at: Timestamp;
 }
 
-// 评论
+// Comments
 export interface TaskComment {
   msgId: string;
   message: string;
@@ -261,16 +263,16 @@ export interface TaskComment {
   uid: string;
 }
 
-// ================ Server Actions 类型 ================
+// ================ Server Actions types ================
 
-// 标准响应
+// Standard response
 export interface ActionResponse<T = any> {
   success: boolean;
   message?: string;
   data?: T;
 }
 
-// 任务分配请求
+// Task assignment request
 export interface AssignTaskRequest {
   projId: string;
   stageId: string;
@@ -278,22 +280,22 @@ export interface AssignTaskRequest {
   assigneeEmail: string;
 }
 
-// 任务完成响应
+// Task completion response
 export interface CompleteTaskResponse extends ActionResponse {
   points_earned?: number;
 }
 
-// 任务提交响应
+// Task submission response
 export interface SubmitTaskResponse extends ActionResponse {
   submission_id?: string;
 }
 
-// 排行榜响应
+// Leaderboard response
 export interface LeaderboardResponse extends ActionResponse {
   leaderboard?: UserScore[];
 }
 
-// 过期任务响应
+// Overdue tasks response
 export interface OverdueTasksResponse extends ActionResponse {
   tasks?: FirestoreTask[];
 }
@@ -304,13 +306,13 @@ export interface OverdueTasksResponse extends ActionResponse {
 ```typescript
 'use server'
 
-// 基于现有 actions/actions.ts 风格的任务管理扩展
+// Task management extensions based on existing actions/actions.ts style
 
 import { adminDb } from "@/firebase-admin";
 import { auth } from "@clerk/nextjs/server";
 import { Timestamp } from "firebase/firestore";
 
-// ================ 任务分配功能 ================
+// ================ Task assignment functionality ================
 
 export async function assignTask(
   projId: string,
@@ -347,7 +349,7 @@ export async function assignTask(
       assigned_at: Timestamp.now()
     });
 
-    // 更新用户任务统计
+    // Update user task statistics
     await updateUserTaskStats(assigneeEmail, projId, 'assigned');
 
     return { success: true };
@@ -357,7 +359,7 @@ export async function assignTask(
   }
 }
 
-// ================ 任务完成功能（增强版） ================
+// ================ Enhanced task completion functionality ================
 
 export async function completeTaskWithProgress(
   projId: string,
@@ -394,7 +396,7 @@ export async function completeTaskWithProgress(
 
     const isCompleted = completionPercentage >= 100;
     
-    // 更新任务状态
+    // Update task status
     await taskRef.update({
       isCompleted: isCompleted,
       status: isCompleted ? 'completed' : 'in_progress',
@@ -402,9 +404,9 @@ export async function completeTaskWithProgress(
       ...(isCompleted && { completed_at: Timestamp.now() })
     });
 
-    // 如果任务完成，更新阶段进度和用户积分
+    // If task is completed, update stage progress and user points
     if (isCompleted) {
-      // 更新阶段统计
+      // Update stage statistics
       const stageRef = adminDb
         .collection('projects').doc(projId)
         .collection('stages').doc(stageId);
@@ -417,12 +419,12 @@ export async function completeTaskWithProgress(
         await stageRef.update({ tasksCompleted });
       }
 
-      // 更新用户积分
+      // Update user points
       const points = taskData?.points || 10;
       await updateUserScore(userEmail, projId, points, true);
       await updateUserTaskStats(userEmail, projId, 'completed');
 
-      // 检查是否解锁下一阶段
+      // Check if next stage should be unlocked
       await checkAndUnlockNextStage(projId, stageId);
     }
 
@@ -436,7 +438,7 @@ export async function completeTaskWithProgress(
   }
 }
 
-// ================ 任务提交功能 ================
+// ================ Task submission functionality ================
 
 export async function submitTask(
   projId: string,
@@ -471,7 +473,7 @@ export async function submitTask(
       throw new Error('You can only submit your own assigned tasks');
     }
 
-    // 创建提交记录
+    // Create submission record
     const submissionRef = taskRef.collection('submissions').doc();
     await submissionRef.set({
       user_email: userEmail,
@@ -486,7 +488,7 @@ export async function submitTask(
   }
 }
 
-// ================ 获取过期任务（悬赏面板） ================
+// ================ Get overdue tasks (bounty board) ================
 
 export async function getOverdueTasks(projId: string) {
   const { userId } = await auth();
@@ -535,7 +537,7 @@ export async function getOverdueTasks(projId: string) {
   }
 }
 
-// ================ 项目排行榜功能 ================
+// ================ Project leaderboard functionality ================
 
 export async function getProjectLeaderboard(projId: string) {
   const { userId } = await auth();
@@ -563,9 +565,9 @@ export async function getProjectLeaderboard(projId: string) {
   }
 }
 
-// ================ 辅助函数 ================
+// ================ Helper functions ================
 
-// 更新用户积分
+// Update user score
 async function updateUserScore(
   userEmail: string,
   projectId: string, 
@@ -609,7 +611,7 @@ async function updateUserScore(
   }
 }
 
-// 更新用户任务统计
+// Update user task statistics
 async function updateUserTaskStats(
   userEmail: string,
   projectId: string, 
@@ -655,7 +657,7 @@ async function updateUserTaskStats(
   }
 }
 
-// 检查并解锁下一阶段
+// Check and unlock next stage
 async function checkAndUnlockNextStage(projId: string, currentStageId: string) {
   try {
     const currentStageDoc = await adminDb
@@ -690,45 +692,45 @@ async function checkAndUnlockNextStage(projId: string, currentStageId: string) {
 ## 4. QUICK_START_GUIDE.md
 
 ```markdown
-# 🚀 Afora Firebase 后端快速开始指南
+# 🚀 Afora Firebase Backend Quick Start Guide
 
-## ⚡ 15分钟快速实施
+## ⚡ 15-minute Quick Implementation
 
-### 第1步：复制必需的文件 (5分钟)
+### Step 1: Copy Required Files (5 minutes)
 
 ```bash
-# 1. 复制类型定义
+# 1. Copy type definitions
 cp types/firebase-types.ts your-project/types/
 
-# 2. 创建新的action文件
+# 2. Create new action files
 mkdir -p actions
 cp actions/taskActionsExample.ts your-project/actions/taskActions.ts
 ```
 
-### 第2步：安装额外依赖 (2分钟)
+### Step 2: Install Additional Dependencies (2 minutes)
 
 ```bash
-# 安装AI功能依赖
+# Install AI functionality dependencies
 npm install openai
 
-# 安装数据验证依赖  
+# Install data validation dependencies  
 npm install zod
 ```
 
-### 第3步：更新环境变量 (2分钟)
+### Step 3: Update Environment Variables (2 minutes)
 
 ```env
-# 添加到现有 .env.local
+# Add to existing .env.local
 OPENAI_API_KEY=sk-your_openai_api_key
 ```
 
-### 第4步：在前端集成新功能 (3分钟)
+### Step 4: Integrate New Features in Frontend (3 minutes)
 
 ```typescript
-// 在您的React组件中使用新的actions
+// Use new actions in your React components
 import { assignTask, completeTaskWithProgress } from '@/actions/taskActions';
 
-// 任务分配示例
+// Task assignment example
 const handleAssignTask = async () => {
   const result = await assignTask(projId, stageId, taskId, 'user@example.com');
   if (result.success) {
@@ -736,7 +738,7 @@ const handleAssignTask = async () => {
   }
 };
 
-// 任务完成示例
+// Task completion example
 const handleCompleteTask = async () => {
   const result = await completeTaskWithProgress(projId, stageId, taskId, 100);
   if (result.success) {
@@ -745,69 +747,69 @@ const handleCompleteTask = async () => {
 };
 ```
 
-## 🎯 立即可以实现的功能
+## 🎯 Features You Can Implement Immediately
 
-### ✅ 现在就可以添加的功能
+### ✅ Features You Can Add Right Now
 
-1. **任务分配系统**
-   - 复制 `taskActionsExample.ts` 中的 `assignTask` 函数
-   - 在前端添加分配按钮
+1. **Task Assignment System**
+   - Copy `assignTask` function from `taskActionsExample.ts`
+   - Add assignment button in frontend
 
-2. **任务完成进度**
-   - 使用 `completeTaskWithProgress` 函数
-   - 支持0-100%的完成进度
+2. **Task Completion Progress**
+   - Use `completeTaskWithProgress` function
+   - Support 0-100% completion progress
 
-3. **任务提交系统**
-   - 使用 `submitTask` 函数
-   - 允许用户提交任务内容
+3. **Task Submission System**
+   - Use `submitTask` function
+   - Allow users to submit task content
 
-4. **悬赏任务面板**
-   - 使用 `getOverdueTasks` 函数
-   - 显示过期可领取的任务
+4. **Bounty Task Board**
+   - Use `getOverdueTasks` function
+   - Display overdue tasks available for claiming
 
-## 📊 数据库扩展
+## 📊 Database Extensions
 
-您需要在Firestore中添加这些新集合：
+You need to add these new collections to Firestore:
 
 ```javascript
-// 新增集合结构
-user_scores/                    // 用户积分统计
-team_compatibility_scores/      // 团队兼容性评分
+// New collection structure
+user_scores/                    // User score statistics
+team_compatibility_scores/      // Team compatibility scores
 
-// 现有任务的子集合扩展
+// Existing task subcollection extensions
 projects/{projId}/stages/{stageId}/tasks/{taskId}/
-├── submissions/               // 任务提交记录
-└── (评论集合已存在)
+├── submissions/               // Task submission records
+└── (comment collections already exist)
 ```
 
-## 🔧 现有代码兼容性
+## 🔧 Existing Code Compatibility
 
-✅ **完全兼容** - 所有新功能都基于您现有的代码风格：
+✅ **Fully Compatible** - All new features are based on your existing code style:
 
-- 使用相同的 `'use server'` 模式
-- 保持现有的身份验证方式 (`auth()` from Clerk)
-- 继续使用 `adminDb` 进行数据库操作
-- 保持相同的错误处理模式
-- 兼容现有的数据结构
+- Uses the same `'use server'` pattern
+- Maintains existing authentication method (`auth()` from Clerk)
+- Continues using `adminDb` for database operations
+- Keeps the same error handling pattern
+- Compatible with existing data structures
 
-## 🎯 推荐的实施顺序
+## 🎯 Recommended Implementation Order
 
-### 阶段1：核心任务功能 (第1天)
-1. 实现任务分配 (`assignTask`)
-2. 实现任务完成 (`completeTaskWithProgress`)
-3. 更新前端任务卡片组件
+### Phase 1: Core Task Features (Day 1)
+1. Implement task assignment (`assignTask`)
+2. Implement task completion (`completeTaskWithProgress`)
+3. Update frontend task card components
 
-### 阶段2：提交和评论 (第2天)
-1. 实现任务提交 (`submitTask`)
-2. 获取提交记录 (`getTaskSubmissions`)
-3. 前端提交界面
+### Phase 2: Submissions and Comments (Day 2)
+1. Implement task submission (`submitTask`)
+2. Get submission records (`getTaskSubmissions`)
+3. Frontend submission interface
 
-### 阶段3：悬赏和排行 (第3天)
-1. 实现过期任务获取 (`getOverdueTasks`)
-2. 实现用户积分系统
-3. 创建排行榜页面
+### Phase 3: Bounty and Leaderboards (Day 3)
+1. Implement overdue task retrieval (`getOverdueTasks`)
+2. Implement user scoring system
+3. Create leaderboard page
 
 ---
 
-**开始实施：建议从 `taskActionsExample.ts` 开始，它包含了最常用的功能，并且与您现有代码完全兼容！** 🎉
+**Start Implementation: We recommend starting with `taskActionsExample.ts`, which contains the most commonly used features and is fully compatible with your existing code!** 🎉
 ```
