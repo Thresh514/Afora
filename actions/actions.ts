@@ -7,8 +7,6 @@ import axios from "axios";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage } from "@/firebase";
 
-// IMPLEMENT THIS WITH FIREBASE FIRESTORE NOW THAT WE AREN'T USING LIVE BLOCKS
-
 export async function createNewUser(
     userEmail: string,
     username: string,
@@ -22,13 +20,17 @@ export async function createNewUser(
         const userRef = adminDb.collection("users").doc(userEmail);
 
         // update current user's profile info whenever it is changed/updated
-        await userRef.set(
-            {
-                email: userEmail,
-                username: username,
-                userImage: userImage,
-            },
-            { merge: true });
+        await userRef.set({
+            email: userEmail,
+            username: username,
+            userImage: userImage,
+        }, { merge: true });
+
+        userRef.collection("notifications").add({
+            type: "welcome",
+            title: "Welcome to Afora!",
+            message: "This is where you can view any updates about tasks or projects you're subscribed to."
+        });
     } catch (e) {
         return { success: false, message: (e as Error).message };
     }
@@ -37,8 +39,7 @@ export async function createNewUser(
 export async function createNewOrganization(
     orgName: string,
     orgDescription: string) {
-    const x = await auth();
-    const { userId, sessionClaims } = x; //await auth();
+    const { userId, sessionClaims } = await auth();
 
     if (!userId) {
         throw new Error("Unauthorized");
@@ -92,13 +93,11 @@ export async function createNewOrganization(
         });
 
         await adminDb
-            .collection("users")
-            .doc(userEmail)
-            .collection("orgs")
-            .doc(docRef.id)
+            .collection("users").doc(userEmail)
+            .collection("orgs").doc(docRef.id)
             .set({
                 userId: userEmail, // 使用邮箱而不是用户ID
-                role: "admin",
+                role: ["admin"],
                 orgId: docRef.id,
             });
         return { orgId: docRef.id, success: true };
@@ -372,15 +371,11 @@ export async function setProjOnboardingSurvey(
             `users/${userEmail}/orgs/${orgId}`);
 
         await adminDb
-            .collection("users")
-            .doc(userEmail.trim())
-            .collection("orgs")
-            .doc(orgId)
-            .set(
-                {
-                    projOnboardingSurveyResponse: responses,
-                },
-                { merge: true });
+            .collection("users").doc(userEmail.trim())
+            .collection("orgs").doc(orgId)
+            .set({
+                projOnboardingSurveyResponse: responses,
+            }, { merge: true });
 
         console.log("Successfully saved survey response");
         return { success: true };
@@ -453,10 +448,8 @@ export async function updateProjects(orgId: string, groups: string[][]) {
                 
             group.map(async (user) => {
                 await adminDb
-                    .collection("users")
-                    .doc(user)
-                    .collection("projs")
-                    .doc(projectId)
+                    .collection("users").doc(user)
+                    .collection("projs").doc(projectId)
                     .set(
                         {
                             orgId: orgId,
@@ -520,8 +513,7 @@ export async function createProject(
 
         // 验证组织是否存在
         const orgDoc = await adminDb
-            .collection("organizations")
-            .doc(orgId)
+            .collection("organizations").doc(orgId)
             .get();
         if (!orgDoc.exists) {
             throw new Error("Organization not found");

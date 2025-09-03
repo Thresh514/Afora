@@ -111,6 +111,28 @@ function MySidebar() {
                 <SidebarContent>
                     <div className="flex-1">
                         <SidebarGroup>
+                            <SidebarGroupLabel>Tools</SidebarGroupLabel>
+                            <SidebarGroupContent>
+                                <SidebarMenu>
+                                    <SidebarMenuItem>
+                                        <SidebarMenuButton asChild>
+                                            <Link href="/notifications" className="flex items-center gap-2">
+                                                <Mail className="h-4 w-4" />
+                                                <span className="truncate">Notifications</span>
+                                            </Link>
+                                        </SidebarMenuButton>
+                                        <SidebarMenuButton asChild>
+                                            <Link href="#calendar" className="flex items-center gap-2">
+                                                <Calendar className="h-4 w-4" />
+                                                <span className="truncate">Calendar</span>
+                                            </Link>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                </SidebarMenu>
+                            </SidebarGroupContent>
+                        </SidebarGroup>
+
+                        <SidebarGroup>
                             <SidebarGroupLabel>Groups</SidebarGroupLabel>
                             <SidebarGroupContent>
                                 <SidebarMenu>
@@ -172,28 +194,6 @@ function MySidebar() {
                                                 </div>
                                             </SidebarMenuItem>
                                         )}
-                                </SidebarMenu>
-                            </SidebarGroupContent>
-                        </SidebarGroup>
-
-                        <SidebarGroup>
-                            <SidebarGroupLabel>Tools</SidebarGroupLabel>
-                            <SidebarGroupContent>
-                                <SidebarMenu>
-                                    <SidebarMenuItem>
-                                        <SidebarMenuButton asChild>
-                                            <Link href="/notifications" className="flex items-center gap-2">
-                                                <Mail className="h-4 w-4" />
-                                                <span className="truncate">Notifications</span>
-                                            </Link>
-                                        </SidebarMenuButton>
-                                        <SidebarMenuButton asChild>
-                                            <Link href="#calendar" className="flex items-center gap-2">
-                                                <Calendar className="h-4 w-4" />
-                                                <span className="truncate">Calendar</span>
-                                            </Link>
-                                        </SidebarMenuButton>
-                                    </SidebarMenuItem>
                                 </SidebarMenu>
                             </SidebarGroupContent>
                         </SidebarGroup>
