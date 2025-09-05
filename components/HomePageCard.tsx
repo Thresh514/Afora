@@ -57,9 +57,9 @@ function HomePageCard({ org }: HomePageCardProps) {
                         {/* 管理员信息 */}
                         <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
                             <Users className="w-4 h-4" />
-                            <span className="text-sm">
+                            {/*<span className="text-sm">
                                 {data?.admins[0]}
-                            </span>
+                            </span>*/}
                         </div>
 
                         {/* 描述文本 */}

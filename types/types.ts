@@ -399,11 +399,12 @@ export const projHeader = [
 ];
 
 export const projQuestions = [
-    "What are your top three technical or professional skills? Which tools, frameworks, or technologies are you proficient in?",
-    "What is your preferred method of communication for this project? (e.g., Slack, Email, Video calls) How often do you prefer to receive updates or engage with teammates? (e.g., daily, weekly)",
-    "What kind of project structure do you prefer? (e.g., rigid with clear processes, or flexible with more autonomy) What industry or type of project excites you most for this specific collaboration?",
-    "Anyone you definitely want to work with for this project? Someone you definitely do not want to work with for this project?",
-    "What days and times are you available to work on this project? (Please share a preferred weekly schedule or select available times like in When2Meet)",
+    "What are your top three technical or professional skills (tools, frameworks, or technologies)?",
+    "What is your preferred method of communication for this project? (e.g., Slack, Email, Video calls)",
+    "What kind of project structure do you prefer? (e.g., rigid with clear processes, or flexible with more autonomy)",
+    "Anyone you definitely want to work with for this project? ",
+    "Anyone you definitely DO NOT want to work with for this project?",
+    "What days and times are you available to work on this project? (Please share a preferred weekly schedule or select available times akin to When2Meet)",
 ];
 
 export const teamCharterQuestions = [
