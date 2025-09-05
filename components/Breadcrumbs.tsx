@@ -27,8 +27,6 @@ function Breadcrumbs() {
     // Adds a path that a user can refer to know where they are and click to "parent" directories
     const path = usePathname();
 
-    console.log(`Path: "${path}"`);
-
     const segments = useMemo(() => {
         const pathSegments = path
             ? path.split("/").filter((segment) => segment !== "")
