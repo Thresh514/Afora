@@ -14,7 +14,7 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useState, useTransition } from "react";
-import { deleteProject } from "@/actions/actions";
+import { deleteProject } from "@/actions/newActions";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 

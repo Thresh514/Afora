@@ -10,19 +10,16 @@ Afora uses Firebase/Firestore as the database, Clerk as the authentication syste
 afora-firestore/
 ├── users/ # User collection
 │ └── {userEmail}/ # Document ID: User email
+│ ├── name: string
 │ ├── email: string
 │ ├── username: string
 │ ├── userImage: string
 │ ├── onboardingSurveyResponse: string[]
-│ ├── orgs/ # Subcollection: User's organizations
-│ │ └── {orgId}/
-│ │ ├── userId: string
-│ │ ├── role: "admin" | "member"
-│ │ ├── orgId: string
-│ │ └── projOnboardingSurveyResponse: string[]
-│ └── projs/ # Subcollection: User's projects
-│ └── {projId}/
-│ └── orgId: string
+│ └── orgs/ # Subcollection: User's organizations
+│   └── {orgId}/
+│     ├── orgId: string
+│     ├── roles: string[] # ["admin", "member", "owner"] - 支持多个角色
+│     └── joinedProjs: string[] # 用户在该org下参与的项目ID数组
 │
 ├── organizations/ # Organization collection
 │ └── {orgId}/ # Document ID: Auto-generated
@@ -30,14 +27,15 @@ afora-firestore/
 │ ├── description: string
 │ ├── backgroundImage?: string
 │ ├── createdAt: Timestamp
-│ └── projs/ # Subcollection: Organization projects
+│ ├── joinedProjs: string[] # Projects within this organization
+│ └── projs/ # Subcollection: Organization projects (legacy)
 │ └── {projId}/
 │ ├── projId: string
 │ └── members: string[]
 
 # Note: Organization member management has been migrated to user collection
 # Organization member information is now stored in users/{userEmail}/orgs/{orgId}
-# Contains fields: userId, role, orgId, createdAt
+# Contains fields: orgId, roles[], joinedProjs[]
 │
 ├── projects/ # Project collection
 │ └── {projId}/ # Document ID: Auto-generated

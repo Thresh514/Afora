@@ -2,7 +2,7 @@
 import { useRouter } from "next/navigation";
 import { Button } from "./ui/button";
 import { useState, useTransition } from "react";
-import { createNewOrganization } from "@/actions/actions";
+import { createNewOrganization } from "@/actions/newActions";
 import { toast } from "sonner";
 import {
     Dialog,

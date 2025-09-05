@@ -9,7 +9,7 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import Leaderboard from "@/components/Leaderboard";
 import { UserScore } from "@/types/types";
-import { getProjectLeaderboard } from "@/actions/actions";
+// import { getProjectLeaderboard } from "@/actions/newActions";
 
 function LeaderboardPage() {
     const params = useParams();

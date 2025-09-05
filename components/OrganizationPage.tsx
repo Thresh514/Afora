@@ -10,6 +10,7 @@ import { Organization, UserOrgData } from "@/types/types";
 import { useUser } from "@clerk/nextjs";
 import ProjTab from "./ProjTab";
 import OrgHeader from "./OrgHeader";
+import { getOrganizationMembers } from "@/actions/newActions";
 
 const OrganizationPage = ({ id }: { id: string }) => {
     const { user } = useUser();
@@ -26,33 +27,96 @@ const OrganizationPage = ({ id }: { id: string }) => {
     );
 
     const [userOrgData, setUserOrgData] = useState<UserOrgData>();
+    const [membersData, setMembersData] = useState<{
+        admins: string[];
+        members: string[];
+    }>({ admins: [], members: [] });
+    const [membersLoading, setMembersLoading] = useState(false);
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+    // Function to refresh members data
+    const refreshMembers = () => {
+        setRefreshTrigger(prev => prev + 1);
+    };
 
     // Handle userOrgData - moved before early returns
     useEffect(() => {
         if (data) {
             const userOrg = data.data() as UserOrgData;
             console.log("OrganizationPage - User org data loaded:", userOrg);
-            setUserOrgData(userOrg);
-        } else if (!loading && userEmail && org) {
-            const orgData = org.data() as Organization;
-            const isAdmin = orgData?.admins?.includes(userEmail);
-            const isMember = orgData?.members?.includes(userEmail);
-
-            if (isAdmin || isMember) {
-                console.log(
-                    "OrganizationPage - Creating default user org data. IsAdmin:",
-                    isAdmin,
-                );
-                const defaultUserOrgData: UserOrgData = {
-                    createdAt: new Date().toISOString(),
-                    role: isAdmin ? "admin" : "member",
-                    orgId: id,
-                    userId: userEmail,
-                };
-                setUserOrgData(defaultUserOrgData);
+            
+            // Handle both old and new data structures
+            if (userOrg.roles && userOrg.roles.length > 0) {
+                // New structure: use roles array, determine primary role
+                const primaryRole = userOrg.roles.includes('owner') ? 'owner' : 
+                                  userOrg.roles.includes('admin') ? 'admin' : 'member';
+                console.log("OrganizationPage - Using new structure, roles:", userOrg.roles, "primary role:", primaryRole);
+                setUserOrgData({
+                    ...userOrg,
+                    role: primaryRole // Set role for backward compatibility
+                });
+            } else {
+                // Old structure: use existing role field
+                console.log("OrganizationPage - Using old structure, role:", userOrg.role);
+                setUserOrgData(userOrg);
             }
+        } else if (!loading && userEmail && org) {
+            // Check if user is actually a member of this organization
+            console.log("OrganizationPage - No user org data found, checking if user is member");
+            const checkUserMembership = async () => {
+                try {
+                    const result = await getOrganizationMembers(id);
+                    if (result.success && result.members) {
+                        const userMember = result.members.find((member: any) => member.email === userEmail);
+                        if (userMember) {
+                            const primaryRole = userMember.roles.includes('owner') ? 'owner' : 
+                                              userMember.roles.includes('admin') ? 'admin' : 'member';
+                            setUserOrgData({
+                                role: primaryRole,
+                                createdAt: new Date().toISOString(),
+                                orgId: id,
+                                userId: userEmail
+                            });
+                        } else {
+                            console.log("User is not a member of this organization");
+                        }
+                    }
+                } catch (error) {
+                    console.error("Error checking user membership:", error);
+                }
+            };
+            
+            checkUserMembership();
         }
     }, [data, loading, userEmail, org, id]);
+
+    // Fetch organization members
+    useEffect(() => {
+        const fetchMembers = async () => {
+            if (!id) return;
+            
+            setMembersLoading(true);
+            try {
+                const result = await getOrganizationMembers(id);
+                if (result.success && result.members) {
+                    const admins = result.members
+                        .filter((member: any) => member.roles.includes('admin') || member.roles.includes('owner'))
+                        .map((member: any) => member.email);
+                    const members = result.members
+                        .filter((member: any) => member.roles.includes('member'))
+                        .map((member: any) => member.email);
+                    
+                    setMembersData({ admins, members });
+                }
+            } catch (error) {
+                console.error('Error fetching organization members:', error);
+            } finally {
+                setMembersLoading(false);
+            }
+        };
+
+        fetchMembers();
+    }, [id, refreshTrigger]);
 
     // Get orgData before any early returns
     const orgData = org?.data() as Organization;
@@ -105,16 +169,19 @@ const OrganizationPage = ({ id }: { id: string }) => {
                     )}
                 </TabsContent>
                 <TabsContent value="members" className="mt-4">
-                    {orgData && userOrgData && (
+                    {orgData && userOrgData && !membersLoading ? (
                         <MemberList
                             userRole={userOrgData.role}
-                            admins={orgData.admins}
-                            members={orgData.members}
+                            admins={membersData.admins || []}
+                            members={membersData.members || []}
                             orgId={id}
                             projectsData={projectsData}
                             currentUserEmail={userEmail}
+                            onMembersChanged={refreshMembers}
                         />
-                    )}
+                    ) : membersLoading ? (
+                        <div>Loading members...</div>
+                    ) : null}
                 </TabsContent>
             </Tabs>
         </div>

@@ -11,7 +11,7 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useTransition } from "react";
-import { removeProjectMember } from "@/actions/actions";
+import { removeProjectMember } from "@/actions/newActions";
 import { toast } from "sonner";
 import { AlertTriangle } from "lucide-react";
 import { useParams } from "next/navigation";

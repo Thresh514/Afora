@@ -12,7 +12,7 @@ import { FormEvent, useState, useTransition } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
-import { addProjectMember } from "@/actions/actions";
+import { addProjectMember } from "@/actions/newActions";
 import { toast } from "sonner";
 import { UserPlus } from "lucide-react";
 

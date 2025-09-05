@@ -12,7 +12,7 @@ import { db } from "@/firebase";
 import { batchInQueryForHooks } from "@/lib/batchQuery";
 import {Users, UserPlus, FolderOpen, UserCheck, ArrowRight, Crown, Building2} from "lucide-react";
 import { toast } from "sonner";
-import {updateProjectMembers, removeProjectMember, updateProjectTeamSize} from "@/actions/actions";
+import {addProjectMember, removeProjectMember, updateProjectTeamSize} from "@/actions/newActions";
 import Image from "next/image";
 
 interface MemberListProps {
@@ -33,6 +33,7 @@ interface MemberListProps {
         }>;
     };
     currentUserEmail?: string;
+    onMembersChanged?: () => void;
 }
 
 interface ProjectTeam {
@@ -43,14 +44,16 @@ interface ProjectTeam {
     teamSize: number;
 }
 
-const MemberList = ({admins, members, userRole, orgId, projectsData, currentUserEmail}: MemberListProps) => {
+const MemberList = ({admins, members, userRole, orgId, projectsData, currentUserEmail, onMembersChanged}: MemberListProps) => {
+    // Helper function to check if user has admin permissions (including owner)
+    const hasAdminPermissions: boolean = userRole === "admin" || userRole === "owner";
     const [adminsPfp, setAdminsPfp] = useState<{ [email: string]: string }>({});
     const [membersPfp, setMembersPfp] = useState<{ [email: string]: string }>(
         {},
     );
     const [selectedProject, setSelectedProject] = useState<string | null>(null);
     const [selectedView, setSelectedView] = useState<"overview" | "projects">(
-        userRole === "admin" ? "overview" : "projects",
+        hasAdminPermissions ? "overview" : "projects",
     );
     const [defaultTeamSize] = useState(3);
 
@@ -160,7 +163,7 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
 
     // 计算用户被分配到的项目
     const userAssignedProjects = useMemo(() => {
-        if (userRole === "admin") {
+        if (hasAdminPermissions) {
             return projectTeams; // 管理员可以看到所有项目
         }
 
@@ -242,10 +245,10 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
                             ...destTeam.members,
                             memberEmail,
                         ];
-                        const result = await updateProjectMembers(
+                        const result = await addProjectMember(
                             toProjectId,
-                            updatedMembers,
-                            orgId
+                            orgId,
+                            memberEmail
                         );
                         if (!result.success) {
                             toast.error(
@@ -268,10 +271,10 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
                                             ...sourceTeam.members,
                                             memberEmail,
                                         ];
-                                        await updateProjectMembers(
+                                        await addProjectMember(
                                             fromProjectId,
-                                            restoreMembers,
-                                            orgId
+                                            orgId,
+                                            memberEmail
                                         );
                                     }
                                 } catch (restoreError) {
@@ -305,7 +308,7 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
     const updateTeamSize = useCallback(
         async (projectId: string, newSize: number) => {
             try {
-                const result = await updateProjectTeamSize(projectId, newSize, orgId);
+                const result = await updateProjectTeamSize(projectId, orgId, newSize);
 
                 if (result.success) {
                     toast.success("Team size updated successfully!");
@@ -365,7 +368,7 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
                         </div>
                     </div>
 
-                    {showActions && userRole === "admin" && (
+                    {showActions && hasAdminPermissions && (
                         <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                             {projectId && (
                                 <Button
@@ -447,7 +450,7 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
 
                     {/* Stats Cards */}
                     <div className="grid grid-cols-2 gap-3">
-                        {userRole === "admin" ? (
+                        {hasAdminPermissions ? (
                             <>
                                 <div className="bg-white bg-opacity-20 backdrop-blur-sm p-3 rounded-lg">
                                     <div className="text-2xl font-bold">
@@ -496,7 +499,7 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
                 </div>
 
                 {/* Navigation */}
-                {userRole === "admin" && (
+                {hasAdminPermissions && (
                     <div className="p-4 border-b border-gray-200">
                         <div className="grid grid-cols-2 gap-2">
                             <Button
@@ -534,7 +537,7 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
 
                 {/* Content Area */}
                 <div className="flex-1 overflow-y-auto p-4">
-                    {userRole === "admin" && selectedView === "overview" ? (
+                    {hasAdminPermissions && selectedView === "overview" ? (
                         <div className="space-y-4">
                             <div className="text-sm font-medium text-gray-500">
                                 Group Overview
@@ -588,7 +591,7 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
                     ) : (
                         <div className="space-y-3">
                             <div className="text-sm font-medium text-gray-500">
-                                {userRole === "admin"
+                                {hasAdminPermissions
                                     ? "Team List"
                                     : "My Teams"}
                             </div>
@@ -596,12 +599,12 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
                                 <div className="text-center py-8">
                                     <FolderOpen className="h-12 w-12 text-gray-400 mx-auto mb-3" />
                                     <h3 className="text-sm font-medium text-gray-900 mb-2">
-                                        {userRole === "admin"
+                                        {hasAdminPermissions
                                             ? "No teams"
                                             : "You have not been assigned to any teams"}
                                     </h3>
                                     <p className="text-xs text-gray-500 mb-4">
-                                        {userRole === "admin"
+                                        {hasAdminPermissions
                                             ? "There are no teams in this organization."
                                             : "Please contact the administrator to be assigned to a team."}
                                     </p>
@@ -675,7 +678,7 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
                             )}
 
                             {/* Unassigned Section */}
-                            {userRole === "admin" && (
+                            {hasAdminPermissions && (
                                 <div
                                     className={`p-4 rounded-xl cursor-pointer transition-all duration-200 ${
                                         selectedProject === "unassigned"
@@ -725,7 +728,7 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
             <div className="flex-1 flex flex-col bg-white">
                 {/* Content Header */}
                 <div className="p-6 border-b border-gray-200 bg-white">
-                    {userRole === "admin" && selectedView === "overview" ? (
+                    {hasAdminPermissions && selectedView === "overview" ? (
                         <div>
                             <h3 className="text-lg font-semibold text-gray-900">
                                 Group Members Overview
@@ -746,7 +749,7 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
                                     {selectedProjectData?.teamSize} team members
                                 </p>
                             </div>
-                            {userRole === "admin" && selectedProjectData && (
+                            {hasAdminPermissions && selectedProjectData && (
                                 <div className="flex items-center gap-2">
                                     <span className="text-sm text-gray-500">
                                         Team Size:
@@ -795,12 +798,12 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
                     ) : (
                         <div>
                             <h3 className="text-lg font-semibold text-gray-900">
-                                {userRole === "admin"
+                                {hasAdminPermissions
                                     ? "Select Team"
                                     : "My Team Members"}
                             </h3>
                             <p className="text-sm text-gray-500">
-                                {userRole === "admin"
+                                {hasAdminPermissions
                                     ? "Select a team from the left to view team members"
                                     : "Select a team from the left to view your team members"}
                             </p>
@@ -810,7 +813,7 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
 
                 {/* Content Area */}
                 <div className="flex-1 overflow-y-auto p-6">
-                    {userRole === "admin" && selectedView === "overview" ? (
+                    {hasAdminPermissions && selectedView === "overview" ? (
                         <div className="space-y-6">
                             {/* Admins Section */}
                             <div>
@@ -818,7 +821,7 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
                                     <h4 className="text-sm font-medium text-gray-700 mb-4 flex items-center gap-2">
                                         <Crown className="h-4 w-4 text-yellow-500" />
                                         Admins ({admins.length})
-                                        {userRole === "admin" && <InviteUserToOrganization defaultAccessRole="admin" />}
+                                        {hasAdminPermissions && <InviteUserToOrganization defaultAccessRole="admin" onInviteSuccess={onMembersChanged} />}
                                     </h4>
                                 </div>
                                 <div className="grid gap-3">
@@ -837,7 +840,7 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
                                 <h4 className="text-sm font-medium text-gray-700 mb-4 flex items-center gap-2">
                                     <Users className="h-4 w-4 text-blue-500" />
                                     Members ({members.length})
-                                    {userRole === "admin" && <InviteUserToOrganization defaultAccessRole="editor" />}
+                                    {hasAdminPermissions && <InviteUserToOrganization defaultAccessRole="editor" onInviteSuccess={onMembersChanged} />}
                                 </h4>
                                 <div className="grid gap-3">
                                     {members.map((member: string) => (
@@ -888,7 +891,7 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
                                                     .length}{" "}
                                             spots available
                                         </p>
-                                        {userRole === "admin" &&
+                                        {hasAdminPermissions &&
                                             unassignedMembers.length > 0 && (
                                                 <p className="text-sm text-gray-400 mt-2">
                                                     Select &ldquo;Unassigned Members&rdquo;
@@ -936,12 +939,12 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
                             {userAssignedProjects.length === 0 ? (
                                 <div>
                                     <h3 className="text-lg font-medium text-gray-900 mb-2">
-                                        {userRole === "admin"
+                                        {hasAdminPermissions
                                             ? "No team data"
                                             : "You have not been assigned to any teams"}
                                     </h3>
                                     <p className="text-gray-500 mb-4">
-                                        {userRole === "admin"
+                                        {hasAdminPermissions
                                             ? "There are no teams in this group. Please check the following:"
                                             : "Please contact the administrator to be assigned to a team."}
                                     </p>
@@ -949,12 +952,12 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
                             ) : (
                                 <div>
                                     <h3 className="text-lg font-medium text-gray-900 mb-2">
-                                        {userRole === "admin"
+                                        {hasAdminPermissions
                                             ? "Select a team to view details"
                                             : "Select a team to view team members"}
                                     </h3>
                                     <p className="text-gray-500">
-                                        {userRole === "admin"
+                                        {hasAdminPermissions
                                             ? "Select a team from the left team list to view team members."
                                             : "Select a team from the left team list to view your team members."}
                                     </p>

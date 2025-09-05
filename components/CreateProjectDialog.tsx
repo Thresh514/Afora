@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { Plus, Users, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useParams } from "next/navigation";
@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createProject, updateProjectMembers } from "@/actions/actions";
+import { createProject, addProjectMember, getOrganizationMembers } from "@/actions/newActions";
 import { matching } from "@/ai_scripts/matching";
 import { projQuestions } from "@/types/types";
 import { db } from "@/firebase";
@@ -26,7 +26,7 @@ import LoadingOverlay from "./LoadingOverlay";
 
 interface CreateProjectDialogProps {
     totalProjects: number;
-    userRole: "admin" | "member";
+    userRole: "admin" | "member" | "owner";
     onProjectCreated?: () => void;
 }
 
@@ -41,6 +41,39 @@ export default function CreateProjectDialog({
     const [teamSize, setTeamSize] = useState("3");
     const [isPending, startTransition] = useTransition();
     const [org, loading, error] = useDocument(doc(db, "organizations", orgId));
+    const [membersData, setMembersData] = useState<{
+        admins: string[];
+        members: string[];
+    }>({ admins: [], members: [] });
+    const [membersLoading, setMembersLoading] = useState(false);
+
+    // Fetch organization members
+    useEffect(() => {
+        const fetchMembers = async () => {
+            if (!orgId) return;
+            
+            setMembersLoading(true);
+            try {
+                const result = await getOrganizationMembers(orgId);
+                if (result.success && result.members) {
+                    const admins = result.members
+                        .filter((member: any) => member.roles.includes('admin') || member.roles.includes('owner'))
+                        .map((member: any) => member.email);
+                    const members = result.members
+                        .filter((member: any) => member.roles.includes('member'))
+                        .map((member: any) => member.email);
+                    
+                    setMembersData({ admins, members });
+                }
+            } catch (error) {
+                console.error('Error fetching organization members:', error);
+            } finally {
+                setMembersLoading(false);
+            }
+        };
+
+        fetchMembers();
+    }, [orgId]);
 
     const handleCreateProject = () => {
         if (!newProjectTitle.trim()) return;
@@ -55,14 +88,14 @@ export default function CreateProjectDialog({
                 }
 
                 // 自动将所有管理员添加到项目中
-                const adminMembers = orgData.admins || [];
+                const adminMembers = membersData.admins || [];
                 console.log("Adding admins to project:", adminMembers);
 
                 // 创建项目并包含所有管理员
                 const memberCountToMatch = teamSize && parseInt(teamSize) > 0 ? parseInt(teamSize) : 0;
                 // 计算总团队大小：admin数量 + 要匹配的成员数量  
                 const totalTeamSize = memberCountToMatch > 0 ? adminMembers.length + memberCountToMatch : undefined;
-                const result = await createProject(orgId, newProjectTitle.trim(), [], totalTeamSize, adminMembers);
+                const result = await createProject(orgId, newProjectTitle.trim(), totalTeamSize || 3);
                 if (!result.success) {
                     toast.error(result.message || "Failed to create team");
                     return;
@@ -78,7 +111,7 @@ export default function CreateProjectDialog({
                 if (teamSize && parseInt(teamSize) > 0) {
                     try {
                         // 匹配用户指定数量的普通成员
-                        const memberList = orgData.members || [];
+                        const memberList = membersData.members || [];
                         const adminsCount = adminMembers.length;
                         
                         console.log(`Member count to match: ${memberCountToMatch}, Admins: ${adminsCount}, Total will be: ${memberCountToMatch + adminsCount}`);
@@ -124,8 +157,10 @@ export default function CreateProjectDialog({
                                 // 使用第一个匹配的团队
                                 const selectedGroup = parsedResult.groups[0];
                                 if (selectedGroup && selectedGroup.length > 0) {
-                                    // 更新项目成员（只添加匹配的普通成员，管理员已在admins字段中）
-                                    await updateProjectMembers(projectId, selectedGroup, orgId);
+                                    // 添加匹配的普通成员到项目
+                                    for (const memberEmail of selectedGroup) {
+                                        await addProjectMember(projectId, orgId, memberEmail);
+                                    }
                                     toast.success("Team created successfully!");
                                 } else {
                                     toast.success("Team created successfully!");

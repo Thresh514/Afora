@@ -8,7 +8,7 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { useUser } from "@clerk/nextjs";
 import Image from "next/image";
-import { postComment } from "@/actions/actions";
+// import { postComment } from "@/actions/newActions";
 import { useTransition } from "react";
 import { Timestamp } from "firebase/firestore";
 import dynamic from 'next/dynamic';

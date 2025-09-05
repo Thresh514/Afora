@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { FormEvent, useState, useTransition, useEffect } from "react";
 import { Button } from "./ui/button";
-import { createProject } from "@/actions/actions";
+import { createProject, getOrganizationMembers } from "@/actions/newActions";
 import { toast } from "sonner";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -48,11 +48,17 @@ export default function AddNewTeamDialog({ orgId, totalProjects, onTeamCreated }
     useEffect(() => {
         const fetchOrgMembers = async () => {
             try {
-                const orgDoc = await getDoc(doc(db, "organizations", orgId));
-                if (orgDoc.exists()) {
-                    const orgData = orgDoc.data() as Organization;
-                    setOrgMembers(orgData.members || []);
-                    setOrgAdmins(orgData.admins || []);
+                const result = await getOrganizationMembers(orgId);
+                if (result.success && result.members) {
+                    const admins = result.members
+                        .filter((member: any) => member.roles.includes('admin') || member.roles.includes('owner'))
+                        .map((member: any) => member.email);
+                    const members = result.members
+                        .filter((member: any) => member.roles.includes('member'))
+                        .map((member: any) => member.email);
+                    
+                    setOrgMembers(members);
+                    setOrgAdmins(admins);
                 }
             } catch (error) {
                 console.error("Error fetching organization members:", error);

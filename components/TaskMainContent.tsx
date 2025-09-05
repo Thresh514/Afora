@@ -19,7 +19,7 @@ import { toast } from "sonner";
 import { Slider } from "@/components/ui/slider";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { assignTask, completeTaskWithProgress } from "@/actions/actions";
+// import { assignTask, completeTaskWithProgress } from "@/actions/newActions";
 import { useRouter } from "next/navigation";
 
 interface TaskMainContentProps {

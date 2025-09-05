@@ -34,23 +34,8 @@ const OrgHeader = ({ id }: OrgHeaderProps) => {
             console.log("OrganizationPage - User org data loaded:", userOrg);
             setUserOrgData(userOrg);
         } else if (!loading && userEmail && org) {
-            const orgData = org.data() as Organization;
-            const isAdmin = orgData?.admins?.includes(userEmail);
-            const isMember = orgData?.members?.includes(userEmail);
-
-            if (isAdmin || isMember) {
-                console.log(
-                    "OrganizationPage - Creating default user org data. IsAdmin:",
-                    isAdmin,
-                );
-                const defaultUserOrgData: UserOrgData = {
-                    createdAt: new Date().toISOString(),
-                    role: isAdmin ? "admin" : "member",
-                    orgId: id,
-                    userId: userEmail,
-                };
-                setUserOrgData(defaultUserOrgData);
-            }
+            // No fallback needed - user org data should be in the orgs subcollection
+            console.log("OrgHeader - No user org data found");
         }
     }, [data, loading, userEmail, org, id]);
 
@@ -121,7 +106,7 @@ const OrgHeader = ({ id }: OrgHeaderProps) => {
                         </div>
 
                         {/* Access Code Card */}
-                        {userOrgData && userOrgData.role === "admin" && (
+                        {userOrgData && (userOrgData.role === "admin" || userOrgData.role === "owner") && (
                             <div className="backdrop-blur-md bg-white/75 rounded-xl p-4 ">
                                 <div className="text-sm font-medium text-gray-600 mb-1">
                                     Access Code

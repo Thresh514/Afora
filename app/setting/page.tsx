@@ -3,7 +3,7 @@
 
 import { useUser } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
-import { updateUserMatchingPreference, getUserMatchingPreference } from "@/actions/actions";
+import { updateUserMatchingPreference, getUserMatchingPreference } from "@/actions/newActions";
 import { db } from "@/firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { useState, useEffect } from "react";

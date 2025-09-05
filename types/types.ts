@@ -1,22 +1,24 @@
 import { DocumentData, Timestamp } from "firebase/firestore";
 
 /**
- * - editor: members who can edit the documents
+ * - owner: creator of the organization
  * - admin: administrators who have higher access
+ * - member: regular members
  */
-export const access_roles: string[] = ["editor", "admin"];
+export const access_roles: string[] = ["owner", "admin", "member"];
 
 export type User = {
-    fullName: string;
-    firstName: string;
-    lastName: string;
+    name: string;
     email: string;
-    emailAddresses: string;
-    imageUrl: string;
-    unsafeMetadata: {
-        demographic?: string; // Use optional chaining here
-        gender?: string;
-    };
+    username: string;
+    userImage: string;
+    onboardingSurveyResponse: string[];
+};
+
+export type UserOrg = {
+    orgId: string;
+    roles: string[]; // ["admin", "member", "owner"]
+    joinedProjs: string[]; // Projects user participates in within this org
 };
 
 export type Project = {
@@ -47,13 +49,15 @@ export type Organization = {
     title: string;
     description: string;
     backgroundImage: string;
+    joinedProjs: string[]; // Projects within this organization
 };
 
-// this structure describes the subcollection 'org' document under each user
-// orgId and userId are not repetitive and are needed for quick query when deleting organizations
+// Legacy interface - now using UserOrg type instead of subcollection
+// This is kept for backward compatibility during migration
 export interface UserOrgData extends DocumentData {
     createdAt: string;
-    role: string;
+    role: string; // Legacy field for backward compatibility
+    roles?: string[]; // New field for multiple roles
     orgId: string;
     userId: string;
 }

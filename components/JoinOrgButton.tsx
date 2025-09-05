@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { useUser } from "@clerk/nextjs";
 import { toast } from "sonner";
-import { inviteUserToOrg } from "@/actions/actions";
+import { inviteUserToOrg } from "@/actions/newActions";
 
 function JoinOrgButton({
     isOpen,

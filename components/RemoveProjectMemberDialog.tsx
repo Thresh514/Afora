@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useState, useTransition } from "react";
 import { Button } from "./ui/button";
-import { removeProjectMember } from "@/actions/actions";
+import { removeProjectMember } from "@/actions/newActions";
 import { toast } from "sonner";
 import { UserMinus, AlertTriangle } from "lucide-react";
 import { useParams } from "next/navigation";

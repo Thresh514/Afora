@@ -5,7 +5,7 @@ import {AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFoot
 import { Button } from "./ui/button";
 import { projHeader, projQuestions } from "@/types/types";
 import { Progress } from "@/components/ui/progress";
-import { setProjOnboardingSurvey } from "@/actions/actions";
+import { setUserProjectOnboardingSurvey } from "@/actions/newActions";
 import { toast } from "sonner";
 import { db } from "@/firebase";
 import { useDocument } from "react-firebase-hooks/firestore";
@@ -224,8 +224,9 @@ const ProjOnboarding = ({ orgId, projId, onDismiss }: ProjOnboardingProps) => {
         // Save structured data to the last question, readable format as comment
         responses[projQuestions.length - 1] = `${structuredSchedule} | Readable: ${readableSchedule}`;
         
-        const { success, message } = await setProjOnboardingSurvey(
+        const { success, message } = await setUserProjectOnboardingSurvey(
             orgId,
+            projId,
             responses,
         );
         if (success) {

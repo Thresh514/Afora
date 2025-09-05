@@ -6,7 +6,7 @@ import { batchInQuery } from "@/lib/batchQuery";
 import React, { useEffect, useState, useTransition } from "react";
 import { useCollection, useDocument } from "react-firebase-hooks/firestore";
 import { Button } from "./ui/button";
-import { updateProjects, previewSmartAssignment, removeProjectMember, addProjectMember } from "@/actions/actions";
+import { removeProjectMember, addProjectMember, getOrganizationMembers } from "@/actions/newActions";
 import { toast } from "sonner";
 import ProjectCard from "./ProjectCard";
 import {Folder, Users, Briefcase, Loader2, Shuffle, ArrowRightLeft} from "lucide-react";
@@ -40,6 +40,8 @@ const ProjTab = ({
     userRole: string;
     orgId: string;
 }) => {
+    // Helper function to check if user has admin permissions (including owner)
+    const hasAdminPermissions = userRole === "admin" || userRole === "owner";
     const [isPending, startTransition] = useTransition();
     const [refreshTrigger, setRefreshTrigger] = useState(0);
 
@@ -47,6 +49,11 @@ const ProjTab = ({
     const [parsedOutput, setParsedOutput] = useState<MatchingOutput | null>(null);
     const [projectTasks, setProjectTasks] = useState<{[key: string]: Task[]}>({});
     const [defaultTeamSize] = useState(3); // Default team size for smart matching
+    const [membersData, setMembersData] = useState<{
+        admins: string[];
+        members: string[];
+    }>({ admins: [], members: [] });
+    const [membersLoading, setMembersLoading] = useState(false);
     
     // Smart Matching Preview Dialog State
     const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false);
@@ -93,6 +100,34 @@ const ProjTab = ({
     // 获取组织数据
     const [org] = useDocument(doc(db, "organizations", orgId));
     const orgData = org?.data() as Organization;
+
+    // Fetch organization members
+    useEffect(() => {
+        const fetchMembers = async () => {
+            if (!orgId) return;
+            
+            setMembersLoading(true);
+            try {
+                const result = await getOrganizationMembers(orgId);
+                if (result.success && result.members) {
+                    const admins = result.members
+                        .filter((member: any) => member.roles.includes('admin') || member.roles.includes('owner'))
+                        .map((member: any) => member.email);
+                    const members = result.members
+                        .filter((member: any) => member.roles.includes('member'))
+                        .map((member: any) => member.email);
+                    
+                    setMembersData({ admins, members });
+                }
+            } catch (error) {
+                console.error('Error fetching organization members:', error);
+            } finally {
+                setMembersLoading(false);
+            }
+        };
+
+        fetchMembers();
+    }, [orgId]);
 
     const userQ = query(
         collection(db, "users", userId, "projs"),
@@ -226,7 +261,7 @@ const ProjTab = ({
 
     const handleSmartMatching = async () => {
         console.log("Current userRole:", userRole); // Debug info
-        if (userRole !== "admin") {
+        if (!hasAdminPermissions) {
             showErrorToast({
                 type: "smart_matching",
                 message: "Only administrators can use smart matching functionality",
@@ -418,12 +453,12 @@ const ProjTab = ({
 
 
     const totalProjects = allProjects?.docs.length || 0;
-    const activeProjects = userRole === "admin" 
+    const activeProjects = hasAdminPermissions 
         ? (allProjects?.docs || []).filter(proj => (proj.data() as Project).members?.length > 0).length
         : userProjList.length;
 
     // 根据用户角色决定显示哪些项目
-    const displayProjects = userRole === "admin" 
+    const displayProjects = hasAdminPermissions 
         ? (allProjects?.docs || []).map((doc) => ({
             ...(doc.data() as Project),
             projId: doc.id
@@ -501,7 +536,7 @@ const ProjTab = ({
                                                 Role
                                             </span>
                                             <span className="text-sm font-medium">
-                                                {userRole === "admin" ? "Admin" : "Member"}
+                                                {hasAdminPermissions ? "Admin" : "Member"}
                                             </span>
                                         </div>
                                         <Separator />
@@ -510,7 +545,7 @@ const ProjTab = ({
                                                 Total Members
                                             </span>
                                             <Badge variant="outline">
-                                                {orgData ? (orgData.admins?.length || 0) + (orgData.members?.length || 0) : 0}
+                                                {membersLoading ? 0 : (membersData.admins.length + membersData.members.length)}
                                             </Badge>
                                         </div>
                                     </div>
@@ -531,11 +566,11 @@ const ProjTab = ({
                         />
                         
                         {/* Smart Matching - Only for admins */}
-                        {userRole === "admin" && (
+                        {hasAdminPermissions && (
                             <>
                                 <Button
                                     onClick={handleSmartMatching}
-                                    disabled={isPending || isPreviewLoading || (orgData ? (orgData.members?.length || 0) === 0 : true)}
+                                    disabled={isPending || isPreviewLoading || membersLoading || membersData.members.length === 0}
                                     className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
                                     size="sm"
                                 >
@@ -561,7 +596,7 @@ const ProjTab = ({
                                 )}
                                 
                                 {/* TEST BUTTONS - Remove after testing */}
-                                {userRole === "admin" && process.env.NODE_ENV === "development" && (
+                                {hasAdminPermissions && process.env.NODE_ENV === "development" && (
                                     <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                                         <p className="text-xs text-yellow-700 mb-2 font-medium">🧪 Dev Test Buttons:</p>
                                         <div className="flex gap-2 flex-wrap">
@@ -686,12 +721,12 @@ const ProjTab = ({
                                     <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl p-6 max-w-md mx-auto">
                                         <Folder className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                                         <h3 className="text-lg font-medium text-gray-900 mb-2">
-                                            {userRole === "admin"
+                                            {hasAdminPermissions
                                                 ? "Welcome to Team Management!"
                                                 : "No teams assigned"}
                                         </h3>
                                         <p className="text-gray-500 mb-4">
-                                            {userRole === "admin"
+                                            {hasAdminPermissions
                                                 ? "Start creating your first team, experience the new task pool management system"
                                                 : "Wait for admins to create teams and assign you"}
                                         </p>

@@ -13,7 +13,7 @@ import {
 import { Button } from "./ui/button";
 import { appHeader, appQuestions, appTags } from "@/types/types";
 import { Progress } from "@/components/ui/progress";
-import { createNewUser, setUserOnboardingSurvey } from "@/actions/actions";
+import { createNewUser, setUserOnboardingSurvey } from "@/actions/newActions";
 import { toast } from "sonner";
 import { db } from "@/firebase";
 import { useDocument } from "react-firebase-hooks/firestore";

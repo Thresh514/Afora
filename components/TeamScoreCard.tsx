@@ -7,7 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Loader2, TrendingUp, AlertCircle, CheckCircle, BarChart3, Users } from "lucide-react";
 import { analyzeTeamCompatibility } from "@/ai_scripts/analyzeTeamCompatibility";
 import { appQuestions, projQuestions, TeamCompatibilityAnalysis, TeamScoreCardProps } from "@/types/types";
-import { getProjectMembersResponses, saveTeamAnalysis, getProjectTeamCharter } from "@/actions/actions";
+import { getProjectTeamCharter } from "@/actions/newActions";
 import { toast } from "sonner";
 import LoadingOverlay from "./LoadingOverlay";
 import { useParams } from "next/navigation";

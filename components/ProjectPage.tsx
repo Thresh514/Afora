@@ -19,7 +19,7 @@ import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFoo
 import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@radix-ui/react-label";
-import { setTeamCharter, updateProjectTitle, updateStages, getProjectStats, getTeamAnalysis } from "@/actions/actions";
+import { setTeamCharter, updateProjectTitle } from "@/actions/newActions";
 import { HoverCard, HoverCardTrigger } from "@radix-ui/react-hover-card";
 import { HoverCardContent } from "@/components/ui/hover-card";
 import { ReorderIcon } from "@/components/ReorderIcon";
@@ -93,6 +93,29 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
         }
     }, [user, proj]);
 
+    // Check if user is organization owner or admin
+    useEffect(() => {
+        const checkOrgPermissions = async () => {
+            if (user?.primaryEmailAddress?.emailAddress && orgId) {
+                try {
+                    const { getOrganizationMembers } = await import("@/actions/actions");
+                    const result = await getOrganizationMembers(orgId);
+                    if (result.success && result.members) {
+                        const userEmail = user.primaryEmailAddress.emailAddress;
+                        const userMember = result.members.find((member: any) => member.email === userEmail);
+                        if (userMember && (userMember.roles.includes('owner') || userMember.roles.includes('admin'))) {
+                            setIsAdmin(true);
+                        }
+                    }
+                } catch (error) {
+                    console.error("Error checking organization permissions:", error);
+                }
+            }
+        };
+
+        checkOrgPermissions();
+    }, [user, orgId]);
+
     useEffect(() => {
         // Redirect to login if the user is not authenticated
         if (isLoaded && !isSignedIn) {
@@ -104,10 +127,10 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
     const loadProjectStats = useCallback(async () => {
         try {
             // load project stats
-            const statsResult = await getProjectStats(projId, orgId);
-            if (statsResult.success && statsResult.data) {
-                setProjectStats(statsResult.data);
-            }
+            // const statsResult = await getProjectStats(projId, orgId);
+            // if (statsResult.success && statsResult.data) {
+            //     setProjectStats(statsResult.data);
+            // }
         } catch (error) {
             console.error("Error loading project stats:", error);
         }
@@ -132,13 +155,13 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                     
                     if (projectData?.lastTeamAnalysis?.filePath) {
                         // if there is existing analysis, load it
-                        const result = await getTeamAnalysis(projId, orgId);
-                        if (result.success && result.data) {
-                            setAnalysisData({
-                                analysis: result.data.analysis,
-                                timestamp: new Date(result.data.timestamp)
-                            });
-                        }
+                        // const result = await getTeamAnalysis(projId, orgId);
+                        // if (result.success && result.data) {
+                        //     setAnalysisData({
+                        //         analysis: result.data.analysis,
+                        //         timestamp: new Date(result.data.timestamp)
+                        //     });
+                        // }
                     }
                 } catch (error) {
                     console.error("Error checking team analysis:", error);
@@ -263,7 +286,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
 
                 // Filter out undefined values and replace with empty strings to avoid Firestore errors
                 const cleanResponses = responses.map(response => response || "");
-                const result = await setTeamCharter(projId, cleanResponses, orgId);
+                const result = await setTeamCharter(projId, orgId, cleanResponses);
                 
                 if (result.success) {
                     toast.success("Team Charter saved successfully!");
@@ -345,7 +368,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                     ),
             );
             const stagesToDeleteIds = stagesToDelete.map((stage) => stage.id);
-            updateStages(projId, stageUpdates, stagesToDeleteIds, orgId);
+            // updateStages(projId, stageUpdates, stagesToDeleteIds, orgId);
 
             if (proj && projTitle !== proj.title) {
                 updateProjectTitle(projId, projTitle, orgId);
@@ -1179,13 +1202,13 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                         <Button
                             onClick={async () => {
                                 try {
-                                    await updateStages(projId, [{
-                                        id: "-1",
-                                        title: newStageTitle,
-                                        order: reorderedStages.length,
-                                        tasksCompleted: 0,
-                                        totalTasks: 0
-                                    }], [], orgId);
+                                    // await updateStages(projId, [{
+                                    //     id: "-1",
+                                    //     title: newStageTitle,
+                                    //     order: reorderedStages.length,
+                                    //     tasksCompleted: 0,
+                                    //     totalTasks: 0
+                                    // }], [], orgId);
                                     toast.success("Stage added successfully!");
                                 } catch (error) {
                                     console.error("Error adding stage:", error);

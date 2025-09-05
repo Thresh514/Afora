@@ -11,7 +11,7 @@ import {
 import { FormEvent, useState, useTransition } from "react";
 import { Button } from "./ui/button";
 import { usePathname } from "next/navigation";
-import { inviteUserToOrg } from "@/actions/actions";
+import { inviteUserToOrg } from "@/actions/newActions";
 import { toast } from "sonner";
 import { Input } from "./ui/input";
 import {
@@ -28,6 +28,7 @@ import { access_roles } from "@/types/types";
 
 interface InviteUserProps {
     defaultAccessRole?: string;
+    onInviteSuccess?: () => void;
 }
 
 function InviteUser(props: InviteUserProps) {
@@ -53,7 +54,9 @@ function InviteUser(props: InviteUserProps) {
 
             if (success) {
                 setIsOpen(false);
+                setEmail(""); // Clear the email field
                 toast.success("User added to group successfully");
+                props.onInviteSuccess?.(); // Call the callback to refresh data
             } else {
                 toast.error(message);
             }

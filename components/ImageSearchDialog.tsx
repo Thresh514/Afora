@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useDropzone } from "react-dropzone";
 import { Image as ImageIcon } from "lucide-react";
-import { searchPexelsImages, setBgImage } from "@/actions/actions";
+import { setBgImage } from "@/actions/newActions";
 import { toast } from "sonner";
 import { Skeleton } from "./ui/skeleton";
 import { Loader } from "lucide-react";

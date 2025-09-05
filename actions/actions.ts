@@ -21,9 +21,11 @@ export async function createNewUser(
 
         // update current user's profile info whenever it is changed/updated
         await userRef.set({
+            name: username, // Use name instead of separate firstName/lastName
             email: userEmail,
             username: username,
             userImage: userImage,
+            onboardingSurveyResponse: [], // Initialize empty array
         }, { merge: true });
 
         userRef.collection("notifications").add({
@@ -90,15 +92,19 @@ export async function createNewOrganization(
             createdAt: Timestamp.now(),
             title: orgName,
             description: orgDescription,
+            joinedProjs: [], // Initialize empty array for projects
         });
 
+        // Add organization to user's orgs subcollection
         await adminDb
-            .collection("users").doc(userEmail)
-            .collection("orgs").doc(docRef.id)
+            .collection("users")
+            .doc(userEmail)
+            .collection("orgs")
+            .doc(docRef.id)
             .set({
-                userId: userEmail, // 使用邮箱而不是用户ID
-                role: ["admin"],
                 orgId: docRef.id,
+                roles: ["owner"], // Creator is automatically owner
+                joinedProjs: [] // Initialize empty array for projects
             });
         return { orgId: docRef.id, success: true };
     } catch (e) {
@@ -143,12 +149,70 @@ export async function inviteUserToOrg(
     orgId: string,
     email: string,
     access: string) {
-    const { userId } = await auth();
+    const { userId, sessionClaims } = await auth();
     if (!userId) {
         throw new Error("Unauthorized");
     }
 
     try {
+        // Get current user's email
+        let currentUserEmail: string | undefined;
+        if (sessionClaims?.email && typeof sessionClaims.email === "string") {
+            currentUserEmail = sessionClaims.email;
+        } else if (
+            sessionClaims?.primaryEmailAddress &&
+            typeof sessionClaims.primaryEmailAddress === "string"
+        ) {
+            currentUserEmail = sessionClaims.primaryEmailAddress;
+        } else if (
+            sessionClaims?.emailAddresses &&
+            Array.isArray(sessionClaims.emailAddresses) &&
+            sessionClaims.emailAddresses.length > 0
+        ) {
+            currentUserEmail = sessionClaims.emailAddresses[0] as string;
+        }
+
+        // 如果仍然没有邮箱，尝试从 Clerk API 获取
+        if (!currentUserEmail) {
+            try {
+                const { currentUser } = await import("@clerk/nextjs/server");
+                const user = await currentUser();
+                currentUserEmail =
+                    user?.emailAddresses?.[0]?.emailAddress ||
+                    user?.primaryEmailAddress?.emailAddress;
+            } catch (clerkError) {
+                console.error(
+                    "Failed to get user email from Clerk:",
+                    clerkError);
+            }
+        }
+
+        if (!currentUserEmail) {
+            throw new Error("Current user email not found");
+        }
+
+        // Check if current user is owner of the organization
+        const currentUserOrgDoc = await adminDb
+            .collection("users")
+            .doc(currentUserEmail)
+            .collection("orgs")
+            .doc(orgId)
+            .get();
+
+        let isOwner = false;
+        
+        if (currentUserOrgDoc.exists) {
+            const currentUserOrgData = currentUserOrgDoc.data();
+            isOwner = currentUserOrgData?.roles?.includes("owner") || false;
+        } else {
+            // If no org data found, assume user is owner (they created the org)
+            isOwner = true;
+        }
+
+        if (!isOwner) {
+            throw new Error("Only organization owners can invite members");
+        }
+
         const userDoc = await adminDb.collection("users").doc(email).get();
         // TODO: consider adding sending emails invitations
         if (!userDoc.exists) {
@@ -170,25 +234,39 @@ export async function inviteUserToOrg(
             throw new Error(`Organization with id ${orgId} not found`);
         }
 
-        // TODO: Check if user is already a member of the organization
-        // This logic should be moved to user collection management
-        // Check users/{email}/orgs/{orgId} to see if user is already a member
-        
-        // TODO: Add user to organization membership
-        // This logic should be moved to user collection management
-        // Add/update users/{email}/orgs/{orgId} with role information
+        // Only allow inviting as member or admin, not owner
+        if (access === "owner") {
+            throw new Error("Cannot invite users as owner. Only the creator can be owner.");
+        }
 
-        await adminDb
+        // Check if user is already a member of the organization
+        const orgDocRef = adminDb
             .collection("users")
             .doc(email)
             .collection("orgs")
-            .doc(orgId)
-            .set({
-                userId: email,
-                role: access,
-                createdAt: Timestamp.now(),
-                orgId,
+            .doc(orgId);
+        
+        const orgDoc = await orgDocRef.get();
+        
+        if (orgDoc.exists) {
+            // User is already a member, update their roles
+            const orgData = orgDoc.data();
+            const currentRoles = orgData?.roles || [];
+            
+            // Add new role if not already present
+            if (!currentRoles.includes(access)) {
+                await orgDocRef.update({
+                    roles: [...currentRoles, access]
+                });
+            }
+        } else {
+            // User is not a member, add them to the organization
+            await orgDocRef.set({
+                orgId: orgId,
+                roles: [access],
+                joinedProjs: []
             });
+        }
 
         return { success: true, message: "User invited successfully" };
     } catch (error) {
@@ -196,6 +274,285 @@ export async function inviteUserToOrg(
         return { success: false, message: (error as Error).message };
     }
 }
+
+// Upgrade user role in organization (member to admin)
+export async function upgradeUserRole(
+    orgId: string,
+    userEmail: string,
+    newRole: string) {
+    const { userId, sessionClaims } = await auth();
+    if (!userId) {
+        throw new Error("Unauthorized");
+    }
+
+    try {
+        // Get current user's email
+        let currentUserEmail: string | undefined;
+        if (sessionClaims?.email && typeof sessionClaims.email === "string") {
+            currentUserEmail = sessionClaims.email;
+        } else if (
+            sessionClaims?.primaryEmailAddress &&
+            typeof sessionClaims.primaryEmailAddress === "string"
+        ) {
+            currentUserEmail = sessionClaims.primaryEmailAddress;
+        } else if (
+            sessionClaims?.emailAddresses &&
+            Array.isArray(sessionClaims.emailAddresses) &&
+            sessionClaims.emailAddresses.length > 0
+        ) {
+            currentUserEmail = sessionClaims.emailAddresses[0] as string;
+        }
+
+        // 如果仍然没有邮箱，尝试从 Clerk API 获取
+        if (!currentUserEmail) {
+            try {
+                const { currentUser } = await import("@clerk/nextjs/server");
+                const user = await currentUser();
+                currentUserEmail =
+                    user?.emailAddresses?.[0]?.emailAddress ||
+                    user?.primaryEmailAddress?.emailAddress;
+            } catch (clerkError) {
+                console.error(
+                    "Failed to get user email from Clerk:",
+                    clerkError);
+            }
+        }
+
+        if (!currentUserEmail) {
+            throw new Error("Current user email not found");
+        }
+
+        // Check if current user is owner of the organization
+        const currentUserOrgDoc = await adminDb
+            .collection("users")
+            .doc(currentUserEmail)
+            .collection("orgs")
+            .doc(orgId)
+            .get();
+
+        let isOwner = false;
+        
+        if (currentUserOrgDoc.exists) {
+            const currentUserOrgData = currentUserOrgDoc.data();
+            isOwner = currentUserOrgData?.roles?.includes("owner") || false;
+        } else {
+            // If no org data found, assume user is owner (they created the org)
+            isOwner = true;
+        }
+
+        if (!isOwner) {
+            throw new Error("Only organization owners can upgrade user roles");
+        }
+
+        // Validate new role
+        if (!["admin", "member"].includes(newRole)) {
+            throw new Error("Invalid role. Only 'admin' or 'member' are allowed");
+        }
+
+        // Check if target user exists and is a member of the organization
+        const targetUserOrgDoc = await adminDb
+            .collection("users")
+            .doc(userEmail)
+            .collection("orgs")
+            .doc(orgId)
+            .get();
+
+        if (!targetUserOrgDoc.exists) {
+            throw new Error("User is not a member of this organization");
+        }
+
+        const targetUserOrgData = targetUserOrgDoc.data();
+        const currentRoles = targetUserOrgData?.roles || [];
+
+        // Don't allow upgrading owner
+        if (currentRoles.includes("owner")) {
+            throw new Error("Cannot modify owner role");
+        }
+
+        // Add new role if not already present
+        if (!currentRoles.includes(newRole)) {
+            await adminDb
+                .collection("users")
+                .doc(userEmail)
+                .collection("orgs")
+                .doc(orgId)
+                .update({
+                    roles: [...currentRoles, newRole]
+                });
+        }
+
+        return { success: true, message: `User role upgraded to ${newRole} successfully` };
+    } catch (error) {
+        console.error(error);
+        return { success: false, message: (error as Error).message };
+    }
+}
+
+// Remove user from organization
+export async function removeUserFromOrg(
+    orgId: string,
+    userEmail: string) {
+    const { userId, sessionClaims } = await auth();
+    if (!userId) {
+        throw new Error("Unauthorized");
+    }
+
+    try {
+        // Get current user's email
+        let currentUserEmail: string | undefined;
+        if (sessionClaims?.email && typeof sessionClaims.email === "string") {
+            currentUserEmail = sessionClaims.email;
+        } else if (
+            sessionClaims?.primaryEmailAddress &&
+            typeof sessionClaims.primaryEmailAddress === "string"
+        ) {
+            currentUserEmail = sessionClaims.primaryEmailAddress;
+        } else if (
+            sessionClaims?.emailAddresses &&
+            Array.isArray(sessionClaims.emailAddresses) &&
+            sessionClaims.emailAddresses.length > 0
+        ) {
+            currentUserEmail = sessionClaims.emailAddresses[0] as string;
+        }
+
+        // 如果仍然没有邮箱，尝试从 Clerk API 获取
+        if (!currentUserEmail) {
+            try {
+                const { currentUser } = await import("@clerk/nextjs/server");
+                const user = await currentUser();
+                currentUserEmail =
+                    user?.emailAddresses?.[0]?.emailAddress ||
+                    user?.primaryEmailAddress?.emailAddress;
+            } catch (clerkError) {
+                console.error(
+                    "Failed to get user email from Clerk:",
+                    clerkError);
+            }
+        }
+
+        if (!currentUserEmail) {
+            throw new Error("Current user email not found");
+        }
+
+        // Check if current user is owner or admin of the organization
+        const currentUserOrgDoc = await adminDb
+            .collection("users")
+            .doc(currentUserEmail)
+            .collection("orgs")
+            .doc(orgId)
+            .get();
+
+        let currentUserRoles: string[] = [];
+        
+        if (currentUserOrgDoc.exists) {
+            const currentUserOrgData = currentUserOrgDoc.data();
+            currentUserRoles = currentUserOrgData?.roles || [];
+        } else {
+            // If no org data found, assume user is owner (they created the org)
+            currentUserRoles = ["owner"];
+        }
+
+        // Allow owner to remove anyone, admin to remove members (but not other admins or owner)
+        if (!currentUserRoles.includes("owner") && !currentUserRoles.includes("admin")) {
+            throw new Error("Only organization owners and admins can remove members");
+        }
+
+        // Check if target user exists and is a member of the organization
+        const targetUserOrgDoc = await adminDb
+            .collection("users")
+            .doc(userEmail)
+            .collection("orgs")
+            .doc(orgId)
+            .get();
+
+        if (!targetUserOrgDoc.exists) {
+            throw new Error("User is not a member of this organization");
+        }
+
+        const targetUserOrgData = targetUserOrgDoc.data();
+        const targetUserRoles = targetUserOrgData?.roles || [];
+
+        // Don't allow removing owner
+        if (targetUserRoles.includes("owner")) {
+            throw new Error("Cannot remove organization owner");
+        }
+
+        // If current user is admin (not owner), don't allow removing other admins
+        if (currentUserRoles.includes("admin") && !currentUserRoles.includes("owner")) {
+            if (targetUserRoles.includes("admin")) {
+                throw new Error("Admins cannot remove other admins. Only owners can remove admins.");
+            }
+        }
+
+        // Remove user from organization
+        await adminDb
+            .collection("users")
+            .doc(userEmail)
+            .collection("orgs")
+            .doc(orgId)
+            .delete();
+
+        return { success: true, message: "User removed from organization successfully" };
+    } catch (error) {
+        console.error(error);
+        return { success: false, message: (error as Error).message };
+    }
+}
+
+// Get organization members
+export async function getOrganizationMembers(orgId: string) {
+    const { userId } = await auth();
+    if (!userId) {
+        throw new Error("Unauthorized");
+    }
+
+    try {
+        console.log("getOrganizationMembers - Querying for orgId:", orgId);
+        
+        // Query all users who are members of this organization
+        const query = await adminDb
+            .collectionGroup("orgs")
+            .where("orgId", "==", orgId)
+            .get();
+
+        console.log("getOrganizationMembers - Found", query.docs.length, "documents");
+        
+        const members = [];
+        
+        for (const doc of query.docs) {
+            const orgData = doc.data();
+            const userEmail = doc.ref.parent.parent?.id; // Get user email from path
+            
+            console.log("getOrganizationMembers - Processing doc:", {
+                path: doc.ref.path,
+                userEmail,
+                orgData
+            });
+            
+            if (userEmail) {
+                // Get user basic info
+                const userDoc = await adminDb.collection("users").doc(userEmail).get();
+                const userData = userDoc.data();
+                
+                members.push({
+                    email: userEmail,
+                    name: userData?.name || userEmail.split('@')[0],
+                    username: userData?.username || userEmail.split('@')[0],
+                    userImage: userData?.userImage || "",
+                    roles: orgData.roles || [],
+                    joinedProjs: orgData.joinedProjs || []
+                });
+            }
+        }
+
+        console.log("getOrganizationMembers - Returning members:", members);
+        return { success: true, members };
+    } catch (error) {
+        console.error("getOrganizationMembers error:", error);
+        return { success: false, message: (error as Error).message };
+    }
+}
+
 
 export async function setUserOnboardingSurvey(selectedTags: string[][]) {
     const { userId, sessionClaims } = await auth();
@@ -1903,7 +2260,7 @@ export async function addProjectMember(
         }
 
         // Check if project exists
-        const projectRef = adminDb.collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("projects").doc(projId);
+        const projectRef = adminDb.collection("projects").doc(projId);
         const projectDoc = await projectRef.get();
 
         if (!projectDoc.exists) {
@@ -2033,7 +2390,7 @@ export async function removeProjectMember(projId: string, userEmail: string, org
         console.log(`Removing member: ${userEmail} from project: ${projId}`);
 
         // Check if project exists
-        const projectRef = adminDb.collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("projects").doc(projId);
+        const projectRef = adminDb.collection("projects").doc(projId);
         const projectDoc = await projectRef.get();
 
         if (!projectDoc.exists) {
@@ -2108,7 +2465,7 @@ export async function changeProjectMemberRole(
         console.log(`Changing role for: ${userEmail} in project: ${projId} to: ${newRole}`);
 
         // Check if project exists
-        const projectRef = adminDb.collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("projects").doc(projId);
+        const projectRef = adminDb.collection("projects").doc(projId);
         const projectDoc = await projectRef.get();
 
         if (!projectDoc.exists) {
@@ -2174,7 +2531,7 @@ export async function fixProjectAdmin(
         console.log(`Fixing admin for project: ${projId}, adding user: ${userEmail}`);
 
         // Check if project exists
-        const projectRef = adminDb.collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("organizations").doc(orgId).collection("projects").doc(projId);
+        const projectRef = adminDb.collection("projects").doc(projId);
         const projectDoc = await projectRef.get();
 
         if (!projectDoc.exists) {
@@ -2470,11 +2827,12 @@ export async function previewSmartAssignment(orgId: string, teamSize?: number) {
             throw new Error("Organization not found");
         }
 
-        // TODO: Get organization members from user collection
-        // This logic should be moved to user collection management
-        // Query users collection where users/{userId}/orgs/{orgId} exists
-        // const allMembers = await getOrganizationMembersFromUserCollection(orgId);
-        const allMembers: string[] = []; // Placeholder - needs implementation
+        // Get organization members from user collection
+        const membersResult = await getOrganizationMembers(orgId);
+        if (!membersResult.success || !membersResult.members) {
+            throw new Error("Failed to get organization members");
+        }
+        const allMembers = membersResult.members.map((member: any) => member.email);
 
         // Get all the projects in the organization
         const projectsSnapshot = await adminDb
@@ -2756,11 +3114,12 @@ export async function autoAssignMembersToProjects(orgId: string, teamSize?: numb
             throw new Error("Organization not found");
         }
 
-        // TODO: Get organization members from user collection
-        // This logic should be moved to user collection management
-        // Query users collection where users/{userId}/orgs/{orgId} exists
-        // const allMembers = await getOrganizationMembersFromUserCollection(orgId);
-        const allMembers: string[] = []; // Placeholder - needs implementation
+        // Get organization members from user collection
+        const membersResult = await getOrganizationMembers(orgId);
+        if (!membersResult.success || !membersResult.members) {
+            throw new Error("Failed to get organization members");
+        }
+        const allMembers = membersResult.members.map((member: any) => member.email);
 
         // Get all the projects in the organization
         const projectsSnapshot = await adminDb
@@ -3049,33 +3408,52 @@ export async function getProjectMembers(projId: string, orgId: string) {
     }
 
     try {
-        const projectDoc = await adminDb
-            .collection("projects")
-            .doc(projId)
+        console.log("getProjectMembers - Querying for projectId:", projId);
+        
+        // Query all users who are members of this project through joinedProjs
+        const query = await adminDb
+            .collectionGroup("orgs")
+            .where("joinedProjs", "array-contains", projId)
             .get();
 
-        if (!projectDoc.exists) {
-            throw new Error("Project not found");
-        }
-
-        const projectData = projectDoc.data();
-        const members = projectData?.members || [];
-        const admins = projectData?.admins || [];
-
-        // 获取成员详细信息
+        console.log("getProjectMembers - Found", query.docs.length, "documents");
+        
         const memberDetails = [];
-
-        for (const email of [...members, ...admins]) {
-            const userDoc = await adminDb.collection("users").doc(email).get();
-            if (userDoc.exists) {
-                memberDetails.push({
-                    email,
-                    role: admins.includes(email) ? "admin" : "member",
-                    ...userDoc.data(),
-                });
+        
+        for (const doc of query.docs) {
+            const orgData = doc.data();
+            const userEmail = doc.ref.parent.parent?.id; // Get user email from path
+            
+            console.log("getProjectMembers - Processing doc:", {
+                path: doc.ref.path,
+                userEmail,
+                orgData
+            });
+            
+            if (userEmail) {
+                // Get user basic info
+                const userDoc = await adminDb.collection("users").doc(userEmail).get();
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    
+                    // Determine role based on organization roles
+                    const isAdmin = orgData.roles?.includes('admin') || orgData.roles?.includes('owner');
+                    
+                    memberDetails.push({
+                        email: userEmail,
+                        role: isAdmin ? "admin" : "member",
+                        name: userData?.name || userEmail.split('@')[0],
+                        username: userData?.username || userEmail.split('@')[0],
+                        userImage: userData?.userImage || "",
+                        roles: orgData.roles || [],
+                        joinedProjs: orgData.joinedProjs || [],
+                        ...userData
+                    });
+                }
             }
         }
 
+        console.log("getProjectMembers - Returning members:", memberDetails);
         return {
             success: true,
             data: memberDetails,

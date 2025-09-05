@@ -14,7 +14,7 @@ import { useState, useTransition } from "react";
 import { Button } from "./ui/button";
 import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { deleteOrg } from "@/actions/actions";
+import { deleteOrg } from "@/actions/newActions";
 
 function DeleteOrg() {
     const [isOpen, setIsOpen] = useState(false);
