@@ -3,7 +3,7 @@
 import { Notification, sendNotification } from "@/actions/notifications";
 import { db } from "@/firebase";
 import { useUser } from "@clerk/nextjs";
-import { collection, doc, updateDoc } from "firebase/firestore";
+import { addDoc, collection, doc, updateDoc } from "firebase/firestore";
 import { Bell, Check, Mail, MessageSquare, Star, UserPlus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useCollection } from "react-firebase-hooks/firestore";
@@ -127,14 +127,15 @@ export default function NotificationsPage() {
     };
 
     function sendTestNotif() {
-        sendNotification({
+        const notifRef = collection(db, "users", userEmail, "notifications");
+        addDoc(notifRef, {
             id: "112",
             type: "message",
             title: "Hello!!!",
             description: "Hi hi hi hi hi",
             time: "Just now",
             read: false,
-        }, userEmail);
+        })
     }
 
     const unreadCount = notifications.filter(n => !n.read).length;

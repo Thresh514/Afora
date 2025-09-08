@@ -23,7 +23,7 @@ import { Input } from "./ui/input";
 
 const AppOnboarding = () => {
     const [selectedTags, setSelectedTags] = useState<string[][]>([]);
-    const [isOpen, setIsOpen] = useState(false);
+    const [isOpen, setIsOpen] = useState(true);
     const [page, setPage] = useState(0);
     useEffect(() => {
         // Open the dialog automatically when the component mounts

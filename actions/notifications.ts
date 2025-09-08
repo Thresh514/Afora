@@ -1,5 +1,5 @@
-import { adminDb } from "@/firebase-admin";
-
+import { db } from "@/firebase";
+import { addDoc, collection, doc, writeBatch } from "firebase/firestore";
 export interface Notification {
     id: string;
     type: "welcome" | "message" | "mention" | "follow" | "star" | "system";
@@ -11,17 +11,16 @@ export interface Notification {
 }
 
 export async function sendNotification(notificationObject: Notification, userID: string) {
-    return adminDb
-        .collection("users").doc(userID)
-        .collection("notifications").add(notificationObject);
+    const notifRef = collection(db, "users", userID, "notifications");
+    return addDoc(notifRef, notificationObject);
 }
 
 export async function sendNotificationBulk(notificationObject: Notification, userIDs: string[]) {
-    const batch = adminDb.batch();
-
-    userIDs.map(userEmail => {
-        const newNotificationRef = adminDb.collection("users").doc(userEmail).collection("notifications").doc();
-        batch.set(newNotificationRef, notificationObject);
+    const batch = writeBatch(db);
+    
+    userIDs.map(userID => {
+        const notifRef = collection(db, "users", userID, "notifications");
+        batch.set(doc(notifRef), notificationObject);
     });
     
 

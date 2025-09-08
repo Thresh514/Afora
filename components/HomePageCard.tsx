@@ -45,7 +45,7 @@ function HomePageCard({ org }: HomePageCardProps) {
                     <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500" />
                     <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     <div className="relative py-8 px-6">
-                        <h1 className="text-3xl font-bold tracking-tight text-white">
+                        <h1 className="text-3xl font-bold tracking-tight text-white truncate">
                             {data?.title}
                         </h1>
                     </div>
