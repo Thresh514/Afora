@@ -45,6 +45,8 @@ export async function createNewOrganization(
         throw new Error("Unauthorized");
     }
 
+    orgName = orgName.trim();
+
     try {
         // 获取用户邮箱而不是用户ID
         let userEmail: string | undefined;
@@ -77,12 +79,13 @@ export async function createNewOrganization(
         }
 
         // Validate orgDescription for valid characters
-        const validRegex = /^[a-zA-Z0-9.,'-]+$/;
+        if (orgName.length === 0) {
+            throw new Error("You must include an organization name!")
+        }
+        const validRegex = /^[a-zA-Z0-9., '-]+$/;
         if (!validRegex.test(orgName)) {
             throw new Error(
                 "Organization name contains invalid characters. Only alphanumeric characters and punctuation (.,'-) are allowed.");
-            // I feel like  an organization should be able to contain spaces because that is so normal
-            // Would there be a way to do this?
         }
 
         const docCollectionRef = adminDb.collection("organizations");

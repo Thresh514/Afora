@@ -128,13 +128,13 @@ export default function NotificationsPage() {
 
     function sendTestNotif() {
         sendNotification({
-        id: "112",
-        type: "message",
-        title: "Hello!!!",
-        description: "Hi hi hi hi hi",
-        time: "Just now",
-        read: false,
-    }, userEmail);
+            id: "112",
+            type: "message",
+            title: "Hello!!!",
+            description: "Hi hi hi hi hi",
+            time: "Just now",
+            read: false,
+        }, userEmail);
     }
 
     const unreadCount = notifications.filter(n => !n.read).length;
