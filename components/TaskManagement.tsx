@@ -56,8 +56,8 @@ const TaskManagement = ({
             {/* Main Task List */}
             <div className="w-full bg-white flex flex-col shadow-lg rounded-lg">
                 {/* Header */}
-                <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-                    <div className="flex items-center gap-3 mb-6">
+                <div className="p-6 flex items-center justify-between border-b border-gray-200 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+                    <div className="flex items-center gap-3">
                         <div className="p-2 bg-white bg-opacity-20 rounded-lg">
                             <User className="h-6 w-6" />
                         </div>
@@ -65,29 +65,11 @@ const TaskManagement = ({
                             <h2 className="text-xl font-bold">
                                 Task Management
                             </h2>
-                            <p className="text-xs opacity-90">
-                                Manage all tasks
-                            </p>
                         </div>
                     </div>
-
-                    {/* Stats Cards */}
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="bg-white bg-opacity-20 backdrop-blur-sm p-3 rounded-lg">
-                            <div className="text-2xl font-bold">
-                                {tasks.length}
-                            </div>
-                            <div className="text-xs opacity-90">
-                                Total Tasks
-                            </div>
-                        </div>
-                        <div className="bg-white bg-opacity-20 backdrop-blur-sm p-3 rounded-lg">
-                            <div className="text-2xl font-bold">
-                                {tasksCompleted}
-                            </div>
-                            <div className="text-xs opacity-90">Completed</div>
-                        </div>
-                    </div>
+                    <p className="text-md font-medium opacity-90">
+                        {tasksCompleted}/{tasks.length} Tasks Completed                     
+                    </p>
                 </div>
 
                 {/* Task List */}

@@ -483,12 +483,12 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                     {stages && stages.length > 0 && (
                                         <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg px-4 py-3 inline-flex items-center gap-4">
                                             <div className="flex items-center gap-3">
-                                                <span className="text-white text-sm font-medium">
+                                                <span className="text-white text-lg font-medium">
                                                     Progress:
                                                 </span>
                                                 <div className="bg-white bg-opacity-30 rounded-full h-2 w-48 overflow-hidden">
                                                     <div
-                                                        className="h-full bg-white rounded-full transition-all duration-500"
+                                                        className="h-full bg-purple-500 rounded-full transition-all duration-500"
                                                         style={{
                                                             width: `${(stages.reduce((acc, stage) => acc + stage.tasksCompleted, 0) / stages.reduce((acc, stage) => acc + stage.totalTasks, 0)) * 100}%`,
                                                         }}
@@ -528,71 +528,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                     </TabsList>
 
                     <TabsContent value="roadmap" className="space-y-4">
-                        {/* project stats card */}
-                        {projectStats && (
-                            <Card className="mb-6">
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2">
-                                        <BarChart3 className="h-5 w-5 text-blue-600" />
-                                        Team Statistics
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="grid grid-cols-6 gap-4">
-                                        <div className="text-center flex flex-row items-center gap-2">
-                                            
-                                            <div className="text-sm text-gray-500">
-                                                Total Tasks:
-                                            </div>
-                                            <div className="text-xl font-bold text-blue-600">
-                                                {projectStats.totalTasks}
-                                            </div>
-                                        </div>
-                                        <div className="text-center flex flex-row items-center gap-2">
-                                            <div className="text-sm text-gray-500">
-                                                Completed:
-                                            </div>
-                                            <div className="text-xl font-bold text-green-600">
-                                                {projectStats.completedTasks}
-                                            </div>
-                                            
-                                        </div>
-                                        <div className="text-center flex flex-row items-center gap-2">
-                                            <div className="text-sm text-gray-500">
-                                                Assigned:
-                                            </div>
-                                            <div className="text-xl font-bold text-yellow-600">
-                                                {projectStats.assignedTasks}
-                                            </div>
-                                        </div>
-                                        <div className="text-center flex flex-row items-center gap-2">
-                                            <div className="text-sm text-gray-500">
-                                                Available:
-                                            </div>
-                                            <div className="text-xl font-bold text-gray-600">
-                                                {projectStats.availableTasks}
-                                            </div>
-                                        </div>
-                                        <div className="text-center flex flex-row items-center gap-2">
-                                            <div className="text-sm text-gray-500">
-                                                Overdue:
-                                            </div>
-                                            <div className="text-xl font-bold text-red-600">
-                                                {projectStats.overdueTasks}
-                                            </div>
-                                        </div>
-                                        <div className="text-center flex flex-row items-center gap-2">
-                                            <div className="text-sm text-gray-500">
-                                                Completion Rate:
-                                            </div>
-                                            <div className="text-xl font-bold text-purple-600">
-                                                {projectStats.completionRate.toFixed(1)}%
-                                            </div>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        )}
+                        
 
                         <div className="space-y-6">
                             {stages.length === 0 ? (
@@ -609,7 +545,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                                 )}
                                         </p>
                                     </div>
-                                    {isAdmin && (
+                        
                                         <div className="flex justify-center gap-4">
                                             <GenerateTasksButton
                                                 orgId={id}
@@ -704,7 +640,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                                 </AlertDialogContent>
                                             </AlertDialog>
                                         </div>
-                                    )}
+                                    
                                     
                                     {/* Team Charter Error Dialog */}
                                     <AlertDialog

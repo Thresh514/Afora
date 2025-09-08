@@ -205,7 +205,7 @@ const TeamScoreCard = ({
         <>
             <LoadingOverlay 
                 isVisible={isPending}
-                message="Analyzing Team Compatibility..."
+                message="Generating Team Compatibility Report..."
                 description="Evaluating team dynamics and collaboration potential, please wait..."
             />
             <div className="space-y-6">
@@ -214,8 +214,8 @@ const TeamScoreCard = ({
                     <CardTitle className="flex items-center gap-2">
                         <BarChart3 className="h-5 w-5 text-purple-600" />
                         {projectFilter
-                            ? "Team Compatibility Analysis"
-                            : "Team Compatibility Analysis"}
+                            ? "Team Compatibility Report"
+                            : "Team Compatibility Report"}
                     </CardTitle>
                     <CardDescription>
                         Analyze team&apos;s overall compatibility and collaboration potential based on member onboarding surveys

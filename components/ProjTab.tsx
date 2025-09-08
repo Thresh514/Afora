@@ -442,31 +442,13 @@ const ProjTab = ({
             <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
                 {/* Header */}
                 <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-purple-600 to-blue-600 text-white">
-                    <div className="flex items-center gap-3 mb-6">
+                    <div className="flex items-center space-x-3">
                         <div className="p-2 bg-white bg-opacity-20 rounded-lg">
                             <Briefcase className="h-6 w-6" />
                         </div>
                         <h2 className="text-xl font-bold">
-                            Team Management
+                        Team Overview
                         </h2>
-                    </div>
-
-                    {/* Stats Cards */}
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="bg-white bg-opacity-20 backdrop-blur-sm p-3 rounded-lg">
-                            <div className="text-2xl font-bold">
-                                {totalProjects}
-                            </div>
-                            <div className="text-xs opacity-90">
-                                Total Teams
-                            </div>
-                        </div>
-                        <div className="bg-white bg-opacity-20 backdrop-blur-sm p-3 rounded-lg">
-                            <div className="text-2xl font-bold">
-                                {activeProjects}
-                            </div>
-                            <div className="text-xs opacity-90">Active</div>
-                        </div>
                     </div>
                 </div>
                 
@@ -474,9 +456,6 @@ const ProjTab = ({
                 {/* Content Area */}
                 <div className="flex-1 overflow-y-auto p-4">
                         <div className="space-y-4">
-                            <div className="text-sm font-medium text-gray-500">
-                                Team Overview
-                            </div>
                             <Card className="border-0 shadow-sm">
                                 <CardContent className="p-4">
                                     <div className="space-y-3">
@@ -488,23 +467,6 @@ const ProjTab = ({
                                                 {totalProjects}
                                             </Badge>
                                         </div>
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-sm text-gray-600">
-                                                Active Teams
-                                            </span>
-                                            <Badge variant="default">
-                                                {activeProjects}
-                                            </Badge>
-                                        </div>
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-sm text-gray-600">
-                                                Role
-                                            </span>
-                                            <span className="text-sm font-medium">
-                                                {userRole === "admin" ? "Admin" : "Member"}
-                                            </span>
-                                        </div>
-                                        <Separator />
                                         <div className="flex justify-between items-center">
                                             <span className="text-sm text-gray-600">
                                                 Total Members
@@ -558,32 +520,6 @@ const ProjTab = ({
                                         error={smartMatchingError} 
                                         className="mt-2 text-sm"
                                     />
-                                )}
-                                
-                                {/* TEST BUTTONS - Remove after testing */}
-                                {userRole === "admin" && process.env.NODE_ENV === "development" && (
-                                    <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                                        <p className="text-xs text-yellow-700 mb-2 font-medium">🧪 Dev Test Buttons:</p>
-                                        <div className="flex gap-2 flex-wrap">
-                                            <button
-                                                onClick={() => {
-                                                    const errorInfo: ErrorInfo = {
-                                                        type: "smart_matching",
-                                                        message: "Test Smart Matching Error - No unassigned members found",
-                                                        details: "This is a test error to showcase the new purple color theme",
-                                                        timestamp: new Date(),
-                                                        canRetry: true,
-                                                        onRetry: () => setSmartMatchingError(null),
-                                                        onDismiss: () => setSmartMatchingError(null)
-                                                    };
-                                                    setSmartMatchingError(errorInfo);
-                                                }}
-                                                className="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200"
-                                            >
-                                                Test Smart Matching Error
-                                            </button>
-                                        </div>
-                                    </div>
                                 )}
                             </>
                         )}
@@ -644,16 +580,6 @@ const ProjTab = ({
                         </div>
                     </div>
                 )}
-
-                {/* Content Header */}
-                <div className="p-6 border-b border-gray-200 bg-white">
-                    <h3 className="text-lg font-semibold text-gray-900">
-                        Team Overview
-                    </h3>
-                    <p className="text-sm text-gray-500">
-                        Manage and monitor all your teams
-                    </p>
-                </div>
 
                 {/* Content Area */}
                 <div className="flex-1 overflow-y-auto p-6">
