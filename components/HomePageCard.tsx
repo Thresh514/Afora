@@ -58,7 +58,7 @@ function HomePageCard({ org }: HomePageCardProps) {
                         <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
                             <Users className="w-4 h-4" />
                             <span className="text-sm">
-                                {data?.admins[0]}
+                                {/* {data?.admins[0]} */}
                             </span>
                         </div>
 

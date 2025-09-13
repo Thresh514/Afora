@@ -11,7 +11,7 @@ import { Project, Stage, teamCharterQuestions, TeamCompatibilityAnalysis } from 
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { CircleCheck, PencilLine, Save, Trophy, Target, BarChart3, Loader2, LockKeyhole, NotepadText, Trash2, UsersIcon, EditIcon, Plus, MoreVertical } from "lucide-react";
+import { CircleCheck, PencilLine, Save, Trophy, Target, BarChart3, Loader2, LockKeyhole, NotepadText, Trash2, UsersIcon, EditIcon, Plus, MoreVertical, AlertTriangle, Info } from "lucide-react";
 import { Reorder, useDragControls } from "framer-motion";
 import { toast } from "sonner";
 import GenerateTasksButton from "@/components/GenerateTasksButton";
@@ -57,10 +57,11 @@ interface ProjectStats {
 const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
     const { isSignedIn, isLoaded } = useAuth();
     const { user } = useUser();
-    const [responses, setResponses] = useState<string[]>([]);
+    const [responses, setResponses] = useState<string[]>(new Array(teamCharterQuestions.length).fill(""));
     const [isOpen, setIsOpen] = useState(false);
     const [isTeamCharterOpen, setIsTeamCharterOpen] = useState(false);
     const [charterSaveError, setCharterSaveError] = useState<ErrorInfo | null>(null);
+    const [showCharterErrorDialog, setShowCharterErrorDialog] = useState(false);
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [isEditing, setIsEditing] = useState(false);
@@ -171,7 +172,11 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
         if (teamCharterData && !loading && !error) {
             const savedResponses = teamCharterData.data()?.teamCharterResponse || [];
             if (savedResponses.length > 0) {
-                setResponses(savedResponses);
+                // 确保所有响应都是字符串，避免 undefined 值
+                const cleanResponses = new Array(teamCharterQuestions.length).fill("").map((_, index) => 
+                    savedResponses[index] || ""
+                );
+                setResponses(cleanResponses);
             }
         }
     }, [teamCharterData, loading, error]);
@@ -238,30 +243,36 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                     return;
                 }
 
-                // Validate responses
-                const emptyResponses = responses.filter((response) => 
-                    !response || response.trim().length === 0
+                // Validate required responses (questions 1, 2, and 4 are required)
+                const requiredQuestionIndices = [0, 1, 3]; // 0-indexed: questions 1, 2, and 4
+                const missingRequiredResponses = requiredQuestionIndices.filter(index => 
+                    !responses[index] || responses[index].trim().length === 0
                 );
                 
-                if (emptyResponses.length > 0) {
+                if (missingRequiredResponses.length > 0) {
+                    const questionNumbers = missingRequiredResponses.map(index => index + 1);
                     const errorInfo: ErrorInfo = {
                         type: "team_charter",
-                        message: `Please complete all ${teamCharterQuestions.length} questions before saving. ${emptyResponses.length} questions are still empty.`,
-                        details: `Missing responses for questions: ${emptyResponses.map((_, index) => index + 1).join(", ")}`,
+                        message: `Please complete required questions ${questionNumbers.join(", ")} before saving.`,
+                        details: `Missing responses for required questions: ${questionNumbers.join(", ")}`,
                         canRetry: false,
                         onDismiss: () => setCharterSaveError(null)
                     };
                     setCharterSaveError(errorInfo);
+                    setShowCharterErrorDialog(true); // 显示错误弹窗
                     showErrorToast(errorInfo);
                     return;
                 }
 
-                const result = await setTeamCharter(projId, responses);
+                // Filter out undefined values and replace with empty strings to avoid Firestore errors
+                const cleanResponses = responses.map(response => response || "");
+                const result = await setTeamCharter(projId, cleanResponses);
                 
                 if (result.success) {
                     toast.success("Team Charter saved successfully!");
                     setIsOpen(false);
                     setCharterSaveError(null);
+                    setShowCharterErrorDialog(false); // 关闭错误弹窗
                 } else {
                     const errorInfo: ErrorInfo = {
                         type: "team_charter",
@@ -272,6 +283,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                         onDismiss: () => setCharterSaveError(null)
                     };
                     setCharterSaveError(errorInfo);
+                    setShowCharterErrorDialog(true); // 显示错误弹窗
                     showErrorToast(errorInfo);
                 }
             } catch (e) {
@@ -302,6 +314,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                 };
                 
                 setCharterSaveError(errorInfo);
+                setShowCharterErrorDialog(true); // 显示错误弹窗
                 showErrorToast(errorInfo);
             }
         });
@@ -628,37 +641,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                                         </AlertDialogDescription>
                                                     </AlertDialogHeader>
                                                     
-                                                    {/* Team Charter Error Display */}
-                                                    {charterSaveError && (
-                                                        <ErrorDisplay 
-                                                            error={charterSaveError} 
-                                                            className="mb-4"
-                                                        />
-                                                    )}
-                                                    
-                                                    {/* TEST BUTTON - Remove after testing */}
-                                                    {process.env.NODE_ENV === "development" && (
-                                                        <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                                                            <p className="text-xs text-yellow-700 mb-2 font-medium">🧪 Dev Test:</p>
-                                                            <button
-                                                                onClick={() => {
-                                                                    const errorInfo: ErrorInfo = {
-                                                                        type: "team_charter",
-                                                                        message: "Test Team Charter Error - Missing required fields",
-                                                                        details: "Questions 1, 3, and 7 are still empty. Please complete all questions.",
-                                                                        timestamp: new Date(),
-                                                                        canRetry: true,
-                                                                        onRetry: () => setCharterSaveError(null),
-                                                                        onDismiss: () => setCharterSaveError(null)
-                                                                    };
-                                                                    setCharterSaveError(errorInfo);
-                                                                }}
-                                                                className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
-                                                            >
-                                                                Test Team Charter Error
-                                                            </button>
-                                                        </div>
-                                                    )}
+
                                                     
                                                     <div className="overflow-y-auto max-h-96">
                                                         <form className="space-y-8 p-2">
@@ -666,28 +649,32 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                                             <div className="space-y-6">
                                                                 {/* Project Basic Information */}
                                                                 <div className="space-y-4">
-                                                                    {teamCharterQuestions.map((question, index) => (
-                                                                        <div key={index} className="space-y-2">
-                                                                            <Label
-                                                                                htmlFor={`question-${index}`}
-                                                                                className="text-sm font-medium text-gray-700"
-                                                                            >
-                                                                                {question}
-                                                                            </Label>
-                                                                            <Textarea
-                                                                                id={`question-${index}`}
-                                                                                name={`question-${index}`}
-                                                                                value={responses[index] || ""}
-                                                                                onChange={(e) => {
-                                                                                    const newResponses = [...responses];
-                                                                                    newResponses[index] = e.target.value;
-                                                                                    setResponses(newResponses);
-                                                                                }}
-                                                                                placeholder="Enter your response here..."
-                                                                                className="min-h-[100px]"
-                                                                            />
-                                                                        </div>
-                                                                    ))}
+                                                                    {teamCharterQuestions.map((question, index) => {
+                                                                        const isRequired = [0, 1, 3].includes(index); // 0-indexed: questions 1, 2, and 4
+                                                                        return (
+                                                                            <div key={index} className="space-y-2">
+                                                                                <Label
+                                                                                    htmlFor={`question-${index}`}
+                                                                                    className="text-sm font-medium text-gray-700"
+                                                                                >
+                                                                                    {question}
+                                                                                    {isRequired && <span className="text-red-500 ml-1">*</span>}
+                                                                                </Label>
+                                                                                <Textarea
+                                                                                    id={`question-${index}`}
+                                                                                    name={`question-${index}`}
+                                                                                    value={responses[index] || ""}
+                                                                                    onChange={(e) => {
+                                                                                        const newResponses = [...responses];
+                                                                                        newResponses[index] = e.target.value;
+                                                                                        setResponses(newResponses);
+                                                                                    }}
+                                                                                    placeholder="Enter your response here..."
+                                                                                    className="min-h-[100px]"
+                                                                                />
+                                                                            </div>
+                                                                        );
+                                                                    })}
                                                                 </div>
                                                             </div>
                                                         </form>
@@ -721,6 +708,64 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                             </AlertDialog>
                                         </div>
                                     )}
+                                    
+                                    {/* Team Charter Error Dialog */}
+                                    <AlertDialog
+                                        open={showCharterErrorDialog}
+                                        onOpenChange={setShowCharterErrorDialog}
+                                    >
+                                        <AlertDialogContent className="w-full max-w-2xl">
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle className="flex items-center gap-2">
+                                                    <AlertTriangle className="h-5 w-5 text-red-500" />
+                                                    Team Charter Save Failed
+                                                </AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    Unable to save your team charter responses
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            
+                                            <div className="space-y-4">
+                                                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                                                    <div className="flex items-start gap-3">
+                                                        <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5" />
+                                                        <div className="flex-1">
+                                                            <h4 className="font-medium text-red-800 mb-2">Error Details:</h4>
+                                                            <p className="text-sm text-red-700">
+                                                                {charterSaveError?.message || "Please complete all required questions before saving."}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                                    <div className="flex items-start gap-3">
+                                                        <Info className="h-5 w-5 text-blue-500 mt-0.5" />
+                                                        <div className="flex-1">
+                                                            <h4 className="font-medium text-blue-800 mb-2">Required Questions:</h4>
+                                                            <ul className="text-sm text-blue-700 space-y-1">
+                                                                <li>• Question 1: What is the main mission/vision of the project?</li>
+                                                                <li>• Question 2: List key project milestones</li>
+                                                                <li>• Question 4: Expected project duration (in weeks)</li>
+                                                            </ul>
+                                                            <p className="text-sm text-blue-600 mt-2">
+                                                                Questions 3 and 5 are optional.
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <AlertDialogFooter>
+                                                <Button
+                                                    onClick={() => setShowCharterErrorDialog(false)}
+                                                    variant="outline"
+                                                >
+                                                    Close
+                                                </Button>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
                                 </div>
                             ) : (
                                 <div className="space-y-6">

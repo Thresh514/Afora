@@ -46,6 +46,7 @@ const GenerateTasksButton = ({
     const [isPending, startTransition] = useTransition();
     const [generatedOutput, setGeneratedOutput] = useState<GeneratedTasks>();
     const [taskGenerationError, setTaskGenerationError] = useState<ErrorInfo | null>(null);
+    const [showErrorDialog, setShowErrorDialog] = useState(false);
     if (loading) {
         return;
     }
@@ -70,6 +71,7 @@ const GenerateTasksButton = ({
                 .then(() => {
                     toast.success("Tasks successfully updated!");
                     setOpen(false);
+                    setShowErrorDialog(false);
                 })
                 .catch((error: Error) => {
                     console.error("Error:", error);
@@ -86,13 +88,39 @@ const GenerateTasksButton = ({
 
         // Validate team charter responses
         if (!teamCharterResponses || teamCharterResponses.length < 5) {
-            toast.error("Please complete all team charter questions first");
+            const errorInfo: ErrorInfo = {
+                type: "task_generation",
+                message: "Please complete all team charter questions first",
+                details: "Team charter must be completed before generating tasks. Please fill out all required questions in the Team Charter section.",
+                timestamp: new Date(),
+                canRetry: false,
+                onDismiss: () => setTaskGenerationError(null)
+            };
+            setTaskGenerationError(errorInfo);
+            setShowErrorDialog(true); // 显示错误弹窗
+            showErrorToast(errorInfo);
             return;
         }
 
         try {
             // Get project members data
             const memberList = projData.members;
+            
+            // Check if project has team members
+            if (!memberList || memberList.length === 0) {
+                const errorInfo: ErrorInfo = {
+                    type: "task_generation",
+                    message: "No team members found in this project",
+                    details: "Please add team members to the project before generating tasks. You can invite members through the project settings.",
+                    timestamp: new Date(),
+                    canRetry: false,
+                    onDismiss: () => setTaskGenerationError(null)
+                };
+                setTaskGenerationError(errorInfo);
+                setShowErrorDialog(true);
+                showErrorToast(errorInfo);
+                return;
+            }
             const userDataPromise = memberList.map(async (user) => {
                 const userOrg = await getDoc(doc(db, "users", user, "org", orgId));
                 const userOrgData = userOrg.data();
@@ -143,6 +171,7 @@ const GenerateTasksButton = ({
                     const parsed: GeneratedTasks = JSON.parse(output);
                     setGeneratedOutput(parsed);
                     setTaskGenerationError(null);
+                    setShowErrorDialog(false); // 关闭错误弹窗
                 } catch (error) {
                     console.error("Task generation error:", error);
                     
@@ -176,6 +205,7 @@ const GenerateTasksButton = ({
                     };
                     
                     setTaskGenerationError(errorInfo);
+                    setShowErrorDialog(true); // 显示错误弹窗
                     showErrorToast(errorInfo);
                 }
             });
@@ -193,6 +223,7 @@ const GenerateTasksButton = ({
             };
             
             setTaskGenerationError(errorInfo);
+            setShowErrorDialog(true); // 显示错误弹窗
             showErrorToast(errorInfo);
         }
     };
@@ -203,7 +234,15 @@ const GenerateTasksButton = ({
                 message="Generating Project Roadmap..."
                 description="Analyzing team structure and project requirements, please wait..."
             />
-            <Dialog open={open} onOpenChange={setOpen}>
+            <Dialog open={open} onOpenChange={(newOpen) => {
+                setOpen(newOpen);
+                if (!newOpen) {
+                    // 当对话框关闭时，清除错误信息和生成输出
+                    setTaskGenerationError(null);
+                    setGeneratedOutput(undefined);
+                    setShowErrorDialog(false);
+                }
+            }}>
                 <DialogTrigger asChild>
                     <Button disabled={isPending}>
                         {isPending ? (
@@ -232,35 +271,11 @@ const GenerateTasksButton = ({
                     </DialogHeader>
                     
                     {/* Task Generation Error Display */}
-                    {taskGenerationError && !generatedOutput && (
+                    {taskGenerationError && (
                         <ErrorDisplay 
                             error={taskGenerationError} 
                             className="mb-4"
                         />
-                    )}
-                    
-                    {/* TEST BUTTON - Remove after testing */}
-                    {process.env.NODE_ENV === "development" && !generatedOutput && (
-                        <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                            <p className="text-xs text-yellow-700 mb-2 font-medium">🧪 Dev Test:</p>
-                            <button
-                                onClick={() => {
-                                    const errorInfo: ErrorInfo = {
-                                        type: "task_generation",
-                                        message: "Test Task Generation Error - AI service temporarily unavailable",
-                                        details: "OpenAI API rate limit exceeded. Error: 429 - Too Many Requests",
-                                        timestamp: new Date(),
-                                        canRetry: true,
-                                        onRetry: () => setTaskGenerationError(null),
-                                        onDismiss: () => setTaskGenerationError(null)
-                                    };
-                                    setTaskGenerationError(errorInfo);
-                                }}
-                                className="text-xs px-2 py-1 bg-emerald-100 text-emerald-700 rounded hover:bg-emerald-200"
-                            >
-                                Test Task Generation Error
-                            </button>
-                        </div>
                     )}
 
                     {generatedOutput && (
@@ -334,6 +349,8 @@ const GenerateTasksButton = ({
                                     type="button"
                                     onClick={() => {
                                         setGeneratedOutput(undefined);
+                                        setTaskGenerationError(null);
+                                        setShowErrorDialog(false);
                                         setOpen(false);
                                     }}
                                 >
