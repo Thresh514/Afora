@@ -31,6 +31,13 @@ export async function createNewUser(
             },
             { merge: true },
         );
+
+        userRef.collection("notifications").add({
+            type: "welcome",
+            title: "Welcome to Afora!",
+            message: "This is where you can view any updates about tasks or projects you're subscribed to."
+        });
+
     } catch (e) {
         return { success: false, message: (e as Error).message };
     }
@@ -38,10 +45,8 @@ export async function createNewUser(
 
 export async function createNewOrganization(
     orgName: string,
-    orgDescription: string,
-) {
-    const x = await auth();
-    const { userId, sessionClaims } = x; //await auth();
+    orgDescription: string) {
+    const { userId, sessionClaims } = await auth();
 
     if (!userId) {
         throw new Error("Unauthorized");
