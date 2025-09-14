@@ -2452,51 +2452,6 @@ function applyAllocationScenario(allocation: number[], projects: any[]) {
         .sort((a, b) => b.plannedAllocation - a.plannedAllocation);
 }
 
-// Backup simple strategy for large projects
-function findOptimalAllocationForLargeProjects(projects: any[], availableMembers: number) {
-    // Strategy: prioritize large projects, maximize individual project completeness
-    const sortedProjects = [...projects].sort((a, b) => b.spotsAvailable - a.spotsAvailable); // Sort large to small
-    
-    const projectsToFill = [];
-    let remainingMembers = availableMembers;
-    
-    for (const project of sortedProjects) {
-        if (remainingMembers > 0) {
-            projectsToFill.push(project);
-            const willAssign = Math.min(project.spotsAvailable, remainingMembers);
-            remainingMembers -= willAssign;
-        }
-    }
-    
-    return projectsToFill;
-}
-
-// Backup greedy algorithm function
-function findOptimalAllocation(projects: any[], availableMembers: number) {
-    // Greedy algorithm: prioritize projects that can be completely filled
-    const sortedProjects = [...projects].sort((a, b) => a.spotsAvailable - b.spotsAvailable);
-    
-    // Try to find projects that can be completely filled
-    const canFillCompletely = [];
-    const cannotFillCompletely = [];
-    let remainingMembers = availableMembers;
-    
-    for (const project of sortedProjects) {
-        if (remainingMembers >= project.spotsAvailable) {
-            canFillCompletely.push(project);
-            remainingMembers -= project.spotsAvailable;
-        } else {
-            cannotFillCompletely.push(project);
-        }
-    }
-    
-    // Handle completely fillable projects first, then partially fillable ones
-    // For partially fillable projects, sort by spots needed ascending (prioritize smaller projects)
-    cannotFillCompletely.sort((a, b) => a.spotsAvailable - b.spotsAvailable);
-    
-    return [...canFillCompletely, ...cannotFillCompletely];
-}
-
 // Preview smart assignment results without actually assigning
 export async function previewSmartAssignment(orgId: string, teamSize?: number) {
     const { userId } = await auth();
@@ -3894,10 +3849,6 @@ export async function getTeamAnalysis(projId: string) {
     }
 }
 
-/**
- * 更新用户匹配偏好设置
- * 控制用户是否参与AI匹配算法
- */
 export async function updateUserMatchingPreference(
     allowMatching: boolean,
 ) {
@@ -3921,9 +3872,6 @@ export async function updateUserMatchingPreference(
     }
 }
 
-/**
- * 获取用户匹配偏好设置
- */
 export async function getUserMatchingPreference() {
     const { userId } = await auth();
     if (!userId) {
@@ -3947,10 +3895,6 @@ export async function getUserMatchingPreference() {
     }
 }
 
-/**
- * 自动 drop 过期任务
- * 扫描所有已分配但超过 soft_deadline 的任务，自动将其设置为 available
- */
 export async function autoDropOverdueTasks() {
     const { userId } = await auth();
     if (!userId) {
@@ -3960,10 +3904,6 @@ export async function autoDropOverdueTasks() {
     return await autoDropOverdueTasksInternal(userId);
 }
 
-/**
- * 内部版本：自动 drop 过期任务（供 cron job 使用）
- * 不需要用户认证，直接执行
- */
 export async function autoDropOverdueTasksInternal(executedBy: string = "system") {
 
     const now = new Date();

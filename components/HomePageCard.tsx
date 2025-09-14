@@ -4,7 +4,7 @@ import { doc } from "firebase/firestore";
 import Link from "next/link";
 import React, { useState } from "react";
 import { useDocumentData } from "react-firebase-hooks/firestore";
-import { Copy, Eye, EyeOff, Users } from "lucide-react";
+import { Copy, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 
 interface HomePageCardProps {
