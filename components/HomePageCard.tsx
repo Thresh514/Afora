@@ -55,12 +55,12 @@ function HomePageCard({ org }: HomePageCardProps) {
                 <div className="flex-1 bg-white dark:bg-gray-800 p-6">
                     <div className="space-y-6">
                         {/* 管理员信息 */}
-                        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
+                        {/* <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
                             <Users className="w-4 h-4" />
                             <span className="text-sm">
-                                {/* {data?.admins[0]} */}
+                                {data?.admins[0]}
                             </span>
-                        </div>
+                        </div> */}
 
                         {/* 描述文本 */}
                         <div className="border-t border-gray-100 dark:border-gray-700 pt-4">
