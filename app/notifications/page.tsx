@@ -94,7 +94,7 @@ export default function NotificationsPage() {
                                 notification.read ? 'bg-white' : 'bg-purple-50'
                             } hover:bg-purple-50/80`}
                             style={{cursor: link? "pointer" : "auto"}}
-                            onClick={link? _=>document.location.assign(link) : undefined}
+                            onClick={link ? () => document.location.assign(link) : undefined}
                         >
                             <div className={`p-2 rounded-full ${
                                 notification.read ? 'bg-gray-100 text-gray-600' : 'bg-purple-100 text-purple-600'

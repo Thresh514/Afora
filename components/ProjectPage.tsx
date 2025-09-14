@@ -28,7 +28,7 @@ import { updateStatus } from "@/lib/store/features/stageStatus/stageStatusSlice"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import ErrorDisplay, { ErrorInfo, showErrorToast } from "./ErrorDisplay";
+import { ErrorInfo, showErrorToast } from "./ErrorDisplay";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -42,7 +42,6 @@ import ProjOnboarding from "./ProjOnboarding";
 import AddProjectMemberDialog from "./AddProjectMemberDialog";
 import ChangeRoleDialog from "./ChangeRoleDialog";
 import RemoveMemberDialog from "./RemoveMemberDialog";
-import { fixProjectAdmin } from "@/actions/actions";
 
 interface ProjectStats {
     totalTasks: number;
