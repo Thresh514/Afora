@@ -411,8 +411,8 @@ export const projQuestions = [
 export const teamCharterQuestions = [
     "What is the main mission/vision of the project?",
     "List key project milestones",
-    "Target Demographic (Who are you building the product/service for)",
     "Expected project duration (in weeks)",
+    "Target Demographic (Who are you building the product/service for)",
     "Potential Risks, Challenges, and Constraints (Identify possible risks and challenges)",
 ];
 

@@ -400,14 +400,8 @@ Output your response in the following JSON schema format.`;
                     Project Information:
                     ${JSON.stringify(projectInfo, null, 2)}
 
-                    Team Information:
-                    ${JSON.stringify(teamInfo, null, 2)}
-
                     Timeline Information:
                     ${JSON.stringify(timelineInfo, null, 2)}
-
-                    Additional Information:
-                    ${JSON.stringify(additionalInfo, null, 2)}
 
                     Team Members Information:
                     ${JSON.stringify(teamMembers, null, 2)}

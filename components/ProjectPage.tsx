@@ -11,7 +11,7 @@ import { Project, Stage, teamCharterQuestions, TeamCompatibilityAnalysis } from 
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { CircleCheck, PencilLine, Save, Trophy, Target, BarChart3, Loader2, LockKeyhole, NotepadText, Trash2, UsersIcon, EditIcon, Plus, MoreVertical, AlertTriangle, Info } from "lucide-react";
+import { CircleCheck, PencilLine, Save, Trophy, Target, BarChart3, Loader2, Clock, NotepadText, Trash2, UsersIcon, EditIcon, Plus, MoreVertical, AlertTriangle, Info } from "lucide-react";
 import { Reorder, useDragControls } from "framer-motion";
 import { toast } from "sonner";
 import GenerateTasksButton from "@/components/GenerateTasksButton";
@@ -200,7 +200,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
         }
     }, [stages, isEditing]);
 
-    // 0 = locked, 1 = in progress, 2 = completed
+    // 0 = not started, 1 = in progress, 2 = completed
     const [stageStatus, setStageStatus] = useState<number[]>([]);
     const dispatch = useDispatch();
     useEffect(() => {
@@ -642,9 +642,6 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                                             Fill out this charter to kick off your team! 🚀
                                                         </AlertDialogDescription>
                                                     </AlertDialogHeader>
-                                                    
-
-                                                    
                                                     <div className="overflow-y-auto max-h-96">
                                                         <form className="space-y-8 p-2">
                                                             {/* Group questions by section */}
@@ -652,7 +649,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                                                 {/* Project Basic Information */}
                                                                 <div className="space-y-4">
                                                                     {teamCharterQuestions.map((question, index) => {
-                                                                        const isRequired = [0, 1, 3].includes(index); // 0-indexed: questions 1, 2, and 4
+                                                                        const isRequired = [0, 1, 3].includes(index);
                                                                         return (
                                                                             <div key={index} className="space-y-2">
                                                                                 <Label
@@ -683,17 +680,13 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                                     </div>
                                                     <AlertDialogFooter>
                                                         <Button
-                                                            onClick={() =>
-                                                                setIsTeamCharterOpen(false)
-                                                            }
+                                                            onClick={() => setIsTeamCharterOpen(false)}
                                                             variant="outline"
                                                         >
                                                             Cancel
                                                         </Button>
                                                         <Button
-                                                            onClick={
-                                                                handleTeamCharterSave
-                                                            }
+                                                            onClick={handleTeamCharterSave}
                                                             disabled={isPending}
                                                         >
                                                             {isPending ? (
@@ -823,25 +816,19 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                                                             )}
                                                                         </span>
                                                                         <span className="flex items-center text-sm text-gray-500">
-                                                                            {stageStatus[
-                                                                                index
-                                                                            ] ===
-                                                                                0 && (
+                                                                            {stageStatus[index] === 0 && (
                                                                                 <HoverCard>
                                                                                     <HoverCardTrigger>
-                                                                                        <LockKeyhole className="mr-4" />
+                                                                                        <Clock className="mr-4 text-gray-500" />
                                                                                     </HoverCardTrigger>
                                                                                     <HoverCardContent className="p-2 bg-gray-800 text-white rounded-md shadow-lg">
                                                                                         <p className="text-sm">
-                                                                                            {isAdmin ? "此阶段已锁定。帮助团队成员完成他们的任务！" : "此阶段已锁定。请等待团队成员解锁。"}
+                                                                                            This stage has not started yet. Click to view details.
                                                                                         </p>
                                                                                     </HoverCardContent>
                                                                                 </HoverCard>
                                                                             )}
-                                                                            {stageStatus[
-                                                                                index
-                                                                            ] ===
-                                                                                1 && (
+                                                                            {stageStatus[index] === 1 && (
                                                                                 <HoverCard>
                                                                                     <HoverCardTrigger>
                                                                                         <NotepadText className="mr-4 text-yellow-500" />
@@ -853,10 +840,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                                                                     </HoverCardContent>
                                                                                 </HoverCard>
                                                                             )}
-                                                                            {stageStatus[
-                                                                                index
-                                                                            ] ===
-                                                                                2 && (
+                                                                            {stageStatus[index] === 2 && (
                                                                                 <HoverCard>
                                                                                     <HoverCardTrigger>
                                                                                         <CircleCheck className="mr-4 text-green-500" />
@@ -968,7 +952,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                                     <HoverCardTrigger asChild>
                                                         <Link
                                                             href={`/org/${id}/proj/${projId}/stage/${stage.id}`}
-                                                            className={`block p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 hover:border-blue-300 hover:shadow-md transition-all duration-300 ${stageStatus[index] === 0 && !isAdmin ? 'pointer-events-none opacity-50' : ''}`}
+                                                            className={`block p-4 ${stageStatus[index] === 1 ? 'bg-green-50 border-green-100 hover:border-green-300 border' : 'bg-gray-50'} rounded-lg border-2 hover:shadow-sm transition-all duration-300`}
                                                         >
                                                             <div className="flex w-full justify-between items-center">
                                                                 <span className="text-lg font-semibold">
@@ -976,7 +960,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                                                 </span>
                                                                 <span className="flex items-center text-sm text-gray-500">
                                                                     {stageStatus[index] === 0 && (
-                                                                    <LockKeyhole className="mr-4" />
+                                                                    <Clock className="mr-4 text-gray-500" />
                                                                     )}
                                                                     {stageStatus[index] === 1 && (
                                                                     <NotepadText className="mr-4 text-yellow-500" />
