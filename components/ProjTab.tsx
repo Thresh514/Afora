@@ -559,31 +559,6 @@ const ProjTab = ({
                                     />
                                 )}
                                 
-                                {/* TEST BUTTONS - Remove after testing */}
-                                {userRole === "admin" && process.env.NODE_ENV === "development" && (
-                                    <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                                        <p className="text-xs text-yellow-700 mb-2 font-medium">🧪 Dev Test Buttons:</p>
-                                        <div className="flex gap-2 flex-wrap">
-                                            <button
-                                                onClick={() => {
-                                                    const errorInfo: ErrorInfo = {
-                                                        type: "smart_matching",
-                                                        message: "Test Smart Matching Error - No unassigned members found",
-                                                        details: "This is a test error to showcase the new purple color theme",
-                                                        timestamp: new Date(),
-                                                        canRetry: true,
-                                                        onRetry: () => setSmartMatchingError(null),
-                                                        onDismiss: () => setSmartMatchingError(null)
-                                                    };
-                                                    setSmartMatchingError(errorInfo);
-                                                }}
-                                                className="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200"
-                                            >
-                                                Test Smart Matching Error
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
                             </>
                         )}
                         

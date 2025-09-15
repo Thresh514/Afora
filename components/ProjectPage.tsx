@@ -38,10 +38,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import TeamScoreCard from "@/components/TeamScoreCard";
-import ProjOnboarding from "./ProjOnboarding";
+// import ProjOnboarding from "./ProjOnboarding"; // Commented out as not currently used
 import AddProjectMemberDialog from "./AddProjectMemberDialog";
 import ChangeRoleDialog from "./ChangeRoleDialog";
 import RemoveMemberDialog from "./RemoveMemberDialog";
+import ProUpgradeDialog from "./ProUpgradeDialog";
 
 interface ProjectStats {
     totalTasks: number;
@@ -59,6 +60,8 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
     const [responses, setResponses] = useState<string[]>(new Array(teamCharterQuestions.length).fill(""));
     const [isOpen, setIsOpen] = useState(false);
     const [isTeamCharterOpen, setIsTeamCharterOpen] = useState(false);
+    // const [isPlanningQuestionOpen, setIsPlanningQuestionOpen] = useState(false); // Removed as no longer needed
+    const [isProUpgradeOpen, setIsProUpgradeOpen] = useState(false);
     const [charterSaveError, setCharterSaveError] = useState<ErrorInfo | null>(null);
     const [showCharterErrorDialog, setShowCharterErrorDialog] = useState(false);
     const router = useRouter();
@@ -370,13 +373,13 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
     return (
         <div className="flex flex-col w-full h-full bg-gray-100">
             {/* ProjOnboarding Survey Check */}
-            <ProjOnboarding 
+            {/* <ProjOnboarding 
                 orgId={id} 
                 projId={projId}
                 onDismiss={() => {
                     // Survey dismissed, continue with normal page
                 }}
-            />
+            /> */}
             
             {/* Header Section - similar to organization page background image style */}
             <div className="relative">
@@ -626,7 +629,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                             >
                                                 <AlertDialogTrigger asChild>
                                                     <Button
-                                                        onClick={() => setIsTeamCharterOpen(true)}
+                                                        onClick={() => setIsProUpgradeOpen(true)}
                                                         variant="outline"
                                                     >
                                                         <EditIcon className="mr-2 h-4 w-4" /> Team Charter
@@ -1210,6 +1213,22 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                 onMemberRemoved={() => {
                     // Refresh the page to show updated member list
                     window.location.reload();
+                }}
+            />
+
+            {/* Pro Upgrade Dialog */}
+            <ProUpgradeDialog
+                open={isProUpgradeOpen}
+                onOpenChange={setIsProUpgradeOpen}
+                onUpgrade={() => {
+                    // TODO: Implement upgrade logic
+                    console.log("User wants to upgrade to Pro");
+                    setIsProUpgradeOpen(false);
+                    setIsTeamCharterOpen(true);
+                }}
+                onCancel={() => {
+                    setIsProUpgradeOpen(false);
+                    setIsTeamCharterOpen(false);
                 }}
             />
         </div>
