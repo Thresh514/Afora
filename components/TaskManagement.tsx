@@ -213,7 +213,7 @@ const TaskManagement = ({
                                                                     )}
                                                                     {isAssignedToCurrentUser && (
                                                                         <>
-                                                                            {handleSwapTask && (
+                                                                            {/* {handleSwapTask && (
                                                                                 <DropdownMenu.Item
                                                                                     className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-blue-50 text-blue-600 data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
                                                                                     onClick={() => handleSwapTask(task.id)}
@@ -230,7 +230,7 @@ const TaskManagement = ({
                                                                                     <XCircle className="mr-2 h-4 w-4" />
                                                                                     Drop Task
                                                                                 </DropdownMenu.Item>
-                                                                            )}
+                                                                            )} */}
                                                                             <DropdownMenu.Item
                                                                                 className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-red-50 text-red-600 data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
                                                                                 onClick={() => {
