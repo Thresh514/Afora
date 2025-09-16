@@ -649,7 +649,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                                                 {/* Project Basic Information */}
                                                                 <div className="space-y-4">
                                                                     {teamCharterQuestions.map((question, index) => {
-                                                                        const isRequired = [0, 1, 3].includes(index);
+                                                                        const isRequired = [0, 1, 2].includes(index);
                                                                         return (
                                                                             <div key={index} className="space-y-2">
                                                                                 <Label
@@ -741,10 +741,10 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                                             <ul className="text-sm text-blue-700 space-y-1">
                                                                 <li>• Question 1: What is the main mission/vision of the project?</li>
                                                                 <li>• Question 2: List key project milestones</li>
-                                                                <li>• Question 4: Expected project duration (in weeks)</li>
+                                                                <li>• Question 3: Expected project duration (in weeks)</li>
                                                             </ul>
                                                             <p className="text-sm text-blue-600 mt-2">
-                                                                Questions 3 and 5 are optional.
+                                                                Questions 4 is optional.
                                                             </p>
                                                         </div>
                                                     </div>

@@ -1,6 +1,24 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+
+// Add CSS for flashing red border animation
+if (typeof document !== 'undefined') {
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes flash-red {
+            0%, 100% {
+                border-color: #ef4444;
+                box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+            }
+            50% {
+                border-color: #dc2626;
+                box-shadow: 0 0 20px rgba(220, 38, 38, 0.6);
+            }
+        }
+    `;
+    document.head.appendChild(style);
+}
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CircleCheckBig, Clock7, Trash, User, MoreVertical, ArrowLeftRight, XCircle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
@@ -50,6 +68,39 @@ const TaskManagement = ({
     currentUserEmail,
 }: TaskManagementProps) => {
     const tasksCompleted = tasks.filter((task) => task.isCompleted).length;
+    
+    // Function to check if a task is within one day of soft deadline
+    const isNearSoftDeadline = (task: Task) => {
+        const now = new Date();
+        const softDeadline = new Date(task.soft_deadline);
+        const timeDiff = softDeadline.getTime() - now.getTime();
+        const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+        return daysDiff <= 1 && daysDiff >= 0 && !task.isCompleted;
+    };
+    
+    // Sort tasks according to requirements
+    const sortedTasks = [...tasks].sort((a, b) => {
+        // First, separate completed and incomplete tasks
+        if (a.isCompleted && !b.isCompleted) return 1;
+        if (!a.isCompleted && b.isCompleted) return -1;
+        
+        // If both are completed, maintain completion order (assuming tasks array is already in completion order)
+        if (a.isCompleted && b.isCompleted) return 0;
+        
+        // For incomplete tasks:
+        const aIsCurrentUser = a.assignee === currentUserEmail;
+        const bIsCurrentUser = b.assignee === currentUserEmail;
+        
+        // Current user's tasks go to the top
+        if (aIsCurrentUser && !bIsCurrentUser) return -1;
+        if (!aIsCurrentUser && bIsCurrentUser) return 1;
+        
+        // If both are current user's tasks or both are other users' tasks,
+        // sort by assignee name alphabetically
+        const aAssignee = a.assignee || 'Unassigned';
+        const bAssignee = b.assignee || 'Unassigned';
+        return aAssignee.localeCompare(bAssignee);
+    });
 
     return (
         <div className="bg-gradient-to-br from-gray-50 to-blue-50 rounded-lg overflow-hidden">
@@ -75,7 +126,7 @@ const TaskManagement = ({
                     <div className="grid grid-cols-2 gap-3">
                         <div className="bg-white bg-opacity-20 backdrop-blur-sm p-3 rounded-lg">
                             <div className="text-2xl font-bold">
-                                {tasks.length}
+                                {sortedTasks.length}
                             </div>
                             <div className="text-xs opacity-90">
                                 Total Tasks
@@ -93,15 +144,25 @@ const TaskManagement = ({
                 {/* Task List */}
                 <div className="flex-1 overflow-y-auto p-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {tasks.length > 0 ? (
-                            tasks.map((task, index) => {
+                        {sortedTasks.length > 0 ? (
+                            sortedTasks.map((task, index) => {
                                 const isAssignedToCurrentUser = task.assignee === currentUserEmail;
                                 const isUnassigned = !task.assignee;
+                                const isNearDeadline = isNearSoftDeadline(task);
                                 
                                 return (
                                     <Card
                                         key={task.id}
-                                        className="transition-all duration-200 hover:shadow-lg group relative"
+                                        className={`transition-all duration-200 hover:shadow-lg group relative ${
+                                            isNearDeadline 
+                                                ? 'animate-pulse border-2 border-red-500 shadow-red-200 shadow-lg' 
+                                                : ''
+                                        }`}
+                                        style={{
+                                            animation: isNearDeadline 
+                                                ? 'flash-red 2s infinite' 
+                                                : 'none'
+                                        }}
                                     >
                                         <CardHeader className="pb-3">
                                             <div className="flex items-start justify-between">
@@ -333,7 +394,7 @@ const TaskManagement = ({
                 </div>
 
                 {/* Actions - Create New Task */}
-                {(isEditing || tasks.length === 0) && (
+                {(isEditing || sortedTasks.length === 0) && (
                     <div className="p-6 border-t border-gray-200 bg-gray-50">
                         <Button
                             className="w-full"

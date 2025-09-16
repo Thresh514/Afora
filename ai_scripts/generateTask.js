@@ -212,9 +212,9 @@ export const generateTask = async (
             risksAndChallenges: teamCharterResponses[4] || "", // Risks and challenges
         };
 
-        // Validate required inputs (questions 1, 2, and 4 are required)
+        // Validate required inputs (questions 1, 2, and 3 are required)
         if (!projectInfo.projectPurpose || !projectInfo.keyMilestones || !timelineInfo.projectDuration) {
-            throw new Error("Missing required project information. Please complete questions 1, 2, and 4 in the team charter.");
+            throw new Error("Missing required project information. Please complete questions 1, 2, and 3 in the team charter.");
         }
 
         if (!teamCharterResponses || teamCharterResponses.length === 0) {
