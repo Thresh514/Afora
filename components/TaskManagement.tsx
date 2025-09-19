@@ -49,6 +49,7 @@ interface TaskManagementProps {
     projId: string;
     stageId: string;
     currentUserEmail?: string;
+    isAdmin?: boolean;
 }
 
 const TaskManagement = ({
@@ -66,6 +67,7 @@ const TaskManagement = ({
     projId,
     stageId,
     currentUserEmail,
+    isAdmin: isCurrentUserAdmin,
 }: TaskManagementProps) => {
     const tasksCompleted = tasks.filter((task) => task.isCompleted).length;
     
@@ -146,7 +148,7 @@ const TaskManagement = ({
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {sortedTasks.length > 0 ? (
                             sortedTasks.map((task, index) => {
-                                const isAssignedToCurrentUser = task.assignee === currentUserEmail;
+                                const isAssignedToCurrentUser = task.assignee === currentUserEmail || isCurrentUserAdmin;
                                 const isUnassigned = !task.assignee;
                                 const isNearDeadline = isNearSoftDeadline(task);
                                 
@@ -183,8 +185,9 @@ const TaskManagement = ({
                                                         </CardTitle>
                                                     </div>
                                                 </div>
+                                                
                                                 {/* Task Actions */}
-                                                {currentUserEmail && (
+                                                {(currentUserEmail || isCurrentUserAdmin) && (
                                                     <>
                                                         <DropdownMenu.Root>
                                                             <DropdownMenu.Trigger asChild>

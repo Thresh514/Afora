@@ -458,8 +458,8 @@ Output your response in the following JSON schema format.`;
         
         if (sanitizedData.stages) {
             sanitizedData.stages.forEach((stage, stageIndex) => {
-                // console.log(`Validating Stage ${stageIndex + 1}: "${stage.stage_name}"`);
-                // console.log(`  Expected tasks: ${teamSize}, Actual tasks: ${stage.tasks.length}`);
+                console.log(`Validating Stage ${stageIndex + 1}: "${stage.stage_name}"`);
+                console.log(`  Expected tasks: ${teamSize}, Actual tasks: ${stage.tasks.length}`);
                 
                 if (stage.tasks.length !== teamSize) {
                     console.error(`❌ Task count mismatch in stage ${stageIndex + 1}`);
@@ -469,7 +469,7 @@ Output your response in the following JSON schema format.`;
                 // Validate that each team member is assigned exactly once per stage
                 const assignedMembers = new Set();
                 stage.tasks.forEach((task, taskIndex) => {
-                    // console.log(`  Checking assignment: "${task.task_name}" → "${task.assigned_member}"`);
+                    console.log(`  Checking assignment: "${task.task_name}" → "${task.assigned_member}"`);
                     
                     if (assignedMembers.has(task.assigned_member)) {
                         console.error(`❌ Duplicate assignment detected: ${task.assigned_member}`);
@@ -485,7 +485,7 @@ Output your response in the following JSON schema format.`;
                     }
                 });
                 
-                // console.log(`✅ Stage ${stageIndex + 1} validation passed`);
+                console.log(`✅ Stage ${stageIndex + 1} validation passed`);
             });
         }
         

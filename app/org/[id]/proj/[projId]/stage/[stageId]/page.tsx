@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useCollection, useDocument } from "react-firebase-hooks/firestore";
 import { db } from "@/firebase";
 import { Stage, Task } from "@/types/types";
-import { collection, doc } from "firebase/firestore";
+import { collection, doc, getDoc } from "firebase/firestore";
 
 import {
     Edit3,
@@ -59,6 +59,7 @@ function StagePage() {
 
     const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false); // State for Create Task dialog
     const [isDeleteTaskOpen, setIsDeleteTaskOpen] = useState(false); // State for Delete Task dialog
+    const [isAdmin, setIsAdmin] = useState(false);
 
     useEffect(() => {
         if (isLoaded && !isSignedIn) {
@@ -118,6 +119,17 @@ function StagePage() {
     useEffect(() => {
         fetchOverdueTasks();
     }, [fetchOverdueTasks]);
+
+    // check if user is admin
+    useEffect(() => {
+        const checkAdmin = async () => {
+            const projectDoc = await getDoc(doc(db, "projects", projId));
+            if (projectDoc?.data()?.admins?.includes(user?.primaryEmailAddress?.emailAddress)) {
+                setIsAdmin(true);
+            }
+        };
+        checkAdmin();
+    }, [user, projId]);
 
     // handle bounty board open function
     const handleBountyBoardOpen = useCallback(async () => {
@@ -615,6 +627,7 @@ function StagePage() {
                     projId={projId}
                     stageId={stageId}
                     currentUserEmail={user?.primaryEmailAddress?.emailAddress}
+                    isAdmin={isAdmin}
                 />
             </div>
         </div>

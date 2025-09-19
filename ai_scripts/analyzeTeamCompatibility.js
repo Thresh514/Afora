@@ -566,19 +566,19 @@ export const analyzeTeamCompatibility = async (
 
     try {
         // Log the raw input for debugging
-        // console.log("=== analyzeTeamCompatibility INPUT ===");
-        // console.log("Context:", context);
-        // console.log("Response Format:", JSON.stringify(responseFormat, null, 2));
-        // console.log("Input:", input);
-        // console.log("=====================================");
+        console.log("=== analyzeTeamCompatibility INPUT ===");
+        console.log("Context:", context);
+        console.log("Response Format:", JSON.stringify(responseFormat, null, 2));
+        console.log("Input:", input);
+        console.log("=====================================");
 
         const result = await apiRequest({ context, responseFormat, input, functionName: "analyzeTeamCompatibility" });
         
         // Log the raw output for debugging
-        // console.log("=== analyzeTeamCompatibility OUTPUT ===");
-        // console.log("Raw Result:", result);
-        // console.log("Result Type:", typeof result);
-        // console.log("=====================================");
+        console.log("=== analyzeTeamCompatibility OUTPUT ===");
+        console.log("Raw Result:", result);
+        console.log("Result Type:", typeof result);
+        console.log("=====================================");
         
         // 确保返回的是有效的 JSON
         if (typeof result === 'string') {
