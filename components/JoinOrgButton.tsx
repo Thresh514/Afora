@@ -39,7 +39,7 @@ function JoinOrgButton({
                     ? await inviteUserToOrg(
                           orgCode,
                           user.primaryEmailAddress.emailAddress,
-                          "editor",
+                          "member",
                       )
                     : { success: false, message: "user does not exist" };
             if (success && orgCode && orgCode.trim()) {

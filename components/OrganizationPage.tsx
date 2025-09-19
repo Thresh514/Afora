@@ -40,9 +40,9 @@ const OrganizationPage = ({ id }: { id: string }) => {
 
             if (isAdmin || isMember) {
                 // console.log(
-                    "OrganizationPage - Creating default user org data. IsAdmin:",
-                    isAdmin,
-                );
+                //     "OrganizationPage - Creating default user org data. IsAdmin:",
+                //     isAdmin,
+                // );
                 const defaultUserOrgData: UserOrgData = {
                     createdAt: new Date().toISOString(),
                     role: isAdmin ? "admin" : "member",

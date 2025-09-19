@@ -1,10 +1,10 @@
 import { DocumentData, Timestamp } from "firebase/firestore";
 
 /**
- * - editor: members who can edit the documents
+ * - member: regular members of the organization
  * - admin: administrators who have higher access
  */
-export const access_roles: string[] = ["editor", "admin"];
+export const access_roles: string[] = ["member", "admin"];
 
 export type User = {
     fullName: string;

@@ -85,7 +85,7 @@ export default function AddNewTeamDialog({ orgId, totalProjects, onTeamCreated }
     const addSelectedMembers = () => {
         const newMembers = Array.from(selectedMembers).map(email => ({
             email,
-            role: "editor" // Default role
+            role: "member" // Default role
         }));
 
         // Filter out already invited members

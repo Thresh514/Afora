@@ -36,7 +36,7 @@ function InviteUser(props: InviteUserProps) {
     const [email, setEmail] = useState("");
     const pathname = usePathname();
     // const router = useRouter();
-    const defaultAccessRole = props.defaultAccessRole || "editor"; // Default to 'editor' if not provided
+    const defaultAccessRole = props.defaultAccessRole || "member"; // Default to 'member' if not provided
     const [access, setAccess] = useState(defaultAccessRole);
 
     const handleInvite = async (e: FormEvent) => {

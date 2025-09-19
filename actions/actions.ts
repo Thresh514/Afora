@@ -85,7 +85,7 @@ export async function createNewOrganization(
         }
 
         // Validate orgDescription for valid characters
-        const validRegex = /^[a-zA-Z0-9.,'-]+$/;
+        const validRegex = /.*/;
         if (!validRegex.test(orgName)) {
             throw new Error(
                 "Organization name contains invalid characters. Only alphanumeric characters and punctuation (.,'-) are allowed.",
@@ -255,20 +255,20 @@ export async function setUserOnboardingSurvey(selectedTags: string[][]) {
             const { currentUser } = await import("@clerk/nextjs/server");
             const user = await currentUser();
             // console.log(
-                "Debug setUserOnboardingSurvey - currentUser:",
-                JSON.stringify(
-                    {
-                        id: user?.id,
-                        emailAddresses: user?.emailAddresses?.map(
-                            (ea) => ea.emailAddress,
-                        ),
-                        primaryEmailAddress:
-                            user?.primaryEmailAddress?.emailAddress,
-                    },
-                    null,
-                    2,
-                ),
-            );
+            //     "Debug setUserOnboardingSurvey - currentUser:",
+            //     JSON.stringify(
+            //         {
+            //             id: user?.id,
+            //             emailAddresses: user?.emailAddresses?.map(
+            //                 (ea) => ea.emailAddress,
+            //             ),
+            //             primaryEmailAddress:
+            //                 user?.primaryEmailAddress?.emailAddress,
+            //         },
+            //         null,
+            //         2,
+            //     ),
+            // );
 
             userEmail =
                 user?.emailAddresses?.[0]?.emailAddress ||
@@ -322,10 +322,7 @@ export async function setProjOnboardingSurvey(
     }
 
     // 详细的调试信息 - 先看看 sessionClaims 里有什么
-    // console.log(
-        "Debug setProjOnboardingSurvey - sessionClaims:",
-        JSON.stringify(sessionClaims, null, 2),
-    );
+    // console.log("Debug setProjOnboardingSurvey - sessionClaims:", JSON.stringify(sessionClaims, null, 2));
 
     // 尝试多种方式获取用户邮箱
     let userEmail: string | undefined;
@@ -352,20 +349,20 @@ export async function setProjOnboardingSurvey(
             const { currentUser } = await import("@clerk/nextjs/server");
             const user = await currentUser();
             // console.log(
-                "Debug - currentUser:",
-                JSON.stringify(
-                    {
-                        id: user?.id,
-                        emailAddresses: user?.emailAddresses?.map(
-                            (ea) => ea.emailAddress,
-                        ),
-                        primaryEmailAddress:
-                            user?.primaryEmailAddress?.emailAddress,
-                    },
-                    null,
-                    2,
-                ),
-            );
+            //     "Debug - currentUser:",
+            //     JSON.stringify(
+            //         {
+            //             id: user?.id,
+            //             emailAddresses: user?.emailAddresses?.map(
+            //                 (ea) => ea.emailAddress,
+            //             ),
+            //             primaryEmailAddress:
+            //                 user?.primaryEmailAddress?.emailAddress,
+            //         },
+            //         null,
+            //         2,
+            //     ),
+            // );
 
             userEmail =
                 user?.emailAddresses?.[0]?.emailAddress ||
@@ -377,15 +374,15 @@ export async function setProjOnboardingSurvey(
 
     // 最终的调试信息
     // console.log("Debug setProjOnboardingSurvey - final values:", {
-        userId,
-        userEmail,
-        orgId,
-        responsesLength: responses?.length,
-        hasValidEmail:
-            !!userEmail &&
-            typeof userEmail === "string" &&
-            userEmail.length > 0,
-    });
+    //     userId,
+    //     userEmail,
+    //     orgId,
+    //     responsesLength: responses?.length,
+    //     hasValidEmail:
+    //         !!userEmail &&
+    //         typeof userEmail === "string" &&
+    //         userEmail.length > 0,
+    // );
 
     if (
         !userEmail ||
@@ -404,10 +401,7 @@ export async function setProjOnboardingSurvey(
             throw new Error("Please answer all questions!");
         }
 
-        // console.log(
-            "About to save to path:",
-            `users/${userEmail}/orgs/${orgId}`,
-        );
+        // console.log("About to save to path:",`users/${userEmail}/orgs/${orgId}`);
 
         await adminDb
             .collection("users")

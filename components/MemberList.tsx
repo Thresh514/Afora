@@ -213,8 +213,8 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                 // Handle removing from source project
                 if (fromProjectId) {
                     // console.log(
-                        `Removing ${memberEmail} from project ${fromProjectId}`,
-                    );
+                    //     `Removing ${memberEmail} from project ${fromProjectId}`,
+                    // );
                     const result = await removeProjectMember(
                         fromProjectId,
                         memberEmail,
@@ -235,8 +235,8 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                     );
                     if (destTeam) {
                         // console.log(
-                            `Adding ${memberEmail} to project ${toProjectId}`,
-                        );
+                        //     `Adding ${memberEmail} to project ${toProjectId}`,
+                        // );
                         const updatedMembers = [
                             ...destTeam.members,
                             memberEmail,
@@ -253,8 +253,8 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                             // If adding failed but removing succeeded, we should try to add back to original project
                             if (fromProjectId) {
                                 // console.log(
-                                    "Attempting to restore member to original project...",
-                                );
+                                //     "Attempting to restore member to original project...",
+                                // );
                                 // This is a best-effort restore, don't handle errors
                                 try {
                                     const sourceTeam = projectTeams.find(
@@ -831,7 +831,7 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                                 <h4 className="text-sm font-medium text-gray-700 mb-4 flex items-center gap-2">
                                     <Users className="h-4 w-4 text-blue-500" />
                                     Members ({members.length})
-                                    {userRole === "admin" && <InviteUserToOrganization defaultAccessRole="editor" />}
+                                    {userRole === "admin" && <InviteUserToOrganization defaultAccessRole="member" />}
                                 </h4>
                                 <div className="grid gap-3">
                                     {members.map((member: string) => (
