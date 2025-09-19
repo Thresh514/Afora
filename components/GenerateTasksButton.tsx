@@ -51,12 +51,12 @@ const GenerateTasksButton = ({
     }
 
     if (error) {
-        console.log(error.message);
+        // console.log(error.message);
         return;
     }
 
     if (!proj) {
-        console.log("No project found");
+        // console.log("No project found");
         return;
     }
 
@@ -163,7 +163,7 @@ const GenerateTasksButton = ({
                         memberCapabilities
                     );
                     
-                    console.log("API Response:", output);
+                    // console.log("API Response:", output);
                     const parsed: GeneratedTasks = JSON.parse(output);
                     setGeneratedOutput(parsed);
                     setTaskGenerationError(null);

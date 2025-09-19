@@ -31,7 +31,7 @@ function JoinOrgButton({
 
     const handleJoinNewOrganization = () => {
         // Updated function name
-        console.log(user!.emailAddresses + " tried joining " + orgCode);
+        // console.log(user!.emailAddresses + " tried joining " + orgCode);
 
         startTransition(async () => {
             const { success, message } =
@@ -43,13 +43,13 @@ function JoinOrgButton({
                       )
                     : { success: false, message: "user does not exist" };
             if (success && orgCode && orgCode.trim()) {
-                console.log("Successfully joined");
+                // console.log("Successfully joined");
                 setIsOpen(false);
                 router.push(`/org/${orgCode}`); // Updated route
                 toast.success("Successfully joined!");
                 setOrgCode("");
             } else {
-                console.log("Failed to join", message);
+                // console.log("Failed to join", message);
                 toast.error(message || "Failed to join group");
             }
         });

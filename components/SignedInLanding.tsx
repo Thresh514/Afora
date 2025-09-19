@@ -35,7 +35,7 @@ function SignedInLanding() {
 
     useEffect(() => {
         if (!orgsData) return;
-        console.log('Raw orgs data:', orgsData.docs.map(doc => ({ id: doc.id, data: doc.data() })));
+        // console.log('Raw orgs data:', orgsData.docs.map(doc => ({ id: doc.id, data: doc.data() })));
         
         const orgsList = orgsData.docs
             .map((doc) => {
@@ -53,11 +53,11 @@ function SignedInLanding() {
                 if (!org) {
                     return false;
                 }
-                console.log('Processing org:', org);
+                // console.log('Processing org:', org);
                 return true;
             });
         
-        console.log('Filtered orgs list:', orgsList);
+        // console.log('Filtered orgs list:', orgsList);
         setOrgs(orgsList);
     }, [orgsData]);
 

@@ -212,7 +212,7 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
 
                 // Handle removing from source project
                 if (fromProjectId) {
-                    console.log(
+                    // console.log(
                         `Removing ${memberEmail} from project ${fromProjectId}`,
                     );
                     const result = await removeProjectMember(
@@ -234,7 +234,7 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                         (team: ProjectTeam) => team.projectId === toProjectId,
                     );
                     if (destTeam) {
-                        console.log(
+                        // console.log(
                             `Adding ${memberEmail} to project ${toProjectId}`,
                         );
                         const updatedMembers = [
@@ -252,7 +252,7 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                             );
                             // If adding failed but removing succeeded, we should try to add back to original project
                             if (fromProjectId) {
-                                console.log(
+                                // console.log(
                                     "Attempting to restore member to original project...",
                                 );
                                 // This is a best-effort restore, don't handle errors

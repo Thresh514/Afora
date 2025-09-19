@@ -254,7 +254,7 @@ export async function setUserOnboardingSurvey(selectedTags: string[][]) {
         try {
             const { currentUser } = await import("@clerk/nextjs/server");
             const user = await currentUser();
-            console.log(
+            // console.log(
                 "Debug setUserOnboardingSurvey - currentUser:",
                 JSON.stringify(
                     {
@@ -322,7 +322,7 @@ export async function setProjOnboardingSurvey(
     }
 
     // 详细的调试信息 - 先看看 sessionClaims 里有什么
-    console.log(
+    // console.log(
         "Debug setProjOnboardingSurvey - sessionClaims:",
         JSON.stringify(sessionClaims, null, 2),
     );
@@ -351,7 +351,7 @@ export async function setProjOnboardingSurvey(
         try {
             const { currentUser } = await import("@clerk/nextjs/server");
             const user = await currentUser();
-            console.log(
+            // console.log(
                 "Debug - currentUser:",
                 JSON.stringify(
                     {
@@ -376,7 +376,7 @@ export async function setProjOnboardingSurvey(
     }
 
     // 最终的调试信息
-    console.log("Debug setProjOnboardingSurvey - final values:", {
+    // console.log("Debug setProjOnboardingSurvey - final values:", {
         userId,
         userEmail,
         orgId,
@@ -404,7 +404,7 @@ export async function setProjOnboardingSurvey(
             throw new Error("Please answer all questions!");
         }
 
-        console.log(
+        // console.log(
             "About to save to path:",
             `users/${userEmail}/orgs/${orgId}`,
         );
@@ -421,7 +421,7 @@ export async function setProjOnboardingSurvey(
                 { merge: true },
             );
 
-        console.log("Successfully saved survey response");
+        // console.log("Successfully saved survey response");
         return { success: true };
     } catch (error) {
         console.error("setProjOnboardingSurvey error:", error);
@@ -1158,8 +1158,8 @@ export async function getProjectMembersResponses(projId: string) {
         // 去重，确保没有重复的成员
         const members = [...new Set(allMembers)];
         
-        console.log("Project members before deduplication:", allMembers);
-        console.log("Project members after deduplication:", members);
+        // console.log("Project members before deduplication:", allMembers);
+        // console.log("Project members after deduplication:", members);
 
         if (members.length === 0) {
             return { success: true, data: [] };
@@ -1176,7 +1176,7 @@ export async function getProjectMembersResponses(projId: string) {
                         .get();
                     
                     if (!userDoc.exists) {
-                        console.log(`User document not found for: ${memberEmail}`);
+                        // console.log(`User document not found for: ${memberEmail}`);
                         return null;
                     }
                     
@@ -1191,7 +1191,7 @@ export async function getProjectMembersResponses(projId: string) {
                         .get();
                     
                     if (!projectDoc.exists) {
-                        console.log(`Project document not found for: ${projId}`);
+                        // console.log(`Project document not found for: ${projId}`);
                         return null;
                     }
                     
@@ -1199,7 +1199,7 @@ export async function getProjectMembersResponses(projId: string) {
                     const orgId = projectData?.orgId;
                     
                     if (!orgId) {
-                        console.log(`No orgId found for project: ${projId}`);
+                        // console.log(`No orgId found for project: ${projId}`);
                         return null;
                     }
                     
@@ -1215,9 +1215,9 @@ export async function getProjectMembersResponses(projId: string) {
                     if (userOrgDoc.exists) {
                         const userOrgData = userOrgDoc.data();
                         projResponses = userOrgData?.projOnboardingSurveyResponse || [];
-                        console.log(`Found projResponses for ${memberEmail}:`, projResponses.length, "items");
+                        // console.log(`Found projResponses for ${memberEmail}:`, projResponses.length, "items");
                     } else {
-                        console.log(`No org document found for user ${memberEmail} in org ${orgId}`);
+                        // console.log(`No org document found for user ${memberEmail} in org ${orgId}`);
                     }
                     
                     return {
@@ -1834,7 +1834,7 @@ export async function getProjectLeaderboard(projId: string) {
             errorMessage.includes("FAILED_PRECONDITION") ||
             errorDetails.includes("The query requires an index")
         ) {
-            console.log("Returning empty leaderboard due to missing index");
+            // console.log("Returning empty leaderboard due to missing index");
             return {
                 success: true,
                 leaderboard: [],
@@ -1929,7 +1929,7 @@ export async function addProjectMember(
             return { success: false, message: "Unauthorized - Please sign in again" };
         }
 
-        console.log(`Adding member: ${userEmail} to project: ${projId} with role: ${role}`);
+        // console.log(`Adding member: ${userEmail} to project: ${projId} with role: ${role}`);
 
         // Check if user exists
         const userDoc = await adminDb.collection("users").doc(userEmail).get();
@@ -1989,7 +1989,7 @@ export async function addProjectMember(
             // Don't fail the entire operation if this fails
         }
 
-        console.log(`Successfully added ${userEmail} as ${role} to project ${projId}`);
+        // console.log(`Successfully added ${userEmail} as ${role} to project ${projId}`);
         return {
             success: true,
             message: `User added as ${role} successfully`,
@@ -2070,7 +2070,7 @@ export async function removeProjectMember(projId: string, userEmail: string) {
             return { success: false, message: "Unauthorized - Please sign in again" };
         }
 
-        console.log(`Removing member: ${userEmail} from project: ${projId}`);
+        // console.log(`Removing member: ${userEmail} from project: ${projId}`);
 
         // Check if project exists
         const projectRef = adminDb.collection("projects").doc(projId);
@@ -2120,7 +2120,7 @@ export async function removeProjectMember(projId: string, userEmail: string) {
             // Don't fail the entire operation if this fails
         }
 
-        console.log(`Successfully removed ${userEmail} from project ${projId}`);
+        // console.log(`Successfully removed ${userEmail} from project ${projId}`);
         return {
             success: true,
             message: "User removed from project successfully",
@@ -2147,7 +2147,7 @@ export async function changeProjectMemberRole(
             return { success: false, message: "Unauthorized - Please sign in again" };
         }
 
-        console.log(`Changing role for: ${userEmail} in project: ${projId} to: ${newRole}`);
+        // console.log(`Changing role for: ${userEmail} in project: ${projId} to: ${newRole}`);
 
         // Check if project exists
         const projectRef = adminDb.collection("projects").doc(projId);
@@ -2188,7 +2188,7 @@ export async function changeProjectMemberRole(
             admins: updatedAdmins,
         });
 
-        console.log(`Successfully changed ${userEmail} role to ${newRole} in project ${projId}`);
+        // console.log(`Successfully changed ${userEmail} role to ${newRole} in project ${projId}`);
         return {
             success: true,
             message: `User role changed to ${newRole} successfully`,
@@ -2214,7 +2214,7 @@ export async function fixProjectAdmin(
             return { success: false, message: "Unauthorized - Please sign in again" };
         }
 
-        console.log(`Fixing admin for project: ${projId}, adding user: ${userEmail}`);
+        // console.log(`Fixing admin for project: ${projId}, adding user: ${userEmail}`);
 
         // Check if project exists
         const projectRef = adminDb.collection("projects").doc(projId);
@@ -2230,7 +2230,7 @@ export async function fixProjectAdmin(
 
         // Check if user is already an admin
         if (currentAdmins.includes(userEmail)) {
-            console.log(`User ${userEmail} is already an admin`);
+            // console.log(`User ${userEmail} is already an admin`);
             return { success: true, message: "User is already an admin" };
         }
 
@@ -2239,7 +2239,7 @@ export async function fixProjectAdmin(
             admins: [...currentAdmins, userEmail],
         });
 
-        console.log(`Successfully added ${userEmail} as admin to project ${projId}`);
+        // console.log(`Successfully added ${userEmail} as admin to project ${projId}`);
         return {
             success: true,
             message: "User added as admin successfully",
@@ -2830,7 +2830,7 @@ export async function autoAssignMembersToProjects(orgId: string, teamSize?: numb
                             onboardingSurveyResponses: onboardingSurveyResponses,
                         });
                     } else {
-                        console.log(`User ${memberEmail} has opted out of matching`);
+                        // console.log(`User ${memberEmail} has opted out of matching`);
                     }
                 }
             } catch (error) {
@@ -3318,7 +3318,7 @@ export async function migrateTasksToTaskPool() {
 
         for (const projectDoc of projectsSnapshot.docs) {
             const projId = projectDoc.id;
-            console.log(`Migrating project: ${projId}`);
+            // console.log(`Migrating project: ${projId}`);
 
             // 获取项目的所有阶段
             const stagesSnapshot = await adminDb
@@ -3910,7 +3910,7 @@ export async function autoDropOverdueTasksInternal(executedBy: string = "system"
     const currentISOString = now.toISOString();
 
     try {
-        console.log("🔍 开始检查过期任务...");
+        // console.log("🔍 开始检查过期任务...");
         
         // 获取所有项目
         const projectsSnapshot = await adminDb.collection("projects").get();
@@ -3954,7 +3954,7 @@ export async function autoDropOverdueTasksInternal(executedBy: string = "system"
         }
         
         if (overdueTasks.length === 0) {
-            console.log("没有找到需要自动 drop 的过期任务");
+            // console.log("没有找到需要自动 drop 的过期任务");
             return { 
                 success: true, 
                 tasksProcessed: 0, 
@@ -3962,7 +3962,7 @@ export async function autoDropOverdueTasksInternal(executedBy: string = "system"
             };
         }
         
-        console.log(`找到 ${overdueTasks.length} 个需要自动 drop 的过期任务`);
+        // console.log(`找到 ${overdueTasks.length} 个需要自动 drop 的过期任务`);
         
         // 使用批量写入进行更新（使用现有的 unassignTask 逻辑）
         const batch = adminDb.batch();
@@ -3981,14 +3981,14 @@ export async function autoDropOverdueTasksInternal(executedBy: string = "system"
             
             processedCount++;
             
-            console.log(`准备自动 drop 任务: ${data.title} (assignee: ${data.assignee})`);
-            console.log(`  项目: ${projectId}, 阶段: ${stageId}`);
+            // console.log(`准备自动 drop 任务: ${data.title} (assignee: ${data.assignee})`);
+            // console.log(`  项目: ${projectId}, 阶段: ${stageId}`);
         });
         
         // 执行批量更新
         if (processedCount > 0) {
             await batch.commit();
-            console.log(`✅ 成功自动 drop ${processedCount} 个过期任务`);
+            // console.log(`✅ 成功自动 drop ${processedCount} 个过期任务`);
             
             // 记录处理结果到日志集合（可选）
             await adminDb.collection("function_logs").add({

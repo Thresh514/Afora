@@ -85,10 +85,10 @@ function MySidebar() {
     // Get orgIds from userOrgs
     useEffect(() => {
         if (!userOrgs) return;
-        console.log(userOrgs);
+        // console.log(userOrgs);
         const orgDocs = userOrgs.docs.map((doc) => doc.data() as OrgDocument);
         const ids = orgDocs.map((org) => org.orgId).filter(Boolean); // 过滤空值
-        console.log("MySidebar - Updated orgIds:", ids);
+        // console.log("MySidebar - Updated orgIds:", ids);
         setOrgIds(ids);
     }, [userOrgs]);
 

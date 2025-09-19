@@ -1206,7 +1206,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                 onOpenChange={setIsProUpgradeOpen}
                 onUpgrade={() => {
                     // TODO: Implement upgrade logic
-                    console.log("User wants to upgrade to Pro");
+                    // console.log("User wants to upgrade to Pro");
                     setIsProUpgradeOpen(false);
                     setIsTeamCharterOpen(true);
                 }}

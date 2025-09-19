@@ -79,46 +79,46 @@ const responseFormat = {
 
 // Add utility function to sanitize and validate JSON response
 const sanitizeAndParseJSON = (jsonString) => {
-    console.log("=== JSON Sanitization Process ===");
-    console.log("Input JSON string length:", jsonString?.length || 0);
+    // console.log("=== JSON Sanitization Process ===");
+    // console.log("Input JSON string length:", jsonString?.length || 0);
     
     try {
         // Remove any potential Unicode control characters
-        console.log("Removing Unicode control characters...");
+        // console.log("Removing Unicode control characters...");
         const cleaned = jsonString.replace(/[\u0000-\u001F\u007F-\u009F]/g, "");
-        console.log("Cleaned string length:", cleaned.length);
+        // console.log("Cleaned string length:", cleaned.length);
         
         // Try to find the actual JSON content (in case AI adds extra text)
-        console.log("Extracting JSON content...");
+        // console.log("Extracting JSON content...");
         const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
         if (!jsonMatch) {
             console.error("❌ No valid JSON object found in response");
-            console.log("Response content (first 1000 chars):", cleaned.substring(0, 1000));
+            // console.log("Response content (first 1000 chars):", cleaned.substring(0, 1000));
             throw new Error("No valid JSON object found in response");
         }
         
         const jsonContent = jsonMatch[0];
-        console.log("Extracted JSON content length:", jsonContent.length);
+        // console.log("Extracted JSON content length:", jsonContent.length);
         
         // Parse and validate the JSON structure
-        console.log("Parsing JSON content...");
+        // console.log("Parsing JSON content...");
         const parsed = JSON.parse(jsonContent);
-        console.log("✅ JSON parsed successfully");
+        // console.log("✅ JSON parsed successfully");
         
         // Validate the required structure
-        console.log("Validating JSON structure...");
+        // console.log("Validating JSON structure...");
         if (!parsed.stages || !Array.isArray(parsed.stages)) {
             console.error("❌ Invalid response format: missing or invalid stages array");
-            console.log("Parsed object keys:", Object.keys(parsed));
+            // console.log("Parsed object keys:", Object.keys(parsed));
             throw new Error("Invalid response format: missing or invalid stages array");
         }
-        console.log("✅ JSON structure validation passed");
-        console.log("Number of stages found:", parsed.stages.length);
+        // console.log("✅ JSON structure validation passed");
+        // console.log("Number of stages found:", parsed.stages.length);
         
         // Validate and sanitize each stage
-        console.log("Validating and sanitizing stages...");
+        // console.log("Validating and sanitizing stages...");
         parsed.stages = parsed.stages.map((stage, index) => {
-            console.log(`Processing Stage ${index + 1}: "${stage.stage_name}"`);
+            // console.log(`Processing Stage ${index + 1}: "${stage.stage_name}"`);
             
             if (!stage.stage_name || typeof stage.stage_name !== 'string') {
                 console.error(`❌ Stage ${index + 1} has invalid or missing name`);
@@ -127,11 +127,11 @@ const sanitizeAndParseJSON = (jsonString) => {
             
             if (!stage.tasks || !Array.isArray(stage.tasks) || stage.tasks.length < 1) {
                 console.error(`❌ Stage ${index + 1} (${stage.stage_name}) must have at least 1 task`);
-                console.log(`  Tasks found:`, stage.tasks);
+                // console.log(`  Tasks found:`, stage.tasks);
                 throw new Error(`Stage ${index + 1} (${stage.stage_name}) must have at least 1 task`);
             }
             
-            console.log(`  Stage has ${stage.tasks.length} tasks`);
+            // console.log(`  Stage has ${stage.tasks.length} tasks`);
             
             // Sanitize and validate each task
             stage.tasks = stage.tasks.map((task, taskIndex) => {
@@ -176,7 +176,7 @@ const sanitizeAndParseJSON = (jsonString) => {
             };
         });
         
-        console.log("✅ All stages and tasks validated successfully");
+        // console.log("✅ All stages and tasks validated successfully");
         return parsed;
     } catch (error) {
         console.error("=== JSON Sanitization Error ===");
@@ -231,12 +231,12 @@ export const generateTask = async (
 
         const teamSize = teamMembers.length;
 
-        console.log("=== Generate Task API Call Debug Info ===");
-        console.log("Team Size:", teamSize);
-        console.log("Team Members:", teamMembers.map(m => m.email));
-        console.log("Project Info:", projectInfo);
-        console.log("Team Charter Response Length:", teamCharterResponses.length);
-        console.log("Member Capabilities Count:", memberCapabilities.length);
+        // console.log("=== Generate Task API Call Debug Info ===");
+        // console.log("Team Size:", teamSize);
+        // console.log("Team Members:", teamMembers.map(m => m.email));
+        // console.log("Project Info:", projectInfo);
+        // console.log("Team Charter Response Length:", teamCharterResponses.length);
+        // console.log("Member Capabilities Count:", memberCapabilities.length);
 
         const context = `You are an experienced project manager AI assistant with expertise in intelligent task assignment.
 
@@ -416,50 +416,50 @@ Output your response in the following JSON schema format.`;
                     ${userResponses.join("\n")}
                     `;
 
-        console.log("=== API Request Details ===");
-        console.log("Context length:", context.length);
-        console.log("Input length:", input.length);
-        console.log("Function Name:", "generateTask");
-        console.log("Response Format Schema:", JSON.stringify(responseFormat, null, 2));
+        // console.log("=== API Request Details ===");
+        // console.log("Context length:", context.length);
+        // console.log("Input length:", input.length);
+        // console.log("Function Name:", "generateTask");
+        // console.log("Response Format Schema:", JSON.stringify(responseFormat, null, 2));
         
-        console.log("=== Calling GPT API ===");
+        // console.log("=== Calling GPT API ===");
         const apiStartTime = Date.now();
         
         const result = await apiRequest({ context, responseFormat, input, functionName: "generateTask" });
         
         const apiEndTime = Date.now();
-        console.log("=== API Response Received ===");
-        console.log("API Response Time:", `${apiEndTime - apiStartTime}ms`);
-        console.log("Raw API Response Length:", result?.length || 0);
-        console.log("Raw API Response (first 500 chars):", result?.substring(0, 500) || "No response");
+        // console.log("=== API Response Received ===");
+        // console.log("API Response Time:", `${apiEndTime - apiStartTime}ms`);
+        // console.log("Raw API Response Length:", result?.length || 0);
+        // console.log("Raw API Response (first 500 chars):", result?.substring(0, 500) || "No response");
         
         // Sanitize and parse the response
-        console.log("=== Processing API Response ===");
-        console.log("Starting JSON sanitization and parsing...");
+        // console.log("=== Processing API Response ===");
+        // console.log("Starting JSON sanitization and parsing...");
         
         const sanitizedData = sanitizeAndParseJSON(result);
         
-        console.log("=== Sanitized Data Overview ===");
-        console.log("Number of stages generated:", sanitizedData.stages?.length || 0);
+        // console.log("=== Sanitized Data Overview ===");
+        // console.log("Number of stages generated:", sanitizedData.stages?.length || 0);
         if (sanitizedData.stages) {
             sanitizedData.stages.forEach((stage, index) => {
-                console.log(`Stage ${index + 1}: "${stage.stage_name}" with ${stage.tasks?.length || 0} tasks`);
+                // console.log(`Stage ${index + 1}: "${stage.stage_name}" with ${stage.tasks?.length || 0} tasks`);
                 if (stage.tasks) {
                     stage.tasks.forEach((task, taskIndex) => {
-                        console.log(`  Task ${taskIndex + 1}: "${task.task_name}" assigned to "${task.assigned_member}"`);
+                        // console.log(`  Task ${taskIndex + 1}: "${task.task_name}" assigned to "${task.assigned_member}"`);
                     });
                 }
             });
         }
         
         // Additional validation: ensure task count matches team size
-        console.log("=== Validation Process ===");
-        console.log("Starting task assignment validation...");
+        // console.log("=== Validation Process ===");
+        // console.log("Starting task assignment validation...");
         
         if (sanitizedData.stages) {
             sanitizedData.stages.forEach((stage, stageIndex) => {
-                console.log(`Validating Stage ${stageIndex + 1}: "${stage.stage_name}"`);
-                console.log(`  Expected tasks: ${teamSize}, Actual tasks: ${stage.tasks.length}`);
+                // console.log(`Validating Stage ${stageIndex + 1}: "${stage.stage_name}"`);
+                // console.log(`  Expected tasks: ${teamSize}, Actual tasks: ${stage.tasks.length}`);
                 
                 if (stage.tasks.length !== teamSize) {
                     console.error(`❌ Task count mismatch in stage ${stageIndex + 1}`);
@@ -469,7 +469,7 @@ Output your response in the following JSON schema format.`;
                 // Validate that each team member is assigned exactly once per stage
                 const assignedMembers = new Set();
                 stage.tasks.forEach((task, taskIndex) => {
-                    console.log(`  Checking assignment: "${task.task_name}" → "${task.assigned_member}"`);
+                    // console.log(`  Checking assignment: "${task.task_name}" → "${task.assigned_member}"`);
                     
                     if (assignedMembers.has(task.assigned_member)) {
                         console.error(`❌ Duplicate assignment detected: ${task.assigned_member}`);
@@ -485,16 +485,16 @@ Output your response in the following JSON schema format.`;
                     }
                 });
                 
-                console.log(`✅ Stage ${stageIndex + 1} validation passed`);
+                // console.log(`✅ Stage ${stageIndex + 1} validation passed`);
             });
         }
         
-        console.log("✅ All validations passed successfully!");
+        // console.log("✅ All validations passed successfully!");
         
         // Convert back to string with proper formatting
-        console.log("=== Final Result ===");
-        console.log("Successfully generated and validated task assignments");
-        console.log("Returning formatted JSON response");
+        // console.log("=== Final Result ===");
+        // console.log("Successfully generated and validated task assignments");
+        // console.log("Returning formatted JSON response");
         
         return JSON.stringify(sanitizedData, null, 2);
     } catch (error) {

@@ -174,11 +174,11 @@ const debugScheduleFormat = (selectedSlots: Set<string>) => {
     const newStructuredFormat = createStructuredSchedule(selectedSlots);
     const newReadableFormat = formatTimeSlots(selectedSlots);
     
-    console.log("=== Schedule Format Optimization Comparison ===");
-    console.log("Old format (hard to read):", oldFormat);
-    console.log("New structured format (JSON):", newStructuredFormat);
-    console.log("New readable format:", newReadableFormat);
-    console.log("=== End Comparison ===");
+    // console.log("=== Schedule Format Optimization Comparison ===");
+    // console.log("Old format (hard to read):", oldFormat);
+    // console.log("New structured format (JSON):", newStructuredFormat);
+    // console.log("New readable format:", newReadableFormat);
+    // console.log("=== End Comparison ===");
 };
 
 interface ProjOnboardingProps {

@@ -60,7 +60,7 @@ function TaskPage() {
         if (stageData) {
             const stage = stageData.data();
             if (stage) {
-                console.log("setting status");
+                // console.log("setting status");
                 setTaskLocked(stageStatus[stage.order]);
             }
         }

@@ -63,8 +63,8 @@ const AppOnboarding = () => {
         if (user) {
             const { primaryEmailAddress, username, imageUrl } = user;
 
-            console.log("userObj");
-            console.log(user);
+            // console.log("userObj");
+            // console.log(user);
 
             if (primaryEmailAddress && username && imageUrl) {
                 createNewUser(

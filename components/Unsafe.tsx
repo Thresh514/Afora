@@ -51,7 +51,7 @@ export default function Unsafe() {
 
         // If there are no changes, don't update
         if (Object.keys(updatedMetadata).length === 0) {
-            console.log("No changes detected");
+            // console.log("No changes detected");
             return;
         }
 
@@ -62,7 +62,7 @@ export default function Unsafe() {
                     ...updatedMetadata, // Update only the changed fields
                 },
             });
-            console.log("User updated successfully");
+            // console.log("User updated successfully");
         } catch (error) {
             console.error("Error updating user:", error);
         }

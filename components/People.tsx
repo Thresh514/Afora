@@ -10,12 +10,12 @@ import { useDocument } from "react-firebase-hooks/firestore";
 function People() {
     const pathname = usePathname();
     const roomId = pathname.split("/");
-    // console.log(pathname)
-    // console.log(roomId[2]);
+    // // console.log(pathname)
+    // // console.log(roomId[2]);
 
     // const { user } = useUser();
 
-    //console.log("user Signed in:", user)
+    //// console.log("user Signed in:", user)
     // const [docSnapshot, loading, error] = useDocument(
     //   doc(db, 'documents', roomId[2])
     // );
@@ -24,8 +24,8 @@ function People() {
 
     const data = docSnapshot?.data();
 
-    console.log("data :", data);
-    console.log("members:", data?.members);
+    // console.log("data :", data);
+    // console.log("members:", data?.members);
 
     return (
         <div>

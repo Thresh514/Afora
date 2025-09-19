@@ -15,19 +15,19 @@ export async function POST(request: NextRequest) {
     const expectedToken = process.env.CRON_SECRET || 'your-secret-token';
     
     if (authHeader !== `Bearer ${expectedToken}`) {
-      console.log('Unauthorized cron request');
+      // console.log('Unauthorized cron request');
       // Still allow for development/testing
       if (process.env.NODE_ENV === 'production') {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
     }
 
-    console.log('🕐 Starting scheduled auto-drop overdue tasks...');
+    // console.log('🕐 Starting scheduled auto-drop overdue tasks...');
     
     // Call the internal action function (no auth required)
     const result = await autoDropOverdueTasksInternal('cron-job');
     
-    console.log('✅ Cron job completed:', result);
+    // console.log('✅ Cron job completed:', result);
     
     return NextResponse.json({
       ...result,

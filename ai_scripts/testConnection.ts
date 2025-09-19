@@ -20,7 +20,7 @@ async function testConnection() {
                 }
             }
         });
-        console.log("Connection test successful:", result);
+        // console.log("Connection test successful:", result);
     } catch (error) {
         console.error("Connection test failed:", error);
     }

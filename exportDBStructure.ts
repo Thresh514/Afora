@@ -11,7 +11,7 @@ import { join } from 'path';
 
 // Initialize Firebase Admin
 const serviceAccountPath = join(process.cwd(), 'service_key.json');
-console.log('Looking for service account key at:', serviceAccountPath);
+// console.log('Looking for service account key at:', serviceAccountPath);
 
 // Store markdown content
 let markdownContent = '# Firestore Database Structure\n\n';
@@ -86,7 +86,7 @@ try {
 
   async function listCollectionsAndStructure() {
     try {
-      console.log('🔍 Starting database structure export...\n');
+      // console.log('🔍 Starting database structure export...\n');
       
       // Add header information
       markdownContent += `Generated on: ${new Date().toLocaleString()}\n\n`;
@@ -101,8 +101,8 @@ try {
       // Save to file
       writeFileSync(outputPath, markdownContent);
       
-      console.log('✅ Database structure export completed!');
-      console.log(`📝 Markdown file saved to: ${outputPath}`);
+      // console.log('✅ Database structure export completed!');
+      // console.log(`📝 Markdown file saved to: ${outputPath}`);
     } catch (error) {
       console.error('❌ Error while exporting database structure:', error);
       process.exit(1);

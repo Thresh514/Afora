@@ -31,7 +31,7 @@ const TimeSlotSelector = ({
     );
     const gridRef = useRef<HTMLDivElement>(null);
 
-    console.log(dragEndPos);
+    // console.log(dragEndPos);
     const toggleSelectedBoxes = () => {
         setSelectedSlots((prevSelected) => {
             const newSelected = new Set(prevSelected);

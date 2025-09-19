@@ -27,7 +27,7 @@ function Breadcrumbs() {
     // Adds a path that a user can refer to know where they are and click to "parent" directories
     const path = usePathname();
 
-    console.log(`Path: "${path}"`);
+    // console.log(`Path: "${path}"`);
 
     const segments = useMemo(() => {
         const pathSegments = path
@@ -43,7 +43,7 @@ function Breadcrumbs() {
     }, [path]);
 
     useEffect(() => {
-        console.log(segments);
+        // console.log(segments);
     }, [segments]);
 
     // Determine route structure

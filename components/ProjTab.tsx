@@ -224,7 +224,7 @@ const ProjTab = ({
     };
 
     const handleSmartMatching = async () => {
-        console.log("Current userRole:", userRole); // Debug info
+        // console.log("Current userRole:", userRole); // Debug info
         if (userRole !== "admin") {
             showErrorToast({
                 type: "smart_matching",
@@ -238,9 +238,9 @@ const ProjTab = ({
         setSmartMatchingError(null);
         
         try {
-            console.log("🔍 Getting smart assignment preview with defaultTeamSize:", defaultTeamSize);
+            // console.log("🔍 Getting smart assignment preview with defaultTeamSize:", defaultTeamSize);
             const result = await previewSmartAssignment(orgId, defaultTeamSize);
-            console.log("📊 Preview result:", result);
+            // console.log("📊 Preview result:", result);
 
             if (result.success) {
                 setPreviewData(result);
@@ -280,7 +280,7 @@ const ProjTab = ({
     const handleConfirmAssignment = async () => {
         startTransition(async () => {
             try {
-                console.log("🚀 Applying preview changes:", previewChanges);
+                // console.log("🚀 Applying preview changes:", previewChanges);
                 
                 // Apply all preview changes to the database
                 for (const [projectId, changes] of Object.entries(previewChanges)) {
@@ -763,7 +763,7 @@ const ProjTab = ({
                                                 e.preventDefault();
                                                 e.dataTransfer.dropEffect = "move";
                                                 setDragOverProject(project.projId);
-                                                console.log("Drag over project:", project.projId);
+                                                // console.log("Drag over project:", project.projId);
                                             }}
                                             onDragLeave={() => {
                                                 setDragOverProject(null);
@@ -771,8 +771,8 @@ const ProjTab = ({
                                             onDrop={(e) => {
                                                 e.preventDefault();
                                                 setDragOverProject(null);
-                                                console.log("Drop event triggered on project:", project.projId);
-                                                console.log("draggedMember:", draggedMember);
+                                                // console.log("Drop event triggered on project:", project.projId);
+                                                // console.log("draggedMember:", draggedMember);
                                                 if (draggedMember && draggedMember.fromProject !== project.projId) {
                                                     // Check if this would be a valid drop before attempting transfer
                                                     const isAlreadyInTarget = 
@@ -788,10 +788,10 @@ const ProjTab = ({
                                                         return;
                                                     }
 
-                                                    console.log("Transferring member:", draggedMember.email, "from", draggedMember.fromProject, "to", project.projId);
+                                                    // console.log("Transferring member:", draggedMember.email, "from", draggedMember.fromProject, "to", project.projId);
                                                     handlePreviewMemberTransfer(draggedMember.email, draggedMember.fromProject, project.projId);
                                                 } else {
-                                                    console.log("Drop rejected - same project or no dragged member");
+                                                    // console.log("Drop rejected - same project or no dragged member");
                                                 }
                                             }}
                                             style={{ pointerEvents: 'auto' }}
@@ -826,7 +826,7 @@ const ProjTab = ({
                                                             }`}
                                                             draggable={true}
                                                             onDragStart={(e) => {
-                                                                console.log("Dragging admin:", adminEmail, "userRole:", userRole);
+                                                                // console.log("Dragging admin:", adminEmail, "userRole:", userRole);
                                                                 setDraggedMember({
                                                                     email: adminEmail,
                                                                     name: adminEmail,
@@ -836,7 +836,7 @@ const ProjTab = ({
                                                                 e.dataTransfer.setData("text/plain", adminEmail);
                                                             }}
                                                             onDragEnd={() => {
-                                                                console.log("Drag ended for admin:", adminEmail);
+                                                                // console.log("Drag ended for admin:", adminEmail);
                                                                 setDraggedMember(null);
                                                             }}
                                                         >
@@ -862,7 +862,7 @@ const ProjTab = ({
                                                             }`}
                                                             draggable={true}
                                                             onDragStart={(e) => {
-                                                                console.log("Dragging member:", memberEmail, "userRole:", userRole);
+                                                                // console.log("Dragging member:", memberEmail, "userRole:", userRole);
                                                                 setDraggedMember({
                                                                     email: memberEmail,
                                                                     name: memberEmail,
@@ -872,7 +872,7 @@ const ProjTab = ({
                                                                 e.dataTransfer.setData("text/plain", memberEmail);
                                                             }}
                                                             onDragEnd={() => {
-                                                                console.log("Drag ended for member:", memberEmail);
+                                                                // console.log("Drag ended for member:", memberEmail);
                                                                 setDraggedMember(null);
                                                             }}
                                                         >
@@ -893,7 +893,7 @@ const ProjTab = ({
                                                             }`}
                                                             draggable={true}
                                                             onDragStart={(e) => {
-                                                                console.log("Dragging AI suggested member:", memberEmail, "userRole:", userRole);
+                                                                // console.log("Dragging AI suggested member:", memberEmail, "userRole:", userRole);
                                                                 setDraggedMember({
                                                                     email: memberEmail,
                                                                     name: memberEmail,
@@ -903,7 +903,7 @@ const ProjTab = ({
                                                                 e.dataTransfer.setData("text/plain", memberEmail);
                                                             }}
                                                             onDragEnd={() => {
-                                                                console.log("Drag ended for AI suggested member:", memberEmail);
+                                                                // console.log("Drag ended for AI suggested member:", memberEmail);
                                                                 setDraggedMember(null);
                                                             }}
                                                         >

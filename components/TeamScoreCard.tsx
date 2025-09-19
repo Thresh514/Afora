@@ -56,7 +56,7 @@ const TeamScoreCard = ({
                         const teamCharterData = await getProjectTeamCharter(projectFilter);
                         const teamCharterResponse = teamCharterData.success ? teamCharterData.data : [];
                         
-                        console.log("Team charter data (no members):", teamCharterResponse);
+                        // console.log("Team charter data (no members):", teamCharterResponse);
 
                         const result = await analyzeTeamCompatibility(
                             appQuestions,
@@ -79,15 +79,15 @@ const TeamScoreCard = ({
                     }
 
                     // 添加调试信息
-                    console.log("Project members data:", membersData.data);
-                    console.log("Expected members count:", members.length);
+                    // console.log("Project members data:", membersData.data);
+                    // console.log("Expected members count:", members.length);
                     
                     // 调试每个成员的数据
                     membersData.data.forEach((member, index) => {
-                        console.log(`Member ${index + 1}: ${member.email}`);
-                        console.log(`  Onboarding responses:`, member.onboardingResponses);
-                        console.log(`  Project responses:`, member.projResponses);
-                        console.log(`  Project responses length:`, member.projResponses?.length || 0);
+                        // console.log(`Member ${index + 1}: ${member.email}`);
+                        // console.log(`  Onboarding responses:`, member.onboardingResponses);
+                        // console.log(`  Project responses:`, member.projResponses);
+                        // console.log(`  Project responses length:`, member.projResponses?.length || 0);
                     });
                     
                     const memberResponses = membersData.data.map(
@@ -110,13 +110,13 @@ const TeamScoreCard = ({
                         },
                     );
                     
-                    console.log("Member responses count:", memberResponses.length);
+                    // console.log("Member responses count:", memberResponses.length);
 
                     // 获取 team charter 数据
                     const teamCharterData = await getProjectTeamCharter(projectFilter);
                     const teamCharterResponse = teamCharterData.success ? teamCharterData.data : [];
                     
-                    console.log("Team charter data:", teamCharterResponse);
+                    // console.log("Team charter data:", teamCharterResponse);
 
                     const result = await analyzeTeamCompatibility(
                         appQuestions,

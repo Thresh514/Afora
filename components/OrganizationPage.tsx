@@ -31,7 +31,7 @@ const OrganizationPage = ({ id }: { id: string }) => {
     useEffect(() => {
         if (data) {
             const userOrg = data.data() as UserOrgData;
-            console.log("OrganizationPage - User org data loaded:", userOrg);
+            // console.log("OrganizationPage - User org data loaded:", userOrg);
             setUserOrgData(userOrg);
         } else if (!loading && userEmail && org) {
             const orgData = org.data() as Organization;
@@ -39,7 +39,7 @@ const OrganizationPage = ({ id }: { id: string }) => {
             const isMember = orgData?.members?.includes(userEmail);
 
             if (isAdmin || isMember) {
-                console.log(
+                // console.log(
                     "OrganizationPage - Creating default user org data. IsAdmin:",
                     isAdmin,
                 );

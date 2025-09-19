@@ -55,7 +55,7 @@ export default function CreateProjectDialog({
 
                 // 自动将所有管理员添加到项目中
                 const adminMembers = orgData.admins || [];
-                console.log("Adding admins to project:", adminMembers);
+                // console.log("Adding admins to project:", adminMembers);
 
                 // 创建项目并包含所有管理员
                 const memberCountToMatch = teamSize && parseInt(teamSize) > 0 ? parseInt(teamSize) : 0;
@@ -80,7 +80,7 @@ export default function CreateProjectDialog({
                         const memberList = orgData.members || [];
                         const adminsCount = adminMembers.length;
                         
-                        console.log(`Member count to match: ${memberCountToMatch}, Admins: ${adminsCount}, Total will be: ${memberCountToMatch + adminsCount}`);
+                        // console.log(`Member count to match: ${memberCountToMatch}, Admins: ${adminsCount}, Total will be: ${memberCountToMatch + adminsCount}`);
                         
                         if (memberCountToMatch === 0) {
                             toast.success("Team created successfully!");
@@ -114,7 +114,7 @@ export default function CreateProjectDialog({
 
                         // 调用匹配API，匹配指定数量的成员
                         const matchingResult = await matching(memberCountToMatch, projQuestions, userData);
-                        console.log("Matching result:", matchingResult);
+                        // console.log("Matching result:", matchingResult);
 
                         // 解析匹配结果并更新项目成员
                         try {

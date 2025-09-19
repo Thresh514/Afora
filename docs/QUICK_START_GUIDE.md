@@ -129,13 +129,13 @@ projects/{projId}/stages/{stageId}/tasks/{taskId}/
 import { migrateTasksToTaskPool } from '@/actions/actions';
 
 const result = await migrateTasksToTaskPool();
-console.log(result.message);
+// console.log(result.message);
 
 // 2. 初始化用户积分
 import { initializeUserScores } from '@/actions/actions';
 
 const scoreResult = await initializeUserScores();
-console.log(scoreResult.message);
+// console.log(scoreResult.message);
 ```
 
 ### 数据库结构变更总结
