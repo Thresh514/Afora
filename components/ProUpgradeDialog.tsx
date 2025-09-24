@@ -56,7 +56,7 @@ const ProUpgradeDialog = ({ open, onOpenChange, onUpgrade, onCancel }: ProUpgrad
                         {/* Price badge */}
                         <div className="flex items-center gap-3 mt-6">
                             <Badge className="bg-yellow-400 text-yellow-900 px-4 py-2 text-lg font-bold">
-                                Only $1.99/month
+                                Only +1.99 USD / month
                             </Badge>
                             <span className="text-blue-100 text-sm">7-day free trial</span>
                         </div>

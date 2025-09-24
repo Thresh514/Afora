@@ -685,16 +685,12 @@ const ProjTab = ({
                         <Shuffle className="h-5 w-5" />
                         Smart Matching Preview
                     </AlertDialogTitle>
-                    <AlertDialogDescription>
-                        Review the AI-suggested assignments and fine-tune by dragging members between projects. 
-                        Click &quot;Confirm Assignment&quot; to apply all changes.
-                    </AlertDialogDescription>
                 </AlertDialogHeader>
                 
                 {previewData && (
                     <div className="space-y-6">
                         {/* Statistics */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                        {/* <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
                             <div className="bg-blue-50 p-3 rounded-lg">
                                 <div className="text-lg font-bold text-blue-600">{previewData.totalUnassigned}</div>
                                 <div className="text-xs">Total Unassigned</div>
@@ -711,7 +707,7 @@ const ProjTab = ({
                                 <div className="text-lg font-bold text-orange-600">{previewData.remainingUnassigned || 0}</div>
                                 <div className="text-xs">Still Unassigned</div>
                             </div>
-                        </div>
+                        </div> */}
 
                         {/* Simple Project Grid with Drag & Drop */}
                         <div className="space-y-4">
