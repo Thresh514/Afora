@@ -22,16 +22,15 @@ const TimeSlotSelector = ({
         day: number;
         slot: number;
     } | null>(null);
-    const [dragEndPos, setDragEndPos] = useState<{
-        day: number;
-        slot: number;
-    } | null>(null);
+    // const [dragEndPos, setDragEndPos] = useState<{
+    //     day: number;
+    //     slot: number;
+    // } | null>(null);
     const [tempSelectedBoxes, setTempSelectedBoxes] = useState<Set<string>>(
         new Set(),
     );
     const gridRef = useRef<HTMLDivElement>(null);
 
-    // console.log(dragEndPos);
     const toggleSelectedBoxes = () => {
         setSelectedSlots((prevSelected) => {
             const newSelected = new Set(prevSelected);
@@ -50,13 +49,11 @@ const TimeSlotSelector = ({
     const handleMouseDown = (dayIndex: number, slotIndex: number) => {
         setIsDragging(true);
         setDragStartPos({ day: dayIndex, slot: slotIndex });
-        setDragEndPos({ day: dayIndex, slot: slotIndex });
         setTempSelectedBoxes(new Set([`${dayIndex}-${slotIndex}`]));
     };
 
     const handleMouseEnter = (dayIndex: number, slotIndex: number) => {
         if (isDragging) {
-            setDragEndPos({ day: dayIndex, slot: slotIndex });
             setTempSelectedBoxes((prevSelected) => {
                 const newSelected = new Set(prevSelected);
                 const minDay = Math.min(dragStartPos!.day, dayIndex);
@@ -80,7 +77,6 @@ const TimeSlotSelector = ({
         }
         setIsDragging(false);
         setDragStartPos(null);
-        setDragEndPos(null);
     };
 
     return (

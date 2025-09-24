@@ -78,7 +78,7 @@ export default function CreateProjectDialog({
                     try {
                         // 匹配用户指定数量的普通成员
                         const memberList = orgData.members || [];
-                        const adminsCount = adminMembers.length;
+                        // const adminsCount = adminMembers.length;
                         
                         // console.log(`Member count to match: ${memberCountToMatch}, Admins: ${adminsCount}, Total will be: ${memberCountToMatch + adminsCount}`);
                         

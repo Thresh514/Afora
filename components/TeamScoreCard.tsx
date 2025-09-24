@@ -83,12 +83,12 @@ const TeamScoreCard = ({
                     // console.log("Expected members count:", members.length);
                     
                     // 调试每个成员的数据
-                    membersData.data.forEach((member, index) => {
+                    // membersData.data.forEach((member, index) => {
                         // console.log(`Member ${index + 1}: ${member.email}`);
                         // console.log(`  Onboarding responses:`, member.onboardingResponses);
                         // console.log(`  Project responses:`, member.projResponses);
                         // console.log(`  Project responses length:`, member.projResponses?.length || 0);
-                    });
+                    // });
                     
                     const memberResponses = membersData.data.map(
                         (member: MemberData) => {

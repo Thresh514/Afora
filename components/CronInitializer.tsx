@@ -50,7 +50,7 @@ function startLocalCron() {
  * 执行定时任务
  */
 async function executeCronTask() {
-  const timestamp = new Date().toISOString();
+  // const timestamp = new Date().toISOString();
   // console.log(`\n🔄 [${timestamp}] 自动执行：检查过期任务`);
   
   try {

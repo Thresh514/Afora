@@ -20,7 +20,7 @@ if (typeof document !== 'undefined') {
     document.head.appendChild(style);
 }
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CircleCheckBig, Clock7, Trash, User, MoreVertical, ArrowLeftRight, XCircle } from "lucide-react";
+import { CircleCheckBig, Clock7, Trash, User, MoreVertical } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import Link from "next/link";
 import { Task } from "@/types/types";
@@ -57,8 +57,6 @@ const TaskManagement = ({
     isEditing,
     handleNewTask,
     handleDeleteTask,
-    handleSwapTask,
-    handleDropTask,
     handleAcceptTask,
     isPending,
     isOpen,
@@ -69,7 +67,7 @@ const TaskManagement = ({
     currentUserEmail,
     isAdmin: isCurrentUserAdmin,
 }: TaskManagementProps) => {
-    const tasksCompleted = tasks.filter((task) => task.isCompleted).length;
+    // const tasksCompleted = tasks.filter((task) => task.isCompleted).length;
     
     // Function to check if a task is within one day of soft deadline
     const isNearSoftDeadline = (task: Task) => {

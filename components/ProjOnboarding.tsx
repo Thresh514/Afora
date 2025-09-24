@@ -169,17 +169,17 @@ const createStructuredSchedule = (selectedSlots: Set<string>): string => {
 };
 
 // Debug function: show comparison before and after optimization
-const debugScheduleFormat = (selectedSlots: Set<string>) => {
-    const oldFormat = Array.from(selectedSlots).join(", ");
-    const newStructuredFormat = createStructuredSchedule(selectedSlots);
-    const newReadableFormat = formatTimeSlots(selectedSlots);
+// const debugScheduleFormat = (selectedSlots: Set<string>) => {
+    // const oldFormat = Array.from(selectedSlots).join(", ");
+    // const newStructuredFormat = createStructuredSchedule(selectedSlots);
+    // const newReadableFormat = formatTimeSlots(selectedSlots);
     
     // console.log("=== Schedule Format Optimization Comparison ===");
     // console.log("Old format (hard to read):", oldFormat);
     // console.log("New structured format (JSON):", newStructuredFormat);
     // console.log("New readable format:", newReadableFormat);
     // console.log("=== End Comparison ===");
-};
+// };
 
 interface ProjOnboardingProps {
     orgId: string;
@@ -215,7 +215,7 @@ const ProjOnboarding = ({ orgId, projId, onDismiss }: ProjOnboardingProps) => {
 
     const handleSubmit = async () => {
         // Debug output: show format optimization effect
-        debugScheduleFormat(selectedSlots);
+        // debugScheduleFormat(selectedSlots);
         
         // Use structured JSON format to save schedule data
         const structuredSchedule = createStructuredSchedule(selectedSlots);

@@ -20,7 +20,6 @@ import LoadingOverlay from "./LoadingOverlay";
 import {
     AlertDialog,
     AlertDialogContent,
-    AlertDialogDescription,
     AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
