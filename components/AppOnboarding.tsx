@@ -85,10 +85,8 @@ const AppOnboarding = () => {
     if (error) return <div> Onboarding error: {error.message}</div>;
     // exit if the user has already answered the survey
     if (!userData || userData.data()?.onboardingSurveyResponse) {
-        // return null;
+        return null;
     }
-
-    // return <div>TEST TEST TEST TEST</div>;
 
     return (
         <div>

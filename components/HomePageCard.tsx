@@ -45,7 +45,7 @@ function HomePageCard({ org }: HomePageCardProps) {
                     <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500" />
                     <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     <div className="relative py-8 px-6">
-                        <h1 className="text-3xl font-bold tracking-tight text-white">
+                        <h1 title={data?.title} className="text-3xl font-bold tracking-tight text-white truncate">
                             {data?.title}
                         </h1>
                     </div>
@@ -67,7 +67,7 @@ function HomePageCard({ org }: HomePageCardProps) {
                             <h2 className="text-md text-gray-900 dark:text-gray-100 mb-2">
                                 Description:
                             </h2>
-                            <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed line-clamp-3">
+                            <p title={data?.description} className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed line-clamp-3">
                                 {data?.description}
                             </p>
                         </div>
