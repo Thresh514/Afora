@@ -39,9 +39,8 @@ interface TaskManagementProps {
     isEditing: boolean;
     handleNewTask: () => void;
     handleDeleteTask: (taskId: string) => void;
-    handleSwapTask?: (taskId: string) => void;
-    handleDropTask?: (taskId: string) => void;
     handleAcceptTask?: (taskId: string) => void;
+    handleCompleteTask?: (taskId: string) => void;
     isPending: boolean;
     isOpen: boolean;
     setIsOpen: (open: boolean) => void;
@@ -58,6 +57,7 @@ const TaskManagement = ({
     handleNewTask,
     handleDeleteTask,
     handleAcceptTask,
+    handleCompleteTask,
     isPending,
     isOpen,
     setIsOpen,
@@ -149,6 +149,7 @@ const TaskManagement = ({
                                 const isAssignedToCurrentUser = task.assignee === currentUserEmail || isCurrentUserAdmin;
                                 const isUnassigned = !task.assignee;
                                 const isNearDeadline = isNearSoftDeadline(task);
+                                const secondButtonNeeded = isUnassigned || isAssignedToCurrentUser && !task.isCompleted;
                                 
                                 return (
                                     <Link
@@ -329,6 +330,53 @@ const TaskManagement = ({
                                             </CardContent>
                                         </Card>
                                     </Link>
+                                            {/* Deadlines */}
+                                            <div className="text-xs text-gray-500 space-y-1">
+                                                <div>
+                                                    Due:{" "}
+                                                    {new Date(
+                                                        task.hard_deadline,
+                                                    ).toLocaleDateString()}
+                                                </div>
+                                            </div>
+
+                                            {/* Action Buttons */}
+                                            <div className="flex gap-x-5">
+                                                <Link
+                                                    className={secondButtonNeeded? "w-1/2" : "w-full"}
+                                                    href={`/org/${orgId}/proj/${projId}/stage/${stageId}/task/${task.id}`}
+                                                >
+                                                    <Button
+                                                        size="sm"
+                                                        className="w-full mt-3"
+                                                    >
+                                                        View
+                                                    </Button>
+                                                </Link>
+                                                
+                                                {isUnassigned? (
+                                                    <Button
+                                                        size="sm"
+                                                        className="w-1/2 mt-3 bg-yellow-200 hover:bg-yellow-300 border border-yellow-500 text-black"
+                                                        onClick={() => handleAcceptTask(task.id)}
+                                                    >
+                                                        Claim
+                                                    </Button>
+                                                ) : null}
+
+                                                {(isAssignedToCurrentUser&&!task.isCompleted)? (
+                                                    <Button
+                                                        size="sm"
+                                                        className="w-1/2 mt-3 bg-green-200 hover:bg-green-300 border border-green-500 text-black"
+                                                        onClick={() => handleCompleteTask(task.id)}
+                                                    >
+                                                        Complete
+                                                    </Button>
+                                                ) : null}
+                                                
+                                            </div>
+                                        </CardContent>
+                                    </Card>
                                 );
                             })
                         ) : (

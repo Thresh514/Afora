@@ -6,7 +6,7 @@ import { useRouter, useParams } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition, useCallback } from "react";
 import React from "react";
 import Link from "next/link";
-import { getOverdueTasks, assignTask, unassignTask, reassignTask } from "@/actions/actions";
+import { getOverdueTasks, assignTask, unassignTask, reassignTask, completeTaskWithProgress } from "@/actions/actions";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCollection, useDocument } from "react-firebase-hooks/firestore";
 import { db } from "@/firebase";
@@ -176,6 +176,11 @@ function StagePage() {
             toast.error("Failed to create task: " + (error as Error).message);
         }
     };
+
+    const handleCompleteTask = (taskId: string) => {
+        completeTaskWithProgress(projId, stageId, taskId, 100, orgId)
+        toast.success("🎉 Task marked as complete!");
+    }
 
     const handleDeleteTask = (taskId: string) => {
         startTransition(() => {
@@ -617,9 +622,8 @@ function StagePage() {
                     isEditing={isEditing}
                     handleNewTask={handleNewTask}
                     handleDeleteTask={handleDeleteTask}
-                    handleSwapTask={handleSwapTask}
-                    handleDropTask={handleDropTask}
                     handleAcceptTask={handleAcceptTask}
+                    handleCompleteTask={handleCompleteTask}
                     isPending={isPending}
                     isOpen={isDeleteTaskOpen} // Pass Delete Task state
                     setIsOpen={setIsDeleteTaskOpen} // Pass Delete Task state setter
