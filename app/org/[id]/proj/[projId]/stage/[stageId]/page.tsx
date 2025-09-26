@@ -178,7 +178,7 @@ function StagePage() {
     };
 
     const handleCompleteTask = (taskId: string) => {
-        completeTaskWithProgress(projId, stageId, taskId, 100, orgId)
+        completeTaskWithProgress(projId, stageId, taskId, 100)
         toast.success("🎉 Task marked as complete!");
     }
 
