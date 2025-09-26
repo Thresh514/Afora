@@ -216,41 +216,6 @@ const TaskManagement = ({
                                         </CardHeader>
 
                                         <CardContent className="space-y-4 group-data-[state=open]:blur-sm transition-all">
-                                            <div className="text-sm text-gray-600 line-clamp-3">
-                                                {task.description}
-                                            </div>
-
-                                            {/* Progress Bar and Percentage */}
-                                            <div className="space-y-2">
-                                                <div className="flex items-center justify-between">
-                                                    <span className="text-xs font-medium text-gray-600">
-                                                        Completion
-                                                    </span>
-                                                    <span
-                                                        className={`text-xs font-bold ${
-                                                            (task.completion_percentage ||
-                                                                0) === 100
-                                                                ? "text-green-600"
-                                                                : (task.completion_percentage ||
-                                                                        0) >= 50
-                                                                  ? "text-blue-600"
-                                                                  : "text-gray-600"
-                                                        }`}
-                                                    >
-                                                        {task.completion_percentage ||
-                                                            0}
-                                                        %
-                                                    </span>
-                                                </div>
-                                                <Progress
-                                                    value={
-                                                        task.completion_percentage ||
-                                                        0
-                                                    }
-                                                    className="h-2"
-                                                />
-                                            </div>
-
                                             {/* Assignee and Status */}
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center gap-2">
@@ -289,13 +254,7 @@ const TaskManagement = ({
                                             {/* Deadlines */}
                                             <div className="text-xs text-gray-500 space-y-1">
                                                 <div>
-                                                    Soft:{" "}
-                                                    {new Date(
-                                                        task.soft_deadline,
-                                                    ).toLocaleDateString()}
-                                                </div>
-                                                <div>
-                                                    Hard:{" "}
+                                                    Due:{" "}
                                                     {new Date(
                                                         task.hard_deadline,
                                                     ).toLocaleDateString()}
