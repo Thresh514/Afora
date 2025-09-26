@@ -83,8 +83,9 @@ const AppOnboarding = () => {
     const [searchQuery, setSearchQuery] = useState<string>("");
     if (loading) return;
     if (error) return <div> Onboarding error: {error.message}</div>;
+    // exit if the user has already answered the survey
     if (!userData || userData.data()?.onboardingSurveyResponse) {
-        return null;
+        // return null;
     }
 
     // return <div>TEST TEST TEST TEST</div>;
@@ -129,20 +130,24 @@ const AppOnboarding = () => {
                             <p>{`Q${page}: ${appQuestions[page - 1]}`}</p>
 
                             <div className="flex flex-wrap gap-2 max-h-64 overflow-y-auto">
-                                {appTags.filter(v => v.toLowerCase().indexOf(searchQuery.toLowerCase()) !== -1).map((tag) => (
-                                    <Button
-                                        key={tag}
-                                        variant={
-                                            selectedTags[page - 1].includes(tag)
-                                                ? "default"
-                                                : "outline"
-                                        } // Apply selected style
-                                        className={`flex items-center space-x-2 px-3 py-1 rounded-lg`}
-                                        onClick={() => toggleTag(tag)}
-                                    >
-                                        <span>{tag}</span>
-                                    </Button>
-                                ))}
+                                {appTags
+                                    .filter(v => v.toLowerCase().indexOf(searchQuery.toLowerCase()) !== -1)
+                                    .sort()
+                                    .map((tag) => (
+                                        <Button
+                                            key={tag}
+                                            variant={
+                                                selectedTags[page - 1].includes(tag)
+                                                    ? "default"
+                                                    : "outline"
+                                            } // Apply selected style
+                                            className={`flex items-center space-x-2 px-3 py-1 rounded-lg`}
+                                            onClick={() => toggleTag(tag)}
+                                        >
+                                            <span>{tag}</span>
+                                        </Button>
+                                    ))
+                                }
                             </div>
                         </>
                     )}
