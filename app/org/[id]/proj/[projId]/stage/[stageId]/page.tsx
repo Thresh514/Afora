@@ -6,7 +6,7 @@ import { useRouter, useParams } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition, useCallback } from "react";
 import React from "react";
 import Link from "next/link";
-import { getOverdueTasks, assignTask, unassignTask, reassignTask, completeTaskWithProgress } from "@/actions/actions";
+import { getOverdueTasks, assignTask, reassignTask, completeTaskWithProgress } from "@/actions/actions";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCollection, useDocument } from "react-firebase-hooks/firestore";
 import { db } from "@/firebase";
@@ -221,11 +221,11 @@ function StagePage() {
         });
     };
 
-    const handleSwapTask = async (taskId: string) => {
-        setCurrentTaskId(taskId);
-        setSwapAssigneeEmail("");
-        setSwapTaskDialogOpen(true);
-    };
+    // const handleSwapTask = async (taskId: string) => {
+    //     setCurrentTaskId(taskId);
+    //     setSwapAssigneeEmail("");
+    //     setSwapTaskDialogOpen(true);
+    // };
 
     const handleSwapTaskConfirm = async () => {
         if (!swapAssigneeEmail.trim()) {
@@ -257,17 +257,17 @@ function StagePage() {
         });
     };
 
-    const handleDropTask = async (taskId: string) => {
-        startTransition(async () => {
-            const result = await unassignTask(projId, stageId, taskId);
+    // const handleDropTask = async (taskId: string) => {
+    //     startTransition(async () => {
+    //         const result = await unassignTask(projId, stageId, taskId);
             
-            if (result.success) {
-                toast.success("Task dropped successfully!");
-            } else {
-                toast.error(result.message || "Failed to drop task");
-            }
-        });
-    };
+    //         if (result.success) {
+    //             toast.success("Task dropped successfully!");
+    //         } else {
+    //             toast.error(result.message || "Failed to drop task");
+    //         }
+    //     });
+    // };
 
     return (
         <div className="w-full h-full flex flex-col bg-gray-100">

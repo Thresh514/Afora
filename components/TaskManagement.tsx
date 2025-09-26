@@ -21,7 +21,6 @@ if (typeof document !== 'undefined') {
 }
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CircleCheckBig, Clock7, Trash, User, MoreVertical } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
 import Link from "next/link";
 import { Task } from "@/types/types";
 import {
@@ -57,7 +56,6 @@ const TaskManagement = ({
     handleNewTask,
     handleDeleteTask,
     handleAcceptTask,
-    handleCompleteTask,
     isPending,
     isOpen,
     setIsOpen,
@@ -149,7 +147,7 @@ const TaskManagement = ({
                                 const isAssignedToCurrentUser = task.assignee === currentUserEmail || isCurrentUserAdmin;
                                 const isUnassigned = !task.assignee;
                                 const isNearDeadline = isNearSoftDeadline(task);
-                                const secondButtonNeeded = isUnassigned || isAssignedToCurrentUser && !task.isCompleted;
+                                // const secondButtonNeeded = isUnassigned || isAssignedToCurrentUser && !task.isCompleted;
                                 
                                 return (
                                     <Link
@@ -159,7 +157,7 @@ const TaskManagement = ({
                                         <Card
                                             key={task.id}
                                             className={`transition-all duration-200 hover:shadow-lg group relative ${
-                                                isNearDeadline 
+                                                isNearDeadline
                                                     ? 'animate-pulse border-2 border-red-500 shadow-red-200 shadow-lg' 
                                                     : ''
                                             }`}
