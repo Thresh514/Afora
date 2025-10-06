@@ -474,7 +474,8 @@ export async function updateProjects(orgId: string, groups: string[][]) {
                 .collection("organizations")
                 .doc(orgId)
                 .collection("projs")
-                .add({
+                .doc(projectId)
+                .set({
                     projId: projectId,
                     members: group,
                 });
@@ -503,7 +504,6 @@ export async function createProject(
     orgId: string,
     projectTitle: string,
     members: string[] = [],
-    teamSize?: number,
     admins: string[] = [],
 ) {
     const { sessionClaims } = await auth();
@@ -556,11 +556,8 @@ export async function createProject(
             throw new Error("Organization not found");
         }
 
-        // 确保至少有一个管理员
-        const finalAdmins = admins.length > 0 ? admins : [userId];
-        if (finalAdmins.length === 0) {
-            throw new Error("Team must have at least one admin");
-        }
+        const finalAdmins = admins.includes(userId) ? admins : [...admins, userId];
+        const finalTeamSize = finalAdmins.length + members.length;
 
         // 创建项目文档
         const projectData: any = {
@@ -568,29 +565,28 @@ export async function createProject(
             title: projectTitle.trim(),
             members: members,
             admins: finalAdmins,
+            teamSize: finalTeamSize,
             createdAt: Timestamp.now(),
         };
-        
-        // 如果提供了团队大小，则添加到项目数据中
-        if (teamSize && teamSize > 0) {
-            projectData.teamSize = teamSize;
-        }
         
         const projectRef = await adminDb.collection("projects").add(projectData);
 
         const projectId = projectRef.id;
 
-        // 更新项目文档添加 projId 字段
         await projectRef.update({ projId: projectId });
 
-        // 在组织的项目子集合中添加引用
         await adminDb
             .collection("organizations")
             .doc(orgId)
             .collection("projs")
-            .add({
+            .doc(projectId)
+            .set({
                 projId: projectId,
+                title: projectTitle.trim(),
                 members: members,
+                admins: finalAdmins,
+                teamSize: finalTeamSize,
+                createdAt: Timestamp.now(),
             });
 
         // 为创建者添加项目引用
@@ -599,12 +595,26 @@ export async function createProject(
             .doc(userId)
             .collection("projs")
             .doc(projectId)
-            .set(
-                {
-                    orgId: orgId,
-                },
+            .set({orgId: orgId,},
                 { merge: true },
             );
+
+        // 为所有管理员添加项目引用
+        for (const adminEmail of finalAdmins) {
+            try {
+                await adminDb
+                    .collection("users")
+                    .doc(adminEmail)
+                    .collection("projs")
+                    .doc(projectId)
+                    .set({orgId: orgId,},{ merge: true },);
+            } catch (error) {
+                console.error(
+                    `Failed to add project reference for admin ${adminEmail}:`,
+                    error,
+                );
+            }
+        }
 
         // 为所有成员添加项目引用
         for (const memberEmail of members) {
@@ -1915,7 +1925,22 @@ export async function getProjectStats(projId: string) {
     }
 }
 
-// ================ 团队管理系统 ================
+
+async function findOrgProject(orgId: string, projId: string) {
+    const orgProjectsQuery = adminDb.collection("organizations").doc(orgId).collection("projs").where("projId", "==", projId);
+    const orgProjectsSnapshot = await orgProjectsQuery.get();
+
+    if (orgProjectsSnapshot.empty) {
+        return null;
+    }
+
+    const orgProjectDoc = orgProjectsSnapshot.docs[0];
+    return {
+        doc: orgProjectDoc,
+        ref: orgProjectDoc.ref,
+        data: orgProjectDoc.data()
+    };
+}
 
 export async function addProjectMember(
     projId: string,
@@ -1938,7 +1963,7 @@ export async function addProjectMember(
             return { success: false, message: `User with email ${userEmail} not found` };
         }
 
-        // Check if project exists
+        // First get the project from the projects collection to get orgId
         const projectRef = adminDb.collection("projects").doc(projId);
         const projectDoc = await projectRef.get();
 
@@ -1948,29 +1973,63 @@ export async function addProjectMember(
         }
 
         const projectData = projectDoc.data();
-        const currentMembers = projectData?.members || [];
-        const currentAdmins = projectData?.admins || [];
-        const currentAdminsAsUsers = projectData?.adminsAsUsers || [];
+        const orgId = projectData?.orgId;
+        
+        if (!orgId) {
+            console.error(`No orgId found for project: ${projId}`);
+            return { success: false, message: "Project organization not found" };
+        }
 
-        // Check if user is already a member (including adminsAsUsers)
-        if (
-            currentMembers.includes(userEmail) ||
-            currentAdmins.includes(userEmail) ||
-            currentAdminsAsUsers.includes(userEmail)
-        ) {
-            console.error(`User already member: ${userEmail}`);
+        // Now work with the organization's subcollection
+        const orgProject = await findOrgProject(orgId, projId);
+        if (!orgProject) {
+            console.error(`Project not found in organization subcollection: ${projId}`);
+            return { success: false, message: "Project not found in organization" };
+        }
+
+        const orgProjectRef = orgProject.ref;
+        const orgProjectData = orgProject.data;
+        const currentMembers = orgProjectData?.members || [];
+        const currentAdmins = orgProjectData?.admins || [];
+
+        // Check if user is already a member
+        const isAlreadyMember = currentMembers.includes(userEmail) || currentAdmins.includes(userEmail);
+        if (isAlreadyMember) {
             return { success: false, message: "User is already a member of this project" };
         }
 
-        // Add user to project
+        // Check team capacity before adding
+        const teamSize = orgProjectData?.teamSize || projectData?.teamSize || 3; // Default to 3 if not set
+        const currentTotalMembers = currentMembers.length + currentAdmins.length;
+        
+        if (currentTotalMembers >= teamSize) {
+            return { 
+                success: false, 
+                message: `Project is full (${currentTotalMembers}/${teamSize} members). Cannot add more members.` 
+            };
+        }
+
+        // Add user to project in both collections
         if (role === "admin") {
-            await projectRef.update({
-                admins: [...currentAdmins, userEmail],
-            });
+            const updatedAdmins = [...currentAdmins, userEmail];
+            await Promise.all([
+                projectRef.update({
+                    admins: updatedAdmins,
+                }),
+                orgProjectRef.update({
+                    admins: updatedAdmins,
+                })
+            ]);
         } else {
-            await projectRef.update({
-                members: [...currentMembers, userEmail],
-            });
+            const updatedMembers = [...currentMembers, userEmail];
+            await Promise.all([
+                projectRef.update({
+                    members: updatedMembers,
+                }),
+                orgProjectRef.update({
+                    members: updatedMembers,
+                })
+            ]);
         }
 
         // Add project to user's projs collection
@@ -2026,10 +2085,21 @@ export async function updateProjectMembers(
         const projectData = projectDoc.data();
         const orgId = projectData?.orgId;
 
-        // update the project members list
-        await projectRef.update({
-            members: memberEmails,
-        });
+        if (!orgId) {
+            throw new Error("Project organization not found");
+        }
+
+        // Update both the main projects collection and organization subcollection
+        const orgProjectRef = adminDb.collection("organizations").doc(orgId).collection("projs").doc(projId);
+        
+        await Promise.all([
+            projectRef.update({
+                members: memberEmails,
+            }),
+            orgProjectRef.update({
+                members: memberEmails,
+            })
+        ]);
 
         // add the project to the new members' projs collection
         for (const memberEmail of memberEmails) {
@@ -2074,7 +2144,7 @@ export async function removeProjectMember(projId: string, userEmail: string) {
 
         // console.log(`Removing member: ${userEmail} from project: ${projId}`);
 
-        // Check if project exists
+        // First get the project from the projects collection to get orgId
         const projectRef = adminDb.collection("projects").doc(projId);
         const projectDoc = await projectRef.get();
 
@@ -2084,40 +2154,45 @@ export async function removeProjectMember(projId: string, userEmail: string) {
         }
 
         const projectData = projectDoc.data();
-        const currentMembers = projectData?.members || [];
-        const currentAdmins = projectData?.admins || [];
-        const currentAdminsAsUsers = projectData?.adminsAsUsers || [];
-
-        // Check if user is actually a member (including adminsAsUsers)
-        if (!currentMembers.includes(userEmail) && !currentAdmins.includes(userEmail) && !currentAdminsAsUsers.includes(userEmail)) {
-            console.error(`User not a member: ${userEmail}`);
-            return { success: false, message: "User is not a member of this project" };
+        const orgId = projectData?.orgId;
+        
+        if (!orgId) {
+            console.error(`No orgId found for project: ${projId}`);
+            return { success: false, message: "Project organization not found" };
         }
 
-        // Check if removing the last admin
-        if (currentAdmins.includes(userEmail) && currentAdmins.length <= 1) {
-            return { 
-                success: false, 
-                message: "Cannot remove the last admin from the team. Each team must have at least one admin." 
-            };
+        // Now work with the organization's subcollection
+        const orgProject = await findOrgProject(orgId, projId);
+        if (!orgProject) {
+            console.error(`Project not found in organization subcollection: ${projId}`);
+            return { success: false, message: "Project not found in organization" };
         }
 
-        // Remove user from the members, admins, and adminsAsUsers lists
+        const orgProjectRef = orgProject.ref;
+        const orgProjectData = orgProject.data;
+        const currentMembers = orgProjectData?.members || [];
+        const currentAdmins = orgProjectData?.admins || [];
+
+
+        // Remove user from the members and admins lists
         const updatedMembers = currentMembers.filter(
             (email: string) => email !== userEmail,
         );
         const updatedAdmins = currentAdmins.filter(
             (email: string) => email !== userEmail,
         );
-        const updatedAdminsAsUsers = currentAdminsAsUsers.filter(
-            (email: string) => email !== userEmail,
-        );
 
-        await projectRef.update({
-            members: updatedMembers,
-            admins: updatedAdmins,
-            adminsAsUsers: updatedAdminsAsUsers,
-        });
+        // Update both the main projects collection and organization subcollection
+        await Promise.all([
+            projectRef.update({
+                members: updatedMembers,
+                admins: updatedAdmins,
+            }),
+            orgProjectRef.update({
+                members: updatedMembers,
+                admins: updatedAdmins,
+            })
+        ]);
 
         // Remove the project from the user's projs collection
         try {
@@ -2164,7 +2239,7 @@ export async function changeProjectMemberRole(
 
         // console.log(`Changing role for: ${userEmail} in project: ${projId} to: ${newRole}`);
 
-        // Check if project exists
+        // First get the project from the projects collection to get orgId
         const projectRef = adminDb.collection("projects").doc(projId);
         const projectDoc = await projectRef.get();
 
@@ -2174,32 +2249,31 @@ export async function changeProjectMemberRole(
         }
 
         const projectData = projectDoc.data();
-        const currentMembers = projectData?.members || [];
-        const currentAdmins = projectData?.admins || [];
-        const currentAdminsAsUsers = projectData?.adminsAsUsers || [];
-
-        // Check if user is actually a member (including adminsAsUsers)
-        if (!currentMembers.includes(userEmail) && !currentAdmins.includes(userEmail) && !currentAdminsAsUsers.includes(userEmail)) {
-            console.error(`User not a member: ${userEmail}`);
-            return { success: false, message: "User is not a member of this project" };
+        const orgId = projectData?.orgId;
+        
+        if (!orgId) {
+            console.error(`No orgId found for project: ${projId}`);
+            return { success: false, message: "Project organization not found" };
         }
 
-        // Check if trying to demote the last admin
-        if (currentAdmins.includes(userEmail) && currentAdmins.length <= 1 && newRole === "member") {
-            return { 
-                success: false, 
-                message: "Cannot demote the last admin to member. Each team must have at least one admin." 
-            };
+        // Now work with the organization's subcollection
+        const orgProject = await findOrgProject(orgId, projId);
+        if (!orgProject) {
+            console.error(`Project not found in organization subcollection: ${projId}`);
+            return { success: false, message: "Project not found in organization" };
         }
+
+        const orgProjectRef = orgProject.ref;
+        const orgProjectData = orgProject.data;
+        const currentMembers = orgProjectData?.members || [];
+        const currentAdmins = orgProjectData?.admins || [];
+
 
         // Remove user from all lists first
         const updatedMembers = currentMembers.filter(
             (email: string) => email !== userEmail,
         );
         const updatedAdmins = currentAdmins.filter(
-            (email: string) => email !== userEmail,
-        );
-        const updatedAdminsAsUsers = currentAdminsAsUsers.filter(
             (email: string) => email !== userEmail,
         );
 
@@ -2210,11 +2284,17 @@ export async function changeProjectMemberRole(
             updatedMembers.push(userEmail);
         }
 
-        await projectRef.update({
-            members: updatedMembers,
-            admins: updatedAdmins,
-            adminsAsUsers: updatedAdminsAsUsers,
-        });
+        // Update both the main projects collection and organization subcollection
+        await Promise.all([
+            projectRef.update({
+                members: updatedMembers,
+                admins: updatedAdmins,
+            }),
+            orgProjectRef.update({
+                members: updatedMembers,
+                admins: updatedAdmins,
+            })
+        ]);
 
         // console.log(`Successfully changed ${userEmail} role to ${newRole} in project ${projId}`);
         return {
@@ -2301,18 +2381,30 @@ export async function updateProjectTeamSize(projId: string, teamSize: number) {
         }
 
         const projectData = projectDoc.data();
-        const currentMembers = projectData?.members || [];
-        const currentAdmins = projectData?.admins || [];
-        const currentAdminsAsUsers = projectData?.adminsAsUsers || [];
-        const currentMemberCount = currentMembers.length + currentAdmins.length + currentAdminsAsUsers.length;
+        const orgId = projectData?.orgId;
 
-        if (teamSize < currentMemberCount) {
-            throw new Error(`Cannot set team size to ${teamSize}. Current team has ${currentMemberCount} members. Please remove some members first.`);
+        if (!orgId) {
+            throw new Error("Project organization not found");
         }
 
-        await projectRef.update({
-            teamSize: teamSize,
-        });
+        // Get current member count from organization subcollection
+        const orgProject = await findOrgProject(orgId, projId);
+        if (!orgProject) {
+            throw new Error("Project not found in organization");
+        }
+
+        const orgProjectRef = orgProject.ref;
+        const orgProjectData = orgProject.data;
+
+        // Update both the main projects collection and organization subcollection
+        await Promise.all([
+            projectRef.update({
+                teamSize: teamSize,
+            }),
+            orgProjectRef.update({
+                teamSize: teamSize,
+            })
+        ]);
 
         return {
             success: true,

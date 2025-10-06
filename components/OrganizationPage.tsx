@@ -17,8 +17,9 @@ const OrganizationPage = ({ id }: { id: string }) => {
     const [org, loading, error] = useDocument(
         doc(db, "organizations", id),
     );
+    // 直接从组织的 projs 子集合读取项目数据
     const [projectsData] = useCollection(
-        query(collection(db, "projects"), where("orgId", "==", id)),
+        query(collection(db, "organizations", id, "projs")),
     );
     const userEmail = user?.primaryEmailAddress?.emailAddress;
     const [data] = useDocument(

@@ -2,7 +2,7 @@
 import { db } from "@/firebase";
 import { Project, Task, Organization } from "@/types/types";
 import {collection, getDocs, query, where, doc} from "firebase/firestore";
-import { batchInQuery } from "@/lib/batchQuery";
+// 移除不再使用的 batchInQuery 导入
 import React, { useEffect, useState, useTransition } from "react";
 import { useCollection, useDocument } from "react-firebase-hooks/firestore";
 import { Button } from "./ui/button";
@@ -86,62 +86,19 @@ const ProjTab = ({
     // Error handling state
     const [smartMatchingError, setSmartMatchingError] = useState<ErrorInfo | null>(null);
 
-    const adminQ = query(collection(db, "projects"), where("orgId", "==", orgId));
-    const [allProjects] = useCollection(adminQ);
+    // 从组织的 projs 子集合读取基本项目数据
+    const orgProjectsQ = query(collection(db, "organizations", orgId, "projs"));
+    const [orgProjects] = useCollection(orgProjectsQ);
+    
+    // 从主 projects 集合读取完整项目数据（包含 title）
+    const projectsQ = query(collection(db, "projects"), where("orgId", "==", orgId));
+    const [allProjects] = useCollection(projectsQ);
     
     // 获取组织数据
     const [org] = useDocument(doc(db, "organizations", orgId));
     const orgData = org?.data() as Organization;
 
-    const userQ = query(
-        collection(db, "users", userId, "projs"),
-        where("orgId", "==", orgId),
-    );
-    const [userProjects, userLoading, userError] = useCollection(userQ);
-    const [userProjList, setUserProjList] = useState<Project[]>([]);
-
-    useEffect(() => {
-        const fetchProjects = async () => {
-            if (
-                !userLoading &&
-                !userError &&
-                userProjects &&
-                userProjects.docs.length > 0
-            ) {
-                const projectIds = userProjects.docs
-                    .map((doc) => doc.id)
-                    .filter(Boolean);
-                if (projectIds.length > 0) {
-                    try {
-                        // 使用批量查询来避免 Firebase IN 查询超过30个值的限制
-                        const projectDocs = await batchInQuery(
-                            collection(db, "projects"),
-                            "__name__",
-                            projectIds
-                        );
-                        const projects = projectDocs.docs.map(
-                            (doc) => ({
-                                ...(doc.data() as Project),
-                                projId: doc.id
-                            }),
-                            
-                        );
-                        setUserProjList(projects);
-                    } catch (error) {
-                        console.error("Error fetching user projects:", error);
-                        toast.error("Failed to fetch your projects");
-                    }
-                }
-            } else if (
-                !userLoading &&
-                !userError &&
-                (!userProjects || userProjects.docs.length === 0)
-            ) {
-                setUserProjList([]);
-            }
-        };
-        fetchProjects();
-    }, [userProjects, userLoading, userError]);
+    // 移除旧的用户项目获取逻辑，现在直接使用组织的项目数据
 
     useEffect(() => {
         if (output) {
@@ -416,17 +373,46 @@ const ProjTab = ({
 
 
     const totalProjects = allProjects?.docs.length || 0;
-    const activeProjects = userRole === "admin" 
-        ? (allProjects?.docs || []).filter(proj => (proj.data() as Project).members?.length > 0).length
-        : userProjList.length;
-
-    // 根据用户角色决定显示哪些项目
+    
+    // 合并项目数据：从主集合获取 title，从组织子集合获取成员信息
+    const allProjectsData = (allProjects?.docs || []).map((doc) => {
+        const mainData = doc.data(); // 主集合数据（包含 title）
+        const orgProjectDoc = orgProjects?.docs.find(orgDoc => orgDoc.id === doc.id);
+        const orgData = orgProjectDoc?.data(); // 组织子集合数据（包含成员信息）
+        
+        return {
+            projId: doc.id,
+            orgId: orgId,
+            title: mainData?.title, // 从主集合读取 title
+            members: orgData?.members || [], // 从组织子集合读取成员
+            admins: orgData?.admins || [], // 从组织子集合读取管理员
+            adminsAsUsers: orgData?.adminsAsUsers || [],
+            teamCharterResponse: mainData?.teamCharterResponse || [],
+            teamSize: orgData?.teamSize, // 从组织子集合读取团队大小
+            createdAt: mainData?.createdAt,
+            description: mainData?.description,
+            projectType: mainData?.projectType,
+            ...mainData,
+            // 用组织子集合的数据覆盖成员相关字段
+            ...(orgData && {
+                members: orgData.members || [],
+                admins: orgData.admins || [],
+                teamSize: orgData.teamSize
+            })
+        } as Project;
+    });
+    
+    // 根据用户角色过滤项目
     const displayProjects = userRole === "admin" 
-        ? (allProjects?.docs || []).map((doc) => ({
-            ...(doc.data() as Project),
-            projId: doc.id
-        }))
-        : userProjList;
+        ? allProjectsData // 管理员显示所有项目
+        : allProjectsData.filter(proj => 
+            // 普通用户只显示自己参与的项目
+            proj.members?.includes(userId) || proj.admins?.includes(userId)
+        );
+    
+    const activeProjects = displayProjects.filter(proj => 
+        (proj.members?.length || 0) > 0 || (proj.admins?.length || 0) > 0
+    ).length;
 
     return (
         <>
@@ -635,7 +621,7 @@ const ProjTab = ({
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                     {displayProjects
                                         .sort((a, b) =>
-                                            a.title.localeCompare(b.title),
+                                            (a.title || "").localeCompare(b.title || ""),
                                         )
                                         .map((proj) => (
                                             <div
