@@ -43,6 +43,8 @@ import AddProjectMemberDialog from "./AddProjectMemberDialog";
 import ChangeRoleDialog from "./ChangeRoleDialog";
 import RemoveMemberDialog from "./RemoveMemberDialog";
 import ProUpgradeDialog from "./ProUpgradeDialog";
+import AdminUserParticipation from "./AdminUserParticipation";
+
 
 interface ProjectStats {
     totalTasks: number;
@@ -365,7 +367,8 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
     // Get project members (including both members and admins)
     const projectMembers = [
         ...(proj?.members || []),
-        ...(proj?.admins || [])
+        ...(proj?.admins || []),
+        ...(proj?.adminasUsers || [])
     ];
 
 
@@ -1007,82 +1010,87 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                             </CardHeader>
                             <CardContent>
                                 {projectMembers && projectMembers.length > 0 ? (
-                                    <div className="grid gap-3">
-                                        {projectMembers.map(
-                                            (member: string, index: number) => {
-                                                const isMemberAdmin = proj?.admins?.includes(member) || false;
-                                                return (
-                                                    <div
-                                                        key={index}
-                                                        className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                                                    >
-                                                        <Avatar className="h-10 w-10">
-                                                            <AvatarFallback className="bg-gradient-to-br from-purple-500 to-blue-500 text-white font-medium">
-                                                                {member
-                                                                    .charAt(0)
-                                                                    .toUpperCase()}
-                                                            </AvatarFallback>
-                                                        </Avatar>
-                                                        <div className="flex-1">
-                                                            <p className="font-medium text-gray-900">
-                                                                {member}
-                                                            </p>
-                                                            <div className="flex items-center gap-2 mt-1">
-                                                                <Badge
-                                                                    variant={isMemberAdmin ? "default" : "secondary"}
-                                                                    className={`text-xs ${isMemberAdmin ? "bg-blue-600 text-white" : ""}`}
-                                                                >
-                                                                    {isMemberAdmin ? "Admin" : "Team Member"}
-                                                                </Badge>
+                                    <div className="flex flex-col gap-3">
+                                        <div className="grid gap-3">
+                                            {projectMembers.map(
+                                                (member: string, index: number) => {
+                                                    const isMemberAdmin = proj?.admins?.includes(member) || false;
+                                                    return (
+                                                        <div
+                                                            key={index}
+                                                            className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                                                        >
+                                                            <Avatar className="h-10 w-10">
+                                                                <AvatarFallback className="bg-gradient-to-br from-purple-500 to-blue-500 text-white font-medium">
+                                                                    {member
+                                                                        .charAt(0)
+                                                                        .toUpperCase()}
+                                                                </AvatarFallback>
+                                                            </Avatar>
+                                                            <div className="flex-1">
+                                                                <p className="font-medium text-gray-900">
+                                                                    {member}
+                                                                </p>
+                                                                <div className="flex items-center gap-2 mt-1">
+                                                                    <Badge
+                                                                        variant={isMemberAdmin ? "default" : "secondary"}
+                                                                        className={`text-xs ${isMemberAdmin ? "bg-blue-600 text-white" : ""}`}
+                                                                    >
+                                                                        {isMemberAdmin ? "Admin" : "Team Member"}
+                                                                    </Badge>
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                        {/* Only show dropdown menu for admins */}
-                                                        {isAdmin && (
-                                                            <DropdownMenu>
-                                                            <DropdownMenuTrigger asChild>
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="sm"
-                                                                    className="h-8 w-8 p-0 hover:bg-gray-200"
-                                                                >
-                                                                    <MoreVertical className="h-4 w-4" />
-                                                                </Button>
-                                                            </DropdownMenuTrigger>
-                                                            <DropdownMenuContent align="end">
-                                                                <DropdownMenuItem asChild>
-                                                                    <ChangeRoleDialog
-                                                                        projId={projId}
-                                                                        memberEmail={member}
-                                                                        currentRole={isMemberAdmin ? "admin" : "member"}
-                                                                        onRoleChanged={() => {
-                                                                            // Refresh the page to show updated roles
-                                                                            window.location.reload();
+                                                            {/* Only show dropdown menu for admins */}
+                                                            {isAdmin && (
+                                                                <DropdownMenu>
+                                                                <DropdownMenuTrigger asChild>
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                        className="h-8 w-8 p-0 hover:bg-gray-200"
+                                                                    >
+                                                                        <MoreVertical className="h-4 w-4" />
+                                                                    </Button>
+                                                                </DropdownMenuTrigger>
+                                                                <DropdownMenuContent align="end">
+                                                                    <DropdownMenuItem asChild>
+                                                                        <ChangeRoleDialog
+                                                                            projId={projId}
+                                                                            memberEmail={member}
+                                                                            currentRole={isMemberAdmin ? "admin" : "member"}
+                                                                            onRoleChanged={() => {
+                                                                                // Refresh the page to show updated roles
+                                                                                window.location.reload();
+                                                                            }}
+                                                                            trigger={
+                                                                                <div className="flex items-center w-full px-2 py-1.5 text-sm cursor-pointer hover:bg-gray-100 rounded-sm">
+                                                                                    <EditIcon className="h-4 w-4 mr-2" />
+                                                                                    Change Role
+                                                                                </div>
+                                                                            }
+                                                                        />
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuSeparator />
+                                                                    <DropdownMenuItem
+                                                                        className="text-red-600 focus:text-red-600"
+                                                                        onClick={() => {
+                                                                            setMemberToRemove(member);
+                                                                            setRemoveMemberDialogOpen(true);
                                                                         }}
-                                                                        trigger={
-                                                                            <div className="flex items-center w-full px-2 py-1.5 text-sm cursor-pointer hover:bg-gray-100 rounded-sm">
-                                                                                <EditIcon className="h-4 w-4 mr-2" />
-                                                                                Change Role
-                                                                            </div>
-                                                                        }
-                                                                    />
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuSeparator />
-                                                                <DropdownMenuItem
-                                                                    className="text-red-600 focus:text-red-600"
-                                                                    onClick={() => {
-                                                                        setMemberToRemove(member);
-                                                                        setRemoveMemberDialogOpen(true);
-                                                                    }}
-                                                                >
-                                                                    <Trash2 className="h-4 w-4 mr-2" />
-                                                                    Remove Member
-                                                                </DropdownMenuItem>
-                                                            </DropdownMenuContent>
-                                                        </DropdownMenu>
-                                                        )}
-                                                    </div>
-                                                );
-                                            },
+                                                                    >
+                                                                        <Trash2 className="h-4 w-4 mr-2" />
+                                                                        Remove Member
+                                                                    </DropdownMenuItem>
+                                                                </DropdownMenuContent>
+                                                            </DropdownMenu>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                },
+                                            )}
+                                        </div>
+                                        {isAdmin && (
+                                            <AdminUserParticipation />
                                         )}
                                     </div>
                                 ) : (

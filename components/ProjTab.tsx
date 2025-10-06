@@ -435,7 +435,7 @@ const ProjTab = ({
                 message="Processing Team Groups..."
                 description="Applying new team group configuration, please wait..."
             />
-            <div className="flex h-auto bg-gradient-to-br from-gray-50 to-purple-50 rounded-lg overflow-hidden py-12">
+            <div className="flex h-auto bg-gradient-to-br from-gray-50 to-purple-50 rounded-lg overflow-hidden">
             {/* Left Sidebar */}
             <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
                 {/* Header */}

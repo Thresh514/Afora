@@ -556,12 +556,18 @@ export async function createProject(
             throw new Error("Organization not found");
         }
 
+        // 确保至少有一个管理员
+        const finalAdmins = admins.length > 0 ? admins : [userId];
+        if (finalAdmins.length === 0) {
+            throw new Error("Team must have at least one admin");
+        }
+
         // 创建项目文档
         const projectData: any = {
             orgId: orgId,
             title: projectTitle.trim(),
             members: members,
-            admins: admins.length > 0 ? admins : [userId], // Use provided admins or fallback to creator
+            admins: finalAdmins,
             createdAt: Timestamp.now(),
         };
         
@@ -1146,7 +1152,7 @@ export async function getProjectMembersResponses(projId: string) {
         const projectData = projectDoc.data();
         const allMembers = [
             ...(projectData?.members || []),
-            ...(projectData?.admins || []),
+            ...(projectData?.adminsAsUsers || []),
         ];
         
         // 去重，确保没有重复的成员
@@ -1759,7 +1765,7 @@ export async function getProjectLeaderboard(projId: string) {
         const projectData = projectDoc.data();
         const allMembers = [
             ...(projectData?.members || []),
-            ...(projectData?.admins || []),
+            ...(projectData?.adminsAsUsers || []),
         ];
 
         const scores = await adminDb
@@ -1944,11 +1950,13 @@ export async function addProjectMember(
         const projectData = projectDoc.data();
         const currentMembers = projectData?.members || [];
         const currentAdmins = projectData?.admins || [];
+        const currentAdminsAsUsers = projectData?.adminsAsUsers || [];
 
-        // Check if user is already a member
+        // Check if user is already a member (including adminsAsUsers)
         if (
             currentMembers.includes(userEmail) ||
-            currentAdmins.includes(userEmail)
+            currentAdmins.includes(userEmail) ||
+            currentAdminsAsUsers.includes(userEmail)
         ) {
             console.error(`User already member: ${userEmail}`);
             return { success: false, message: "User is already a member of this project" };
@@ -2078,24 +2086,37 @@ export async function removeProjectMember(projId: string, userEmail: string) {
         const projectData = projectDoc.data();
         const currentMembers = projectData?.members || [];
         const currentAdmins = projectData?.admins || [];
+        const currentAdminsAsUsers = projectData?.adminsAsUsers || [];
 
-        // Check if user is actually a member
-        if (!currentMembers.includes(userEmail) && !currentAdmins.includes(userEmail)) {
+        // Check if user is actually a member (including adminsAsUsers)
+        if (!currentMembers.includes(userEmail) && !currentAdmins.includes(userEmail) && !currentAdminsAsUsers.includes(userEmail)) {
             console.error(`User not a member: ${userEmail}`);
             return { success: false, message: "User is not a member of this project" };
         }
 
-        // Remove user from the members or admins list
+        // Check if removing the last admin
+        if (currentAdmins.includes(userEmail) && currentAdmins.length <= 1) {
+            return { 
+                success: false, 
+                message: "Cannot remove the last admin from the team. Each team must have at least one admin." 
+            };
+        }
+
+        // Remove user from the members, admins, and adminsAsUsers lists
         const updatedMembers = currentMembers.filter(
             (email: string) => email !== userEmail,
         );
         const updatedAdmins = currentAdmins.filter(
             (email: string) => email !== userEmail,
         );
+        const updatedAdminsAsUsers = currentAdminsAsUsers.filter(
+            (email: string) => email !== userEmail,
+        );
 
         await projectRef.update({
             members: updatedMembers,
             admins: updatedAdmins,
+            adminsAsUsers: updatedAdminsAsUsers,
         });
 
         // Remove the project from the user's projs collection
@@ -2155,18 +2176,30 @@ export async function changeProjectMemberRole(
         const projectData = projectDoc.data();
         const currentMembers = projectData?.members || [];
         const currentAdmins = projectData?.admins || [];
+        const currentAdminsAsUsers = projectData?.adminsAsUsers || [];
 
-        // Check if user is actually a member
-        if (!currentMembers.includes(userEmail) && !currentAdmins.includes(userEmail)) {
+        // Check if user is actually a member (including adminsAsUsers)
+        if (!currentMembers.includes(userEmail) && !currentAdmins.includes(userEmail) && !currentAdminsAsUsers.includes(userEmail)) {
             console.error(`User not a member: ${userEmail}`);
             return { success: false, message: "User is not a member of this project" };
         }
 
-        // Remove user from both lists first
+        // Check if trying to demote the last admin
+        if (currentAdmins.includes(userEmail) && currentAdmins.length <= 1 && newRole === "member") {
+            return { 
+                success: false, 
+                message: "Cannot demote the last admin to member. Each team must have at least one admin." 
+            };
+        }
+
+        // Remove user from all lists first
         const updatedMembers = currentMembers.filter(
             (email: string) => email !== userEmail,
         );
         const updatedAdmins = currentAdmins.filter(
+            (email: string) => email !== userEmail,
+        );
+        const updatedAdminsAsUsers = currentAdminsAsUsers.filter(
             (email: string) => email !== userEmail,
         );
 
@@ -2180,6 +2213,7 @@ export async function changeProjectMemberRole(
         await projectRef.update({
             members: updatedMembers,
             admins: updatedAdmins,
+            adminsAsUsers: updatedAdminsAsUsers,
         });
 
         // console.log(`Successfully changed ${userEmail} role to ${newRole} in project ${projId}`);
@@ -2264,6 +2298,16 @@ export async function updateProjectTeamSize(projId: string, teamSize: number) {
 
         if (!projectDoc.exists) {
             throw new Error("Project not found");
+        }
+
+        const projectData = projectDoc.data();
+        const currentMembers = projectData?.members || [];
+        const currentAdmins = projectData?.admins || [];
+        const currentAdminsAsUsers = projectData?.adminsAsUsers || [];
+        const currentMemberCount = currentMembers.length + currentAdmins.length + currentAdminsAsUsers.length;
+
+        if (teamSize < currentMemberCount) {
+            throw new Error(`Cannot set team size to ${teamSize}. Current team has ${currentMemberCount} members. Please remove some members first.`);
         }
 
         await projectRef.update({
@@ -2772,6 +2816,8 @@ export async function autoAssignMembersToProjects(orgId: string, teamSize?: numb
                 id: doc.id,
                 members: data.members || [],
                 title: data.title || "",
+                admins: data.admins || [],
+                adminsAsUsers: data.adminsAsUsers || [],
                 teamSize: data.teamSize || teamSize, // Use project's own team size or passed parameter
                 ...data,
             };
@@ -2781,7 +2827,9 @@ export async function autoAssignMembersToProjects(orgId: string, teamSize?: numb
         const assignedMembers = new Set();
         projects.forEach((project) => {
             const projectMembers = (project.members as string[]) || [];
-            projectMembers.forEach((member: string) =>
+            const participatingAdmins = (project.adminsAsUsers as string[]) || [];
+
+            [...projectMembers, ...participatingAdmins].forEach((member: string) =>
                 assignedMembers.add(member),
             );
         });
@@ -2848,9 +2896,10 @@ export async function autoAssignMembersToProjects(orgId: string, teamSize?: numb
             .map(project => {
                 const currentMembers = (project.members as string[]) || [];
                 const currentAdmins = ((project as any).admins as string[]) || [];
+                const participatingAdmins = (project.adminsAsUsers as string[]) || [];
                 // 合并成员和管理员，确保管理员的技能也被考虑
-                const allCurrentMembers = [...new Set([...currentMembers, ...currentAdmins])];
-                const projectTeamSize = project.teamSize || teamSize || 3; // Use project config > passed parameter > default
+                const allCurrentMembers = [...new Set([...currentMembers, ...currentAdmins, ...participatingAdmins])];
+                const projectTeamSize = project.teamSize || teamSize; // Use project config > passed parameter
                 const spotsAvailable = projectTeamSize - allCurrentMembers.length;
                 return {
                     ...project,
@@ -3453,7 +3502,7 @@ export async function initializeUserScores(projId?: string) {
             const projectData = projectDoc.data();
             const allMembers = [
                 ...(projectData?.members || []),
-                ...(projectData?.admins || []),
+                ...(projectData?.adminsAsUsers || []),
             ];
 
             for (const userEmail of allMembers) {
@@ -4024,5 +4073,183 @@ export async function autoDropOverdueTasksInternal(executedBy: string = "system"
             success: false, 
             message: `自动 drop 过期任务失败: ${(error as Error).message}` 
         };
+    }
+}
+
+// 修复 toggleAdminUserParticipation 函数
+export async function toggleAdminUserParticipation(
+    projId: string,
+    participate: boolean = true
+) {
+    try {
+        const { userId, sessionClaims } = await auth();
+        if (!userId) {
+            console.error("Auth failed: No userId");
+            return { success: false, message: "Unauthorized - Please sign in again" };
+        }
+
+        // 使用和其他函数相同的模式获取用户邮箱
+        let userEmail: string | undefined;
+
+        // 检查 sessionClaims 中的各种可能的邮箱字段
+        if (sessionClaims?.email && typeof sessionClaims.email === "string") {
+            userEmail = sessionClaims.email;
+        } else if (
+            sessionClaims?.primaryEmailAddress &&
+            typeof sessionClaims.primaryEmailAddress === "string"
+        ) {
+            userEmail = sessionClaims.primaryEmailAddress;
+        } else if (
+            sessionClaims?.emailAddresses &&
+            Array.isArray(sessionClaims.emailAddresses) &&
+            sessionClaims.emailAddresses.length > 0
+        ) {
+            userEmail = sessionClaims.emailAddresses[0] as string;
+        }
+
+        // 如果仍然没有邮箱，尝试从 Clerk API 获取
+        if (!userEmail) {
+            try {
+                const { currentUser } = await import("@clerk/nextjs/server");
+                const user = await currentUser();
+                userEmail =
+                    user?.emailAddresses?.[0]?.emailAddress ||
+                    user?.primaryEmailAddress?.emailAddress;
+            } catch (clerkError) {
+                console.error("Failed to get user from Clerk:", clerkError);
+            }
+        }
+
+        if (
+            !userEmail ||
+            typeof userEmail !== "string" ||
+            userEmail.trim().length === 0
+        ) {
+            console.error("Authentication failed: no valid email found");
+            return { 
+                success: false, 
+                message: `Unauthorized - no valid email found. Got: ${userEmail}` 
+            };
+        }
+
+        // 检查项目是否存在
+        const projectRef = adminDb.collection("projects").doc(projId);
+        const projectDoc = await projectRef.get();
+
+        if (!projectDoc.exists) {
+            console.error(`Project not found: ${projId}`);
+            return { success: false, message: "Project not found" };
+        }
+
+        const projectData = projectDoc.data();
+        const currentAdmins = projectData?.admins || [];
+        const currentAdminsAsUsers = projectData?.adminsAsUsers || [];
+
+        // 检查用户是否是admin
+        if (!currentAdmins.includes(userEmail)) {
+            console.error(`User is not an admin: ${userEmail}`);
+            return { success: false, message: "Only admins can toggle user participation" };
+        }
+
+        let updatedAdminsAsUsers = [...currentAdminsAsUsers];
+
+        if (participate) {
+            // 添加到参与用户活动的admin列表
+            if (!updatedAdminsAsUsers.includes(userEmail)) {
+                updatedAdminsAsUsers.push(userEmail);
+            }
+        } else {
+            // 从参与用户活动的admin列表中移除
+            updatedAdminsAsUsers = updatedAdminsAsUsers.filter(
+                (email: string) => email !== userEmail
+            );
+        }
+
+        await projectRef.update({
+            adminsAsUsers: updatedAdminsAsUsers,
+        });
+
+        return {
+            success: true,
+            message: participate 
+                ? "You are now participating in user activities" 
+                : "You are no longer participating in user activities",
+        };
+    } catch (error) {
+        console.error("Error toggling admin user participation:", error);
+        return { 
+            success: false, 
+            message: error instanceof Error ? error.message : "An unexpected error occurred" 
+        };
+    }
+}
+
+// 修复 checkAdminUserParticipation 函数
+export async function checkAdminUserParticipation(projId: string) {
+    try {
+        const { userId, sessionClaims } = await auth();
+        if (!userId) {
+            return { success: false, participating: false };
+        }
+
+        // 使用和其他函数相同的模式获取用户邮箱
+        let userEmail: string | undefined;
+
+        // 检查 sessionClaims 中的各种可能的邮箱字段
+        if (sessionClaims?.email && typeof sessionClaims.email === "string") {
+            userEmail = sessionClaims.email;
+        } else if (
+            sessionClaims?.primaryEmailAddress &&
+            typeof sessionClaims.primaryEmailAddress === "string"
+        ) {
+            userEmail = sessionClaims.primaryEmailAddress;
+        } else if (
+            sessionClaims?.emailAddresses &&
+            Array.isArray(sessionClaims.emailAddresses) &&
+            sessionClaims.emailAddresses.length > 0
+        ) {
+            userEmail = sessionClaims.emailAddresses[0] as string;
+        }
+
+        // 如果仍然没有邮箱，尝试从 Clerk API 获取
+        if (!userEmail) {
+            try {
+                const { currentUser } = await import("@clerk/nextjs/server");
+                const user = await currentUser();
+                userEmail =
+                    user?.emailAddresses?.[0]?.emailAddress ||
+                    user?.primaryEmailAddress?.emailAddress;
+            } catch (clerkError) {
+                console.error("Failed to get user from Clerk:", clerkError);
+            }
+        }
+
+        if (
+            !userEmail ||
+            typeof userEmail !== "string" ||
+            userEmail.trim().length === 0
+        ) {
+            return { success: false, participating: false };
+        }
+
+        const projectRef = adminDb.collection("projects").doc(projId);
+        const projectDoc = await projectRef.get();
+
+        if (!projectDoc.exists) {
+            return { success: false, participating: false };
+        }
+
+        const projectData = projectDoc.data();
+        const adminsAsUsers = projectData?.adminsAsUsers || [];
+        const isAdmin = projectData?.admins?.includes(userEmail) || false;
+
+        return {
+            success: true,
+            participating: adminsAsUsers.includes(userEmail),
+            isAdmin: isAdmin,
+        };
+    } catch (error) {
+        console.error("Error checking admin user participation:", error);
+        return { success: false, participating: false };
     }
 }

@@ -71,7 +71,7 @@ const OrgHeader = ({ id }: OrgHeaderProps) => {
     }
 
     return (
-        <div className="overflow-x-hidden p-4">
+        <div className="overflow-x-hidden">
             {/* Hero Section with Background Image */}
             <div className="relative w-full h-80 rounded-lg overflow-hidden">
                 {/* Background Image */}

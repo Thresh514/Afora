@@ -74,6 +74,26 @@ const OrganizationPage = ({ id }: { id: string }) => {
         return <div>No group found</div>;
     }
 
+    if (userOrgData?.role === 'member') {
+        return (
+            <div className="overflow-x-hidden p-4 space-y-6">
+                {/* Header Section */}
+                <OrgHeader id={id} />
+                
+                {/* Projects Section */}
+                <div className="w-full">
+                    {user && user.primaryEmailAddress && userOrgData && (
+                        <ProjTab
+                            userRole={userOrgData.role}
+                            userId={user.primaryEmailAddress.toString()}
+                            orgId={id}
+                        />
+                    )}
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="overflow-x-hidden p-4">
             {/* Header Section */}

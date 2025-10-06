@@ -27,7 +27,8 @@ interface MemberListProps {
                 projId?: string;
                 title?: string;
                 members?: string[];
-                admins?: string[];
+                admins?: string[];                
+                adminsAsUsers?: string[];
                 teamSize?: number;
             };
         }>;
@@ -40,6 +41,7 @@ interface ProjectTeam {
     projectTitle: string;
     members: string[];
     admins?: string[];
+    adminsAsUsers?: string[];
     teamSize: number;
 }
 
@@ -53,6 +55,17 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
         userRole === "admin" ? "overview" : "projects",
     );
     const [defaultTeamSize] = useState(3);
+
+    // 辅助函数：计算团队总成员数（包括管理员）
+    const getTotalTeamMembers = useCallback((team: ProjectTeam) => {
+        return (team.members?.length || 0) + (team.admins?.length || 0) + (team.adminsAsUsers?.length || 0);
+    }, []);
+
+    const teamHasAdmin = useCallback((team: ProjectTeam) => {
+        const adminsCount = (team.admins || []).length;
+        const adminsAsUsersCount = (team.adminsAsUsers || []).length;
+        return adminsCount > 0 || adminsAsUsersCount > 0;
+    }, []);
 
     // 使用自定义状态来处理批量查询，避免 Firebase IN 查询超过30个值的限制
     const [results, setResults] = useState<QuerySnapshot<DocumentData> | null>(null);
@@ -133,6 +146,9 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                 admins: Array.isArray(projectData.admins)
                     ? projectData.admins
                     : [],
+                adminsAsUsers: Array.isArray(projectData.adminsAsUsers)
+                    ? projectData.adminsAsUsers
+                    : [],
                 teamSize:
                     typeof projectData.teamSize === "number"
                         ? projectData.teamSize
@@ -151,7 +167,10 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
         }
 
         const assignedMembers = new Set(
-            teams.flatMap((team: ProjectTeam) => team.members),
+            teams.flatMap((team: ProjectTeam) => [
+                ...(team.members || []),
+                ...(team.admins || [])
+            ]),
         );
         return [...members, ...admins].filter(
             (member) => !assignedMembers.has(member),
@@ -170,7 +189,8 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
         }
 
         return projectTeams.filter((team: ProjectTeam) =>
-            team.members.includes(currentUserEmail),
+            team.members.includes(currentUserEmail) || 
+            (team.admins && team.admins.includes(currentUserEmail)),
         );
     }, [projectTeams, userRole, currentUserEmail]);
 
@@ -187,16 +207,14 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
             try {
                 // Check destination availability first if moving to a project
                 if (toProjectId) {
-                    const destTeam = projectTeams.find(
-                        (team: ProjectTeam) => team.projectId === toProjectId,
-                    );
+                    const destTeam = projectTeams.find((team: ProjectTeam) => team.projectId === toProjectId);
                     if (!destTeam) {
                         toast.error("Destination project not found!");
                         return;
                     }
 
                     // Check if destination team is full
-                    if (destTeam.members.length >= destTeam.teamSize) {
+                    if (getTotalTeamMembers(destTeam) >= destTeam.teamSize) {
                         toast.error(
                             `Team is full! Maximum size is ${destTeam.teamSize}.`,
                         );
@@ -212,6 +230,23 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
 
                 // Handle removing from source project
                 if (fromProjectId) {
+                    // 检查是否要移除管理员，如果是最后一个管理员则阻止
+                    const sourceTeam = projectTeams.find(
+                        (team: ProjectTeam) => team.projectId === fromProjectId
+                    );
+                    
+                    if (sourceTeam && (sourceTeam.admins || []).includes(memberEmail)) {
+                        // 检查这个团队中有多少管理员
+                        const teamAdmins = sourceTeam.admins || [];
+                        
+                        if (teamAdmins.length <= 1) {
+                            toast.error(
+                                "Cannot remove the last admin from the team. Each team must have at least one admin."
+                            );
+                            return;
+                        }
+                    }
+
                     // console.log(
                     //     `Removing ${memberEmail} from project ${fromProjectId}`,
                     // );
@@ -234,6 +269,14 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                         (team: ProjectTeam) => team.projectId === toProjectId,
                     );
                     if (destTeam) {
+                        // 检查目标团队是否有管理员，如果没有且要添加的不是组织管理员，则警告
+                        if (!teamHasAdmin(destTeam) && !admins.includes(memberEmail)) {
+                            toast.error(
+                                "Cannot add regular member to a team without admin. Please add an admin first or assign an admin role to this member."
+                            );
+                            return;
+                        }
+
                         // console.log(
                         //     `Adding ${memberEmail} to project ${toProjectId}`,
                         // );
@@ -301,6 +344,23 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
     const updateTeamSize = useCallback(
         async (projectId: string, newSize: number) => {
             try {
+                const currentTeam = projectTeams.find(
+                    (team: ProjectTeam) => team.projectId === projectId
+                );
+                
+                if (!currentTeam) {
+                    toast.error("Team not found!");
+                    return;
+                }
+                const currentMemberCount = getTotalTeamMembers(currentTeam);
+                
+                if (newSize < currentMemberCount) {
+                    toast.error(
+                        `Cannot set team size to ${newSize}. Current team has ${currentMemberCount} members. Please remove some members first.`
+                    );
+                    return;
+                }
+
                 const result = await updateProjectTeamSize(projectId, newSize);
 
                 if (result.success) {
@@ -313,7 +373,7 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                 toast.error("Failed to update team size");
             }
         },
-        [],
+        [projectTeams, getTotalTeamMembers],
     );
 
     const renderMemberCard = useCallback(
@@ -368,11 +428,7 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                                     size="sm"
                                     className="h-8 px-2 text-red-500 hover:text-red-700 hover:bg-red-50"
                                     onClick={() =>
-                                        handleMemberMove(
-                                            memberEmail,
-                                            projectId,
-                                            null,
-                                        )
+                                        handleMemberMove(memberEmail, projectId, null)
                                     }
                                 >
                                     Remove
@@ -381,11 +437,7 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                             {!projectId && projectTeams.length > 0 && (
                                 <Select
                                     onValueChange={(selectedProjectId) =>
-                                        handleMemberMove(
-                                            memberEmail,
-                                            null,
-                                            selectedProjectId,
-                                        )
+                                        handleMemberMove(memberEmail, null, selectedProjectId)
                                     }
                                 >
                                     <SelectTrigger className="w-32 h-8">
@@ -395,7 +447,7 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                                         {projectTeams
                                             .filter(
                                                 (team: ProjectTeam) =>
-                                                    team.members.length <
+                                                    getTotalTeamMembers(team) <
                                                     team.teamSize,
                                             )
                                             .map((team: ProjectTeam) => (
@@ -422,7 +474,7 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
     );
     const totalMembers = [...admins, ...members].length;
     const assignedMembers = projectTeams.reduce(
-        (total: number, team: ProjectTeam) => total + team.members.length,
+        (total: number, team: ProjectTeam) => total + getTotalTeamMembers(team),
         0,
     );
 
@@ -638,25 +690,31 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                                                         {team.projectTitle}
                                                     </div>
                                                     <div className="text-sm text-gray-500">
-                                                        {team.members.length}/
+                                                        {getTotalTeamMembers(team)}/
                                                         {team.teamSize} members
                                                     </div>
                                                 </div>
                                                 <div className="flex flex-col items-end gap-1">
-                                                    <Badge
-                                                        variant={
-                                                            team.members
-                                                                .length ===
+                                                    <div className="flex gap-1">
+                                                        <Badge
+                                                            variant={
+                                                                getTotalTeamMembers(team) ===
+                                                                team.teamSize
+                                                                    ? "default"
+                                                                    : "secondary"
+                                                            }
+                                                        >
+                                                            {getTotalTeamMembers(team) ===
                                                             team.teamSize
-                                                                ? "default"
-                                                                : "secondary"
-                                                        }
-                                                    >
-                                                        {team.members.length ===
-                                                        team.teamSize
-                                                            ? "Full"
-                                                            : "Available"}
-                                                    </Badge>
+                                                                ? "Full"
+                                                                : "Available"}
+                                                        </Badge>
+                                                        {!teamHasAdmin(team) && (
+                                                            <Badge variant="destructive" className="text-xs">
+                                                                No Admin
+                                                            </Badge>
+                                                        )}
+                                                    </div>
                                                     {selectedProject ===
                                                         team.projectId && (
                                                         <ArrowRight className="h-4 w-4 text-blue-600" />
@@ -761,16 +819,29 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {[2, 3, 4, 5, 6, 7, 8].map(
-                                                (size) => (
+                                            {(() => {
+                                                // 计算当前团队总成员数（包括管理员）
+                                                const currentMemberCount = getTotalTeamMembers(selectedProjectData);
+                                                // 最小团队大小不能小于当前成员数，且不小于2
+                                                const minSize = Math.max(currentMemberCount, 2);
+                                                const maxSize = 8;
+                                                const availableSizes = [];
+                                                
+                                                // 生成可用的团队大小选项
+                                                for (let size = minSize; size <= maxSize; size++) {
+                                                    availableSizes.push(size);
+                                                }
+                                                
+                                                return availableSizes.map((size) => (
                                                     <SelectItem
                                                         key={size}
                                                         value={size.toString()}
                                                     >
                                                         {size}
+                                                        {size === currentMemberCount && " (current)"}
                                                     </SelectItem>
-                                                ),
-                                            )}
+                                                ));
+                                            })()}
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -846,23 +917,33 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                         <div className="space-y-6">
                             {/* Project Team Members */}
                             {selectedProjectData &&
-                                selectedProjectData.members.length > 0 && (
+                                getTotalTeamMembers(selectedProjectData) > 0 && (
                                     <div>
                                         <h4 className="text-sm font-medium text-gray-700 mb-4">
                                             Current Team Members
                                         </h4>
                                         <div className="grid gap-3">
-                                            {selectedProjectData.members.map(
+                                            {/* 显示项目管理员 */}
+                                            {selectedProjectData.admins?.map(
+                                                (admin: string) => (
+                                                    <div key={admin}>
+                                                        {renderMemberCard(admin, true, true, selectedProject)}
+                                                    </div>
+                                                ),
+                                            )}
+                                            {/* 显示参与项目的管理员用户 */}
+                                            {selectedProjectData.adminsAsUsers?.map(
+                                                (adminUser: string) => (
+                                                    <div key={adminUser}>
+                                                        {renderMemberCard(adminUser, true, true, selectedProject)}
+                                                    </div>
+                                                ),
+                                            )}
+                                            {/* 显示项目成员 */}
+                                            {selectedProjectData.members?.map(
                                                 (member: string) => (
                                                     <div key={member}>
-                                                        {renderMemberCard(
-                                                            member,
-                                                            admins.includes(
-                                                                member,
-                                                            ),
-                                                            true,
-                                                            selectedProject,
-                                                        )}
+                                                        {renderMemberCard(member, admins.includes(member), true, selectedProject)}
                                                     </div>
                                                 ),
                                             )}
@@ -872,14 +953,13 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
 
                             {/* Available Spots */}
                             {selectedProjectData &&
-                                selectedProjectData.members.length <
+                                getTotalTeamMembers(selectedProjectData) <
                                     selectedProjectData.teamSize && (
                                     <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center bg-gray-50">
                                         <UserPlus className="h-8 w-8 text-gray-400 mx-auto mb-3" />
                                         <p className="text-gray-600 font-medium">
                                             {selectedProjectData.teamSize -
-                                                selectedProjectData.members
-                                                    .length}{" "}
+                                                getTotalTeamMembers(selectedProjectData)}{" "}
                                             spots available
                                         </p>
                                         {userRole === "admin" &&

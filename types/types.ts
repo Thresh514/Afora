@@ -25,6 +25,7 @@ export type Project = {
     title: string;
     members: string[];
     admins: string[];
+    adminsAsUsers: string[];
     teamCharterResponse: string[];
     projectType?: string; // 项目类型：Frontend, Backend, Mobile等
     teamSize?: number; // 团队大小配置
