@@ -10,9 +10,9 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { collection, QuerySnapshot, DocumentData } from "firebase/firestore";
 import { db } from "@/firebase";
 import { batchInQueryForHooks } from "@/lib/batchQuery";
-import {Users, UserPlus, FolderOpen, UserCheck, ArrowRight, Crown, Search, X} from "lucide-react";
+import { Users, FolderOpen, ArrowRight, Crown, Search, X } from "lucide-react";
 import { toast } from "sonner";
-import {updateProjectMembers, removeProjectMember, updateProjectTeamSize, addProjectMember} from "@/actions/actions";
+import { removeProjectMember, updateProjectTeamSize, addProjectMember } from "@/actions/actions";
 import Image from "next/image";
 
 interface MemberListProps {
@@ -157,9 +157,9 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
     }, [projectTeams, userRole, currentUserEmail]);
 
     // 所有成员列表（包括管理员和普通成员）
-    const allMembers = useMemo(() => {
-        return [...admins, ...members];
-    }, [admins, members]);
+    // const allMembers = useMemo(() => {
+    //     return [...admins, ...members];
+    // }, [admins, members]);
 
     // 搜索过滤逻辑
     const filteredAdmins = useMemo(() => {
@@ -704,7 +704,7 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                                         ))
                                     ) : searchTerm ? (
                                         <div className="text-center py-4 text-gray-500 text-sm">
-                                            No admins found matching "{searchTerm}"
+                                            No admins found matching &quot;{searchTerm}&quot;
                                         </div>
                                     ) : null}
                                 </div>
@@ -728,7 +728,7 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                                         ))
                                     ) : searchTerm ? (
                                         <div className="text-center py-4 text-gray-500 text-sm">
-                                            No members found matching "{searchTerm}"
+                                            No members found matching &quot;{searchTerm}&quot;
                                         </div>
                                     ) : null}
                                 </div>

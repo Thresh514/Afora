@@ -23,7 +23,7 @@ export default function AdminUserParticipation() {
     const [isUpdating, setIsUpdating] = useState(false);
 
     // 获取项目数据来检查用户是否是admin
-    const [projectDoc, projectLoading, projectError] = useDocument(
+    const [projectDoc, projectLoading] = useDocument(
         projId ? doc(db, "projects", projId) : null
     );
 

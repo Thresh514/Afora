@@ -2,11 +2,10 @@
 import { db } from "@/firebase";
 import { Project, Task, Organization } from "@/types/types";
 import {collection, getDocs, query, where, doc} from "firebase/firestore";
-// 移除不再使用的 batchInQuery 导入
 import React, { useEffect, useState, useTransition } from "react";
 import { useCollection, useDocument } from "react-firebase-hooks/firestore";
 import { Button } from "./ui/button";
-import { updateProjects, previewSmartAssignment, applyGroupAssignments } from "@/actions/actions";
+import { previewSmartAssignment, applyGroupAssignments } from "@/actions/actions";
 import { toast } from "sonner";
 import ProjectCard from "./ProjectCard";
 import {Folder, Users, Briefcase, Loader2, Shuffle, ArrowRightLeft} from "lucide-react";
@@ -25,10 +24,10 @@ import {
     AlertDialogTitle,
 } from "./ui/alert-dialog";
 
-type MatchingOutput = {
-    groupSize: number;
-    groups: string[][];
-};
+// type MatchingOutput = {
+//     groupSize: number;
+//     groups: string[][];
+// };
 
 const ProjTab = ({
     orgId,
@@ -42,8 +41,8 @@ const ProjTab = ({
     const [isPending, startTransition] = useTransition();
     const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-    const [output, setOutput] = useState("");
-    const [parsedOutput, setParsedOutput] = useState<MatchingOutput | null>(null);
+    // const [output, setOutput] = useState("");
+    // const [parsedOutput, setParsedOutput] = useState<MatchingOutput | null>(null);
     const [projectTasks, setProjectTasks] = useState<{[key: string]: Task[]}>({});
     const [defaultTeamSize] = useState(3); // Default team size for smart matching
     
@@ -100,16 +99,16 @@ const ProjTab = ({
 
     // 移除旧的用户项目获取逻辑，现在直接使用组织的项目数据
 
-    useEffect(() => {
-        if (output) {
-            try {
-                const parsed: MatchingOutput = JSON.parse(output);
-                setParsedOutput(parsed);
-            } catch (error) {
-                console.error("Error parsing output:", error);
-            }
-        }
-    }, [output]);
+    // useEffect(() => {
+    //     if (output) {
+    //         try {
+    //             const parsed: MatchingOutput = JSON.parse(output);
+    //             setParsedOutput(parsed);
+    //         } catch (error) {
+    //             console.error("Error parsing output:", error);
+    //         }
+    //     }
+    // }, [output]);
 
     // Fetch project tasks for each project
     useEffect(() => {
@@ -154,26 +153,26 @@ const ProjTab = ({
         fetchProjectTasks();
     }, [allProjects, refreshTrigger]);
 
-    const handleAccept = () => {
-        if (!parsedOutput) return;
+    // const handleAccept = () => {
+    //     if (!parsedOutput) return;
 
-        startTransition(async () => {
-            try {
-                const result = await updateProjects(orgId, parsedOutput.groups);
-                if (result?.success) {
-                    toast.success("Teams updated successfully!");
-                    setOutput("");
-                    setParsedOutput(null);
-                    setRefreshTrigger((prev: number) => prev + 1);
-                } else {
-                    toast.error(result?.message || "Failed to update projects");
-                }
-            } catch (error) {
-                console.error("Failed to update projects:", error);
-                toast.error("Failed to update teams");
-            }
-        });
-    };
+    //     startTransition(async () => {
+    //         try {
+    //             const result = await updateProjects(orgId, parsedOutput.groups);
+    //             if (result?.success) {
+    //                 toast.success("Teams updated successfully!");
+    //                 setOutput("");
+    //                 setParsedOutput(null);
+    //                 setRefreshTrigger((prev: number) => prev + 1);
+    //             } else {
+    //                 toast.error(result?.message || "Failed to update projects");
+    //             }
+    //         } catch (error) {
+    //             console.error("Failed to update projects:", error);
+    //             toast.error("Failed to update teams");
+    //         }
+    //     });
+    // };
 
     const handleProjectCreated = () => {
         setRefreshTrigger((prev: number) => prev + 1);
@@ -259,7 +258,7 @@ const ProjTab = ({
 
                     // 叠加新增
                     let members = [...baseMembers, ...projectChanges.addedMembers];
-                    let admins = [...baseAdmins, ...projectChanges.addedAdmins];
+                    const admins: string[] = [...baseAdmins, ...projectChanges.addedAdmins];
 
                     // 将仍未拖动的 AI 建议加入成员（排除已被手动添加到任意项目的人）
                     const remainingProposed = proposedNewMembers.filter((email: string) => !addedEverywhere.has(email));
@@ -816,7 +815,7 @@ const ProjTab = ({
                                                 {/* Effective Admins */}
                                                 {effectiveAdmins.map((adminEmail) => {
                                                     const isBeingDragged = draggedMember?.email === adminEmail && draggedMember?.fromProject === project.projId;
-                                                    const isNewlyAdded = projectChanges.addedAdmins.includes(adminEmail);
+                                                    // const isNewlyAdded = projectChanges.addedAdmins.includes(adminEmail);
                                                     return (
                                                         <div
                                                             key={`admin-${adminEmail}`}
@@ -833,7 +832,7 @@ const ProjTab = ({
                                                 {/* Effective Members */}
                                                 {effectiveMembers.map((memberEmail) => {
                                                     const isBeingDragged = draggedMember?.email === memberEmail && draggedMember?.fromProject === project.projId;
-                                                    const isNewlyAdded = projectChanges.addedMembers.includes(memberEmail);
+                                                    // const isNewlyAdded = projectChanges.addedMembers.includes(memberEmail);
                                                     return (
                                                         <div
                                                             key={`member-${memberEmail}`}

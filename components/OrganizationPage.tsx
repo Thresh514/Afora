@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCollection, useDocument } from "react-firebase-hooks/firestore";
-import { collection, doc, query, where } from "firebase/firestore";
+import { collection, doc, query } from "firebase/firestore";
 import { db } from "@/firebase";
 import MemberList from "./MemberList";
 import { Organization, UserOrgData } from "@/types/types";
