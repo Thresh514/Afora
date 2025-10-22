@@ -9,7 +9,6 @@ import { useUser } from "@clerk/nextjs";
 import HomePageCard from "./HomePageCard";
 import LoadingSpinner from "./LoadingSpinner";
 import { UserOrgData } from "@/types/types";
-import Background3D from "./Background3D";
 import NewOrgButton from "./NewOrgButton";
 import JoinOrgButton from "./JoinOrgButton";
 import {
@@ -25,9 +24,7 @@ function SignedInLanding() {
     const [orgs, setOrgs] = useState<UserOrgData[]>([]);
     const { user } = useUser();
     const email = user?.primaryEmailAddress?.emailAddress || "";
-    const [orgsData, orgsLoading, orgsError] = useCollection(
-        email ? collection(db, "users", email, "orgs") : null,
-    );
+    const [orgsData, orgsLoading, orgsError] = useCollection(email ? collection(db, "users", email, "orgs") : null);
 
     const [isNewOrgOpen, setIsNewOrgOpen] = useState(false);
     const [isJoinOrgOpen, setIsJoinOrgOpen] = useState(false);
@@ -74,7 +71,6 @@ function SignedInLanding() {
     if (!user || orgsLoading) {
         return (
             <div className="flex justify-center items-center min-h-screen">
-                <Background3D />
                 <LoadingSpinner />
             </div>
         );
@@ -83,7 +79,6 @@ function SignedInLanding() {
     if (orgsError) {
         return (
             <div className="flex flex-col items-center justify-center min-h-screen">
-                <Background3D />
                 <div className="text-red-500 bg-red-50 px-6 py-4 rounded-lg shadow-sm">
                     Failed to load groups. Please try again later.
                 </div>
@@ -93,8 +88,6 @@ function SignedInLanding() {
 
     return (
         <div className="min-h-screen max-w-7xl mx-auto">
-            <Background3D />
-            
             {/* Welcome Section */}
             <div className="relative pt-24 pb-12 px-4">
                 <div className="max-w-7xl mx-auto">
