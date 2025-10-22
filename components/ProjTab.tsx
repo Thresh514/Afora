@@ -6,7 +6,7 @@ import {collection, getDocs, query, where, doc} from "firebase/firestore";
 import React, { useEffect, useState, useTransition } from "react";
 import { useCollection, useDocument } from "react-firebase-hooks/firestore";
 import { Button } from "./ui/button";
-import { updateProjects, previewSmartAssignment, removeProjectMember, addProjectMember } from "@/actions/actions";
+import { updateProjects, previewSmartAssignment, applyGroupAssignments } from "@/actions/actions";
 import { toast } from "sonner";
 import ProjectCard from "./ProjectCard";
 import {Folder, Users, Briefcase, Loader2, Shuffle, ArrowRightLeft} from "lucide-react";
@@ -236,43 +236,51 @@ const ProjTab = ({
     const handleConfirmAssignment = async () => {
         startTransition(async () => {
             try {
-                // console.log("🚀 Applying preview changes:", previewChanges);
-                
-                // Apply all preview changes to the database
-                for (const [projectId, changes] of Object.entries(previewChanges)) {
-                    // Remove members
-                    for (const memberEmail of changes.removedMembers) {
-                        const removeResult = await removeProjectMember(projectId, memberEmail);
-                        if (!removeResult.success) {
-                            console.error(`Failed to remove member ${memberEmail} from project ${projectId}`);
-                        }
-                    }
-                    
-                    // Remove admins
-                    for (const adminEmail of changes.removedAdmins) {
-                        const removeResult = await removeProjectMember(projectId, adminEmail);
-                        if (!removeResult.success) {
-                            console.error(`Failed to remove admin ${adminEmail} from project ${projectId}`);
-                        }
-                    }
-                    
-                    // Add members
-                    for (const memberEmail of changes.addedMembers) {
-                        const addResult = await addProjectMember(projectId, memberEmail, "member");
-                        if (!addResult.success) {
-                            console.error(`Failed to add member ${memberEmail} to project ${projectId}`);
-                        }
-                    }
-                    
-                    // Add admins
-                    for (const adminEmail of changes.addedAdmins) {
-                        const addResult = await addProjectMember(projectId, adminEmail, "admin");
-                        if (!addResult.success) {
-                            console.error(`Failed to add admin ${adminEmail} to project ${projectId}`);
-                        }
-                    }
+                // 汇总所有项目的最终成员/管理员（包含预览变更与未拖动的 AI 建议）
+                const addedEverywhere = new Set<string>();
+                Object.values(previewChanges).forEach((c) => {
+                    c.addedMembers.forEach((e) => addedEverywhere.add(e));
+                    c.addedAdmins.forEach((e) => addedEverywhere.add(e));
+                });
+
+                const updates = displayProjects.map((project) => {
+                    const aiPreview = previewData?.preview?.find((p) => p.projectId === project.projId);
+                    const proposedNewMembers = aiPreview?.proposedNewMembers || [];
+                    const projectChanges = previewChanges[project.projId] || {
+                        addedMembers: [],
+                        removedMembers: [],
+                        addedAdmins: [],
+                        removedAdmins: [],
+                    };
+
+                    // 当前成员/管理员
+                    const baseMembers = (project.members || []).filter((m) => !projectChanges.removedMembers.includes(m));
+                    const baseAdmins = (project.admins || []).filter((a) => !projectChanges.removedAdmins.includes(a));
+
+                    // 叠加新增
+                    let members = [...baseMembers, ...projectChanges.addedMembers];
+                    let admins = [...baseAdmins, ...projectChanges.addedAdmins];
+
+                    // 将仍未拖动的 AI 建议加入成员（排除已被手动添加到任意项目的人）
+                    const remainingProposed = proposedNewMembers.filter((email: string) => !addedEverywhere.has(email));
+                    members = [...members, ...remainingProposed];
+
+                    // 去重与互斥（管理员从成员里移除）
+                    const uniqueAdmins = Array.from(new Set(admins));
+                    const uniqueMembers = Array.from(new Set(members)).filter((m) => !uniqueAdmins.includes(m));
+
+                    return {
+                        projectId: project.projId,
+                        members: uniqueMembers,
+                        admins: uniqueAdmins,
+                    };
+                });
+
+                const result = await applyGroupAssignments(orgId, updates);
+                if (!result?.success) {
+                    throw new Error(result?.message || "Apply group assignments failed");
                 }
-                
+
                 toast.success("All changes applied successfully!");
                 setIsPreviewDialogOpen(false);
                 setPreviewData(null);
@@ -286,7 +294,7 @@ const ProjTab = ({
                     message: "Failed to apply some changes",
                     details: error instanceof Error ? error.message : String(error),
                     timestamp: new Date(),
-                    canRetry: true
+                    canRetry: true,
                 });
             }
         });
@@ -344,8 +352,10 @@ const ProjTab = ({
             }
 
             if (fromProjectId === "unassigned") {
-                // AI suggested member - just add to target
-                newChanges[toProjectId].addedMembers.push(memberEmail);
+                // AI suggested member - just add to target if not already added
+                if (!newChanges[toProjectId].addedMembers.includes(memberEmail) && !newChanges[toProjectId].addedAdmins.includes(memberEmail)) {
+                    newChanges[toProjectId].addedMembers.push(memberEmail);
+                }
             } else {
                 // Initialize source project changes if not exists
                 if (!newChanges[fromProjectId]) {
@@ -353,12 +363,18 @@ const ProjTab = ({
                 }
 
                 if (isAdminInSource) {
-                    // Admin can be in multiple projects - copy
-                    newChanges[toProjectId].addedAdmins.push(memberEmail);
+                    // Admin can be in multiple projects - copy (avoid duplicates)
+                    if (!newChanges[toProjectId].addedAdmins.includes(memberEmail)) {
+                        newChanges[toProjectId].addedAdmins.push(memberEmail);
+                    }
                 } else {
                     // Regular member - move (remove from source, add to target)
-                    newChanges[fromProjectId].removedMembers.push(memberEmail);
-                    newChanges[toProjectId].addedMembers.push(memberEmail);
+                    if (!newChanges[fromProjectId].removedMembers.includes(memberEmail)) {
+                        newChanges[fromProjectId].removedMembers.push(memberEmail);
+                    }
+                    if (!newChanges[toProjectId].addedMembers.includes(memberEmail)) {
+                        newChanges[toProjectId].addedMembers.push(memberEmail);
+                    }
                 }
             }
             
@@ -555,7 +571,7 @@ const ProjTab = ({
             {/* Right Content Area */}
             <div className="flex-1 flex flex-col bg-white">
                 {/* Team Generation Results */}
-                {output && parsedOutput && parsedOutput.groups && (
+                {/* {output && parsedOutput && parsedOutput.groups && (
                     <div className="p-6 border-b border-gray-200 bg-blue-50">
                         <h3 className="text-lg font-semibold text-gray-900 mb-4">
                             Generated Team Groups
@@ -602,7 +618,7 @@ const ProjTab = ({
                             </Button>
                         </div>
                     </div>
-                )}
+                )} */}
 
                 {/* Content Header */}
                 <div className="p-6 border-b border-gray-200 bg-white">
@@ -712,22 +728,28 @@ const ProjTab = ({
                                         addedMembers: [], removedMembers: [], addedAdmins: [], removedAdmins: [] 
                                     };
                                     
-                                    const effectiveMembers = [
+                                    const effectiveMembersRaw = [
                                         ...(project.members || []).filter(m => !projectChanges.removedMembers.includes(m)),
                                         ...projectChanges.addedMembers
                                     ];
                                     
-                                    const effectiveAdmins = [
+                                    const effectiveAdminsRaw = [
                                         ...(project.admins || []).filter(a => !projectChanges.removedAdmins.includes(a)),
                                         ...projectChanges.addedAdmins
                                     ];
+
+                                    // 去重并确保管理员不出现在成员列表
+                                    const effectiveAdmins = Array.from(new Set(effectiveAdminsRaw));
+                                    const effectiveMembers = Array.from(new Set(effectiveMembersRaw)).filter(m => !effectiveAdmins.includes(m));
                                     
-                                    // Filter out AI proposed members that have been manually moved
-                                    const remainingProposedMembers = proposedNewMembers.filter((email: string) => 
-                                        !Object.values(previewChanges).some(changes => 
-                                            changes.addedMembers.includes(email) || changes.addedAdmins.includes(email)
+                                    // 过滤 AI 提议：去重，排除已在任一项目被手动加入，且排除已在当前有效成员/管理员中的邮箱
+                                    const remainingProposedMembers = Array.from(new Set(proposedNewMembers))
+                                        .filter((email: string) => 
+                                            !Object.values(previewChanges).some(changes => 
+                                                changes.addedMembers.includes(email) || changes.addedAdmins.includes(email)
+                                            )
                                         )
-                                    );
+                                        .filter((email: string) => !effectiveMembers.includes(email) && !effectiveAdmins.includes(email));
                                     
                                     return (
                                         <motion.div
@@ -782,11 +804,11 @@ const ProjTab = ({
                                                 <h3 className="font-semibold text-gray-900 mb-1">{project.title}</h3>
                                                 <div className="text-sm text-gray-500">
                                                     {effectiveMembers.length + effectiveAdmins.length + remainingProposedMembers.length} members
-                                                    {aiPreview && (
+                                                    {/* {aiPreview && (
                                                         <span className="ml-2 text-xs text-purple-600 font-medium">
                                                             Score: {aiPreview.aiMatchingScore || 'N/A'}
                                                         </span>
-                                                    )}
+                                                    )} */}
                                                 </div>
                                             </div>
                                             
@@ -798,31 +820,12 @@ const ProjTab = ({
                                                     return (
                                                         <div
                                                             key={`admin-${adminEmail}`}
-                                                            className={`flex items-center gap-2 p-2 rounded-md cursor-move transition-all duration-200 ${
-                                                                isNewlyAdded 
-                                                                    ? 'bg-yellow-100 border-2 border-yellow-300' 
-                                                                    : 'bg-red-100'
-                                                            } ${
-                                                                isBeingDragged ? 'opacity-30 scale-95 shadow-none' : 'opacity-100 scale-100 shadow-sm hover:shadow-md'
-                                                            }`}
-                                                            draggable={true}
-                                                            onDragStart={(e) => {
-                                                                // console.log("Dragging admin:", adminEmail, "userRole:", userRole);
-                                                                setDraggedMember({
-                                                                    email: adminEmail,
-                                                                    name: adminEmail,
-                                                                    fromProject: project.projId
-                                                                });
-                                                                e.dataTransfer.effectAllowed = "move";
-                                                                e.dataTransfer.setData("text/plain", adminEmail);
-                                                            }}
-                                                            onDragEnd={() => {
-                                                                // console.log("Drag ended for admin:", adminEmail);
-                                                                setDraggedMember(null);
-                                                            }}
+                                                            className={`flex items-center gap-2 p-2 rounded-md transition-all duration-200 bg-red-100 border border-red-300 ${
+                                                                isBeingDragged ? 'opacity-30 scale-95 shadow-none' : 'opacity-100 scale-100 shadow-sm'
+                                                            } cursor-default`}
+                                                            draggable={false}
                                                         >
                                                             <span className="text-sm truncate">{adminEmail}</span>
-                                                            {isNewlyAdded && <span className="text-xs text-yellow-600">(Preview)</span>}
                                                         </div>
                                                     );
                                                 })}
@@ -834,12 +837,8 @@ const ProjTab = ({
                                                     return (
                                                         <div
                                                             key={`member-${memberEmail}`}
-                                                            className={`flex items-center gap-2 p-2 rounded-md cursor-move transition-all duration-200 ${
-                                                                isNewlyAdded 
-                                                                    ? 'bg-yellow-100 border-2 border-yellow-300' 
-                                                                    : 'bg-blue-100'
-                                                            } ${
-                                                                isBeingDragged ? 'opacity-30 scale-95 shadow-none' : 'opacity-100 scale-100 shadow-sm hover:shadow-md'
+                                                            className={`flex items-center gap-2 p-2 rounded-md cursor-move transition-all duration-200 bg-green-100 border border-green-300 ${
+                                                                isBeingDragged ? 'opacity-30 scale-95 shadow-none' : 'opacity-100 scale-100 shadow-sm hover:shadow-md hover:border-green-400'
                                                             }`}
                                                             draggable={true}
                                                             onDragStart={(e) => {
@@ -858,7 +857,6 @@ const ProjTab = ({
                                                             }}
                                                         >
                                                             <span className="text-sm truncate">{memberEmail}</span>
-                                                            {isNewlyAdded && <span className="text-xs text-yellow-600">(Preview)</span>}
                                                         </div>
                                                     );
                                                 })}
@@ -869,8 +867,8 @@ const ProjTab = ({
                                                     return (
                                                         <div
                                                             key={`proposed-${memberEmail}`}
-                                                            className={`flex items-center gap-2 p-2 bg-green-100 border-2 border-green-300 rounded-md cursor-move transition-all duration-200 ${
-                                                                isBeingDragged ? 'opacity-30 scale-95 shadow-none border-green-200' : 'opacity-100 scale-100 shadow-sm hover:shadow-md hover:border-green-400'
+                                                            className={`flex items-center gap-2 p-2 rounded-md cursor-move transition-all duration-200 bg-green-100 border border-green-300 ${
+                                                                isBeingDragged ? 'opacity-30 scale-95 shadow-none' : 'opacity-100 scale-100 shadow-sm hover:shadow-md hover:border-green-400'
                                                             }`}
                                                             draggable={true}
                                                             onDragStart={(e) => {
@@ -905,12 +903,12 @@ const ProjTab = ({
                                             </div>
                                             
                                             {/* AI Insight */}
-                                            {aiPreview && (
+                                            {/* {aiPreview && (
                                                 <div className="mt-3 p-2 bg-purple-50 rounded-md pointer-events-none">
                                                     <div className="text-xs text-purple-700 font-medium mb-1">AI Insight:</div>
                                                     <div className="text-xs text-purple-600">{aiPreview.matchingReasoning}</div>
                                                 </div>
-                                            )}
+                                            )} */}
                                         </motion.div>
                                     );
                                 })}

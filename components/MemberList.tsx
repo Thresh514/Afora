@@ -698,7 +698,7 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                                 <div className="grid gap-3">
                                     {filteredAdmins.length > 0 ? (
                                         filteredAdmins.map((admin: string) => (
-                                            <div key={admin}>
+                                            <div key={`admin-${admin}`}>
                                                 {renderMemberCard(admin, true, true)}
                                             </div>
                                         ))
@@ -722,7 +722,7 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                                 <div className="grid gap-3">
                                     {filteredMembers.length > 0 ? (
                                         filteredMembers.map((member: string) => (
-                                            <div key={member}>
+                                            <div key={`member-${member}`}>
                                                 {renderMemberCard(member, false, true)}
                                             </div>
                                         ))
@@ -746,7 +746,7 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                                         {/* 显示项目管理员 */}
                                         {selectedProjectData.admins?.map(
                                             (admin: string) => (
-                                                <div key={admin}>
+                                                <div key={`admin-${admin}`}>
                                                     {renderMemberCard(admin, true, true, selectedProject)}
                                                 </div>
                                             ),
@@ -754,7 +754,7 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                                         {/* 显示项目成员 */}
                                         {selectedProjectData.members?.map(
                                             (member: string) => (
-                                                <div key={member}>
+                                                <div key={`member-${member}`}>
                                                     {renderMemberCard(member, admins.includes(member), true, selectedProject)}
                                                 </div>
                                             ),

@@ -368,7 +368,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
     const projectMembers = [
         ...(proj?.members || []),
         ...(proj?.admins || []),
-        ...(proj?.adminasUsers || [])
+        ...(proj?.adminsAsUsers || [])
     ];
 
 
@@ -609,15 +609,9 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                         <h3 className="text-lg font-medium mb-2">
                                             No stages yet
                                         </h3>
-                                        <p>
-                                                {isAdmin ? (
-                                                    "Try generating stages and tasks to start your team."
-                                                ) : (
-                                                    "Please wait for the admin to create team stages."
-                                                )}
-                                        </p>
+                                        <p className="text-gray-500">Try generating stages and tasks to start your team.</p>
                                     </div>
-                                    {isAdmin && (
+                                    
                                         <div className="flex justify-center gap-4">
                                             <GenerateTasksButton
                                                 orgId={id}
@@ -705,7 +699,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                                 </AlertDialogContent>
                                             </AlertDialog>
                                         </div>
-                                    )}
+                                    
                                     
                                     {/* Team Charter Error Dialog */}
                                     <AlertDialog

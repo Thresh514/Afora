@@ -2492,6 +2492,18 @@ export async function deleteProject(projId: string) {
     }
 }
 
+// Simple random matching helper used for temporary assignment without GPT
+function randomMatching(availableMembers: Array<{ email: string }>, teamSize: number): string[] {
+    const shuffled = [...availableMembers];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const temp = shuffled[i];
+        shuffled[i] = shuffled[j];
+        shuffled[j] = temp;
+    }
+    return shuffled.slice(0, teamSize).map(m => m.email);
+}
+
 // Backtracking algorithm to find optimal allocation strategy
 function findOptimalAllocationWithBacktracking(projects: any[], availableMembers: number) {
     // Generate all possible allocation scenarios
@@ -2763,93 +2775,25 @@ export async function previewSmartAssignment(orgId: string, teamSize?: number) {
                     const plannedAllocation = (project as any).plannedAllocation || project.spotsAvailable;
                     const actualAllocationSize = Math.min(plannedAllocation, remainingMembers.length);
 
-                    // Call AI matching API
-                    let matchingResultRaw;
-                    if (existingMembersInfo.length > 0) {
-                        const matchingModule = await import("@/ai_scripts/matching");
-                        const { matchingWithExistingTeam } = matchingModule as any;
-                        matchingResultRaw = await matchingWithExistingTeam(
-                            actualAllocationSize,
-                            ["What is your primary area of expertise and main professional skills?", 
-                             "What industries or fields are you currently most interested in some levels of skills and experiences?", 
-                             "What future roles or job titles are you aiming for?"],
-                            matchingInput,
-                            existingMembersInfo
-                        );
-                    } else {
-                        const { matching } = await import("@/ai_scripts/matching");
-                        matchingResultRaw = await matching(
-                            actualAllocationSize,
-                            ["What is your primary area of expertise and main professional skills?", 
-                             "What industries or fields are you currently most interested in some levels of skills and experiences?", 
-                             "What future roles or job titles are you aiming for?"],
-                            matchingInput
-                        );
-                    }
-                    
-                    // Parse JSON string
-                    let matchingResult;
-                    try {
-                        matchingResult = typeof matchingResultRaw === 'string' 
-                            ? JSON.parse(matchingResultRaw) 
-                            : matchingResultRaw;
-                    } catch (parseError) {
-                        console.error(`Failed to parse AI matching result:`, parseError);
-                        throw new Error("Failed to parse AI matching result");
-                    }
+					// Random matching (temporary replacement for GPT)
+					const assignedEmails: string[] = randomMatching(remainingMembers, actualAllocationSize);
+					// Remove assigned members from remaining pool
+					remainingMembers = remainingMembers.filter(member => 
+						!assignedEmails.includes(member.email)
+					);
 
-                    // Check AI matching result
-                    let groups = null;
-                    if (matchingResult?.success && matchingResult.data?.groups) {
-                        groups = matchingResult.data.groups;
-                    } else if (matchingResult?.groups) {
-                        groups = matchingResult.groups;
-                    } else if (Array.isArray(matchingResult)) {
-                        groups = matchingResult;
-                    }
-
-                    let assignedEmails: string[] = [];
-                    if (groups && groups.length > 0) {
-                        // Take the first best matched group
-                        const bestGroup = groups[0];
-                        assignedEmails = Array.isArray(bestGroup) ? bestGroup : bestGroup.members || [];
-                        
-                        // Remove assigned members from remaining pool
-                        remainingMembers = remainingMembers.filter(member => 
-                            !assignedEmails.includes(member.email)
-                        );
-                    }
-
-                    preview.push({
-                        projectId: project.id,
-                        projectTitle: project.title,
-                        currentMembers: project.currentMembers,
-                        spotsAvailable: project.spotsAvailable,
-                        proposedNewMembers: assignedEmails,
-                        aiMatchingScore: matchingResult?.score || null,
-                        matchingReasoning: matchingResult?.reasoning || "AI matching completed"
-                    });
+					preview.push({
+						projectId: project.id,
+						projectTitle: project.title,
+						currentMembers: project.currentMembers,
+						spotsAvailable: project.spotsAvailable,
+						proposedNewMembers: assignedEmails,
+						aiMatchingScore: null,
+						matchingReasoning: "Random assignment (temporary)"
+					});
 
                 } catch (error) {
-                    console.error(`AI matching failed for project ${project.id}:`, error);
-                    // Fallback to simple assignment for this project
-                    const fallbackMembers = remainingMembers
-                        .slice(0, Math.min(project.spotsAvailable, remainingMembers.length))
-                        .map(member => member.email);
-                    
-                    remainingMembers = remainingMembers.filter(member => 
-                        !fallbackMembers.includes(member.email)
-                    );
-
-                    preview.push({
-                        projectId: project.id,
-                        projectTitle: project.title,
-                        currentMembers: project.currentMembers,
-                        spotsAvailable: project.spotsAvailable,
-                        proposedNewMembers: fallbackMembers,
-                        aiMatchingScore: null,
-                        matchingReasoning: "Fallback assignment (AI matching failed)"
-                    });
+					console.error(`Random matching failed for project ${project.id}:`, error);
                 }
             }
         }
@@ -3057,107 +3001,51 @@ export async function autoAssignMembersToProjects(orgId: string, teamSize?: numb
                     const plannedAllocation = (project as any).plannedAllocation || project.spotsAvailable;
                     const actualAllocationSize = Math.min(plannedAllocation, memberSurveyData.length);
 
-                    // Call AI matching API, choose different strategy based on existing members
-                    let matchingResultRaw;
-                    if (existingMembersInfo.length > 0) {
-                        const matchingModule = await import("@/ai_scripts/matching");
-                        const { matchingWithExistingTeam } = matchingModule as any;
-                        matchingResultRaw = await matchingWithExistingTeam(
-                            actualAllocationSize, // Use actual allocatable member count
-                            ["What is your primary area of expertise and main professional skills?", 
-                             "What industries or fields are you currently most interested in some levels of skills and experiences?", 
-                             "What future roles or job titles are you aiming for?"], // Question list
-                            matchingInput, // New member data
-                            existingMembersInfo // Existing member data
-                        );
-                    } else {
-                        const { matching } = await import("@/ai_scripts/matching");
-                        matchingResultRaw = await matching(
-                            actualAllocationSize, // Use actual allocatable member count
-                            ["What is your primary area of expertise and main professional skills?", 
-                             "What industries or fields are you currently most interested in some levels of skills and experiences?", 
-                             "What future roles or job titles are you aiming for?"], // Question list
-                            matchingInput // New member data
-                        );
-                    }
-                    
-                    // Parse JSON string
-                    let matchingResult;
-                    try {
-                        matchingResult = typeof matchingResultRaw === 'string' 
-                            ? JSON.parse(matchingResultRaw) 
-                            : matchingResultRaw;
-                    } catch (parseError) {
-                        console.error(`Failed to parse AI matching result:`, parseError);
-                        throw new Error("Failed to parse AI matching result");
-                    }
+					// Random matching (temporary replacement for GPT)
+					const membersToAdd: string[] = randomMatching(memberSurveyData, actualAllocationSize);
+					if (membersToAdd.length > 0) {
+						const projectDoc = await adminDb.collection("projects").doc(project.id).get();
+						const projectData = projectDoc.data();
+						const currentMembers = (projectData?.members as string[]) || [];
+						const updatedMembers = [...currentMembers, ...membersToAdd];
 
-                    // Check AI matching result - handle different return formats
-                    let groups = null;
-                    if (matchingResult?.success && matchingResult.data?.groups) {
-                        // If has success field and nested data
-                        groups = matchingResult.data.groups;
-                    } else if (matchingResult?.groups) {
-                        // If directly returns groups
-                        groups = matchingResult.groups;
-                    } else if (Array.isArray(matchingResult)) {
-                        // If directly returns array
-                        groups = matchingResult;
-                    }
+						await adminDb.collection("projects").doc(project.id).update({
+							members: updatedMembers,
+						});
 
-                    if (groups && groups.length > 0) {
-                        // Take the first best matched group, ensure not exceeding actual allocatable members
-                        const bestGroup: string[] = groups[0];
-                        const membersToAdd: string[] = bestGroup.slice(0, actualAllocationSize);
-                        
-                        if (membersToAdd.length > 0) {
-                            // 获取当前项目的实际members和admins，只更新members字段
-                            const projectDoc = await adminDb.collection("projects").doc(project.id).get();
-                            const projectData = projectDoc.data();
-                            const currentMembers = (projectData?.members as string[]) || [];
-                            const updatedMembers = [...currentMembers, ...membersToAdd];
+						for (const memberEmail of membersToAdd) {
+							try {
+								await adminDb
+									.collection("users")
+									.doc(memberEmail)
+									.collection("projs")
+									.doc(project.id)
+									.set(
+										{
+											orgId: orgId,
+										},
+										{ merge: true },
+									);
+							} catch (error) {
+								console.error(
+									`Failed to add project reference for user ${memberEmail}:`,
+									error,
+								);
+							}
+						}
 
-                            // Update the project members (只更新普通成员，不影响管理员)
-                            await adminDb.collection("projects").doc(project.id).update({
-                                members: updatedMembers,
-                            });
+						memberSurveyData = memberSurveyData.filter(
+							member => !membersToAdd.includes(member.email)
+						);
 
-                            // Add the project to the new members' projs collection
-                            for (const memberEmail of membersToAdd) {
-                                try {
-                                    await adminDb
-                                        .collection("users")
-                                        .doc(memberEmail)
-                                        .collection("projs")
-                                        .doc(project.id)
-                                        .set(
-                                            {
-                                                orgId: orgId,
-                                            },
-                                            { merge: true },
-                                        );
-                                } catch (error) {
-                                    console.error(
-                                        `Failed to add project reference for user ${memberEmail}:`,
-                                        error,
-                                    );
-                                }
-                            }
-
-                            // Remove assigned members from the pending assignment list
-                            memberSurveyData = memberSurveyData.filter(
-                                member => !membersToAdd.includes(member.email)
-                            );
-
-                            totalAssignedCount += membersToAdd.length;
-                            assignmentResults.push({
-                                projectId: project.id,
-                                projectTitle: project.title,
-                                assignedMembers: membersToAdd,
-                                count: membersToAdd.length
-                            });
-                        }
-                    }
+						totalAssignedCount += membersToAdd.length;
+						assignmentResults.push({
+							projectId: project.id,
+							projectTitle: project.title,
+							assignedMembers: membersToAdd,
+							count: membersToAdd.length
+						});
+					}
                 } catch (error) {
                     console.error(`AI matching failed for project ${project.id}:`, error);
                     // If AI matching fails, could implement simple round-robin assignment as fallback
@@ -4343,5 +4231,116 @@ export async function checkAdminUserParticipation(projId: string) {
     } catch (error) {
         console.error("Error checking admin user participation:", error);
         return { success: false, participating: false };
+    }
+}
+
+export async function applyGroupAssignments(
+    orgId: string,
+    updates: Array<{ projectId: string; members: string[]; admins: string[] }>,
+) {
+    const { userId } = await auth();
+    if (!userId) {
+        throw new Error("Unauthorized");
+    }
+
+    try {
+        if (!orgId || !Array.isArray(updates)) {
+            throw new Error("Invalid parameters");
+        }
+
+        for (const update of updates) {
+            const projectId = update.projectId;
+            const members = Array.from(
+                new Set((update.members || []).map((e) => e.trim()).filter(Boolean)),
+            );
+            const admins = Array.from(
+                new Set((update.admins || []).map((e) => e.trim()).filter(Boolean)),
+            );
+
+            const projectRef = adminDb.collection("projects").doc(projectId);
+            const projectSnap = await projectRef.get();
+            if (!projectSnap.exists) {
+                throw new Error(`Project not found: ${projectId}`);
+            }
+
+            const projectData = projectSnap.data() || {};
+            const projectOrgId = projectData.orgId;
+            if (!projectOrgId || projectOrgId !== orgId) {
+                throw new Error(
+                    `Project ${projectId} does not belong to organization ${orgId}`,
+                );
+            }
+
+            const orgProjRef = adminDb
+                .collection("organizations")
+                .doc(orgId)
+                .collection("projs")
+                .doc(projectId);
+
+            const currentMembers: string[] = (projectData.members as string[]) || [];
+            const currentAdmins: string[] = (projectData.admins as string[]) || [];
+            const currentParticipants = new Set([
+                ...currentMembers,
+                ...currentAdmins,
+            ]);
+            const newParticipants = new Set([...members, ...admins]);
+
+            // Always update main project doc
+            await projectRef.update({ members, admins });
+
+            // Only update org subcollection mirror if it already exists
+            try {
+                const orgProjSnap = await orgProjRef.get();
+                if (orgProjSnap.exists) {
+                    await orgProjRef.update({ members, admins });
+                }
+            } catch (err) {
+                // Intentionally ignore missing org mirror to avoid creating extra docs
+                // console.warn("Org project mirror update skipped:", err);
+            }
+
+            // Add references for newly added users
+            for (const email of newParticipants) {
+                if (!currentParticipants.has(email)) {
+                    try {
+                        await adminDb
+                            .collection("users")
+                            .doc(email)
+                            .collection("projs")
+                            .doc(projectId)
+                            .set({ orgId }, { merge: true });
+                    } catch (error) {
+                        console.warn(
+                            `Failed to add project reference for user ${email}:`,
+                            error,
+                        );
+                    }
+                }
+            }
+
+            // Remove references for users no longer in the project
+            for (const email of currentParticipants) {
+                if (!newParticipants.has(email)) {
+                    try {
+                        await adminDb
+                            .collection("users")
+                            .doc(email)
+                            .collection("projs")
+                            .doc(projectId)
+                            .delete();
+                    } catch (error) {
+                        console.warn(
+                            `Failed to remove project reference for user ${email}:`,
+                            error,
+                        );
+                    }
+                }
+            }
+        }
+
+        return { success: true, message: "Group assignments applied successfully" };
+    } catch (error) {
+        console.error("Error applying group assignments:", error);
+        return { success: false, message: (error as Error).message };
     }
 }
