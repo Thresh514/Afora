@@ -139,7 +139,6 @@ export default function AddNewTeamDialog({ orgId, totalProjects, onTeamCreated }
                     orgId,
                     projectTitle.trim(),
                     memberEmails,
-                    undefined, // 不设置团队大小限制
                     [] // 不预设管理员
                 );
 

@@ -60,8 +60,8 @@ export default function CreateProjectDialog({
                 // 创建项目并包含所有管理员
                 const memberCountToMatch = teamSize && parseInt(teamSize) > 0 ? parseInt(teamSize) : 0;
                 // 计算总团队大小：admin数量 + 要匹配的成员数量  
-                const totalTeamSize = memberCountToMatch > 0 ? adminMembers.length + memberCountToMatch : undefined;
-                const result = await createProject(orgId, newProjectTitle.trim(), [], totalTeamSize, adminMembers);
+                // const totalTeamSize = memberCountToMatch > 0 ? adminMembers.length + memberCountToMatch : undefined;
+                const result = await createProject(orgId, newProjectTitle.trim(), [], adminMembers);
                 if (!result.success) {
                     toast.error(result.message || "Failed to create team");
                     return;

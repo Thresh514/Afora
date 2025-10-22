@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCollection, useDocument } from "react-firebase-hooks/firestore";
-import { collection, doc, query, where } from "firebase/firestore";
+import { collection, doc, query } from "firebase/firestore";
 import { db } from "@/firebase";
 import MemberList from "./MemberList";
 import { Organization, UserOrgData } from "@/types/types";
@@ -17,8 +17,9 @@ const OrganizationPage = ({ id }: { id: string }) => {
     const [org, loading, error] = useDocument(
         doc(db, "organizations", id),
     );
+    // 直接从组织的 projs 子集合读取项目数据
     const [projectsData] = useCollection(
-        query(collection(db, "projects"), where("orgId", "==", id)),
+        query(collection(db, "organizations", id, "projs")),
     );
     const userEmail = user?.primaryEmailAddress?.emailAddress;
     const [data] = useDocument(
@@ -72,6 +73,26 @@ const OrganizationPage = ({ id }: { id: string }) => {
 
     if (!orgData) {
         return <div>No group found</div>;
+    }
+
+    if (userOrgData?.role === 'member') {
+        return (
+            <div className="overflow-x-hidden p-4 space-y-6">
+                {/* Header Section */}
+                <OrgHeader id={id} />
+                
+                {/* Projects Section */}
+                <div className="w-full">
+                    {user && user.primaryEmailAddress && userOrgData && (
+                        <ProjTab
+                            userRole={userOrgData.role}
+                            userId={user.primaryEmailAddress.toString()}
+                            orgId={id}
+                        />
+                    )}
+                </div>
+            </div>
+        );
     }
 
     return (

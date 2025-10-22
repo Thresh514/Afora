@@ -102,9 +102,11 @@ const GenerateTasksButton = ({
         try {
             // Get project members data
             const memberList = projData.members;
+            const participatingAdmins = projData.adminsAsUsers || [];
+            const allMembers = [...memberList, ...participatingAdmins];
             
             // Check if project has team members
-            if (!memberList || memberList.length === 0) {
+            if (!allMembers || allMembers.length === 0) {
                 const errorInfo: ErrorInfo = {
                     type: "task_generation",
                     message: "No team members found in this project",
@@ -117,7 +119,7 @@ const GenerateTasksButton = ({
                 showErrorToast(errorInfo);
                 return;
             }
-            const userDataPromise = memberList.map(async (user) => {
+            const userDataPromise = allMembers.map(async (user) => {
                 const userOrg = await getDoc(doc(db, "users", user, "org", orgId));
                 const userOrgData = userOrg.data();
                 const surveyResponse = userOrgData?.projOnboardingSurveyResponse
@@ -130,7 +132,7 @@ const GenerateTasksButton = ({
 
             // Prepare team members data for generateTask
             const teamMembers = await Promise.all(
-                memberList.map(async (user) => {
+                allMembers.map(async (user) => {
                     const userOrg = await getDoc(doc(db, "users", user, "org", orgId));
                     const userOrgData = userOrg.data();
                     return {

@@ -10,9 +10,9 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { collection, QuerySnapshot, DocumentData } from "firebase/firestore";
 import { db } from "@/firebase";
 import { batchInQueryForHooks } from "@/lib/batchQuery";
-import {Users, UserPlus, FolderOpen, UserCheck, ArrowRight, Crown, Building2} from "lucide-react";
+import { Users, FolderOpen, ArrowRight, Crown, Search, X } from "lucide-react";
 import { toast } from "sonner";
-import {updateProjectMembers, removeProjectMember, updateProjectTeamSize} from "@/actions/actions";
+import { removeProjectMember, updateProjectTeamSize, addProjectMember } from "@/actions/actions";
 import Image from "next/image";
 
 interface MemberListProps {
@@ -48,13 +48,9 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
     const [membersPfp, setMembersPfp] = useState<{ [email: string]: string }>(
         {},
     );
-    const [selectedProject, setSelectedProject] = useState<string | null>(null);
-    const [selectedView, setSelectedView] = useState<"overview" | "projects">(
-        userRole === "admin" ? "overview" : "projects",
-    );
-    const [defaultTeamSize] = useState(3);
+    const [selectedProject, setSelectedProject] = useState<string | null>("all");
+    const [searchTerm, setSearchTerm] = useState<string>("");
 
-    // 使用自定义状态来处理批量查询，避免 Firebase IN 查询超过30个值的限制
     const [results, setResults] = useState<QuerySnapshot<DocumentData> | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<Error | null>(null);
@@ -135,28 +131,13 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                     : [],
                 teamSize:
                     typeof projectData.teamSize === "number"
-                        ? projectData.teamSize
-                        : defaultTeamSize,
+                        ? projectData.teamSize  
+                        : 3,
             };
         });
-    }, [projects, defaultTeamSize]);
+    }, [projects]);
 
-    // 直接使用计算值，不需要额外的状态
     const projectTeams = teams;
-
-    // 使用 useMemo 来计算未分配成员
-    const calculatedUnassignedMembers = useMemo(() => {
-        if (teams.length === 0) {
-            return [...members, ...admins];
-        }
-
-        const assignedMembers = new Set(
-            teams.flatMap((team: ProjectTeam) => team.members),
-        );
-        return [...members, ...admins].filter(
-            (member) => !assignedMembers.has(member),
-        );
-    }, [teams, members, admins]);
 
     // 计算用户被分配到的项目
     const userAssignedProjects = useMemo(() => {
@@ -170,11 +151,30 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
         }
 
         return projectTeams.filter((team: ProjectTeam) =>
-            team.members.includes(currentUserEmail),
+            team.members.includes(currentUserEmail) || 
+            (team.admins && team.admins.includes(currentUserEmail)),
         );
     }, [projectTeams, userRole, currentUserEmail]);
 
-    const unassignedMembers = calculatedUnassignedMembers;
+    // 所有成员列表（包括管理员和普通成员）
+    // const allMembers = useMemo(() => {
+    //     return [...admins, ...members];
+    // }, [admins, members]);
+
+    // 搜索过滤逻辑
+    const filteredAdmins = useMemo(() => {
+        if (!searchTerm.trim()) return admins;
+        return admins.filter(admin => 
+            admin.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    }, [admins, searchTerm]);
+
+    const filteredMembers = useMemo(() => {
+        if (!searchTerm.trim()) return members;
+        return members.filter(member => 
+            member.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    }, [members, searchTerm]);
 
 
 
@@ -185,36 +185,8 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
             toProjectId: string | null,
         ) => {
             try {
-                // Check destination availability first if moving to a project
-                if (toProjectId) {
-                    const destTeam = projectTeams.find(
-                        (team: ProjectTeam) => team.projectId === toProjectId,
-                    );
-                    if (!destTeam) {
-                        toast.error("Destination project not found!");
-                        return;
-                    }
-
-                    // Check if destination team is full
-                    if (destTeam.members.length >= destTeam.teamSize) {
-                        toast.error(
-                            `Team is full! Maximum size is ${destTeam.teamSize}.`,
-                        );
-                        return;
-                    }
-
-                    // Check if member is already in destination team
-                    if (destTeam.members.includes(memberEmail)) {
-                        toast.error("Member is already in this project!");
-                        return;
-                    }
-                }
-
                 // Handle removing from source project
                 if (fromProjectId) {
-                    // console.log(
-                    //     `Removing ${memberEmail} from project ${fromProjectId}`,
-                    // );
                     const result = await removeProjectMember(
                         fromProjectId,
                         memberEmail,
@@ -230,56 +202,18 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
 
                 // Handle adding to destination project
                 if (toProjectId) {
-                    const destTeam = projectTeams.find(
-                        (team: ProjectTeam) => team.projectId === toProjectId,
+                    // Use addProjectMember function which includes capacity check
+                    const result = await addProjectMember(
+                        toProjectId,
+                        memberEmail,
+                        "member"
                     );
-                    if (destTeam) {
-                        // console.log(
-                        //     `Adding ${memberEmail} to project ${toProjectId}`,
-                        // );
-                        const updatedMembers = [
-                            ...destTeam.members,
-                            memberEmail,
-                        ];
-                        const result = await updateProjectMembers(
-                            toProjectId,
-                            updatedMembers,
+                    if (!result.success) {
+                        toast.error(
+                            result.message ||
+                                "Failed to add member to project",
                         );
-                        if (!result.success) {
-                            toast.error(
-                                result.message ||
-                                    "Failed to add member to project",
-                            );
-                            // If adding failed but removing succeeded, we should try to add back to original project
-                            if (fromProjectId) {
-                                // console.log(
-                                //     "Attempting to restore member to original project...",
-                                // );
-                                // This is a best-effort restore, don't handle errors
-                                try {
-                                    const sourceTeam = projectTeams.find(
-                                        (team: ProjectTeam) =>
-                                            team.projectId === fromProjectId,
-                                    );
-                                    if (sourceTeam) {
-                                        const restoreMembers = [
-                                            ...sourceTeam.members,
-                                            memberEmail,
-                                        ];
-                                        await updateProjectMembers(
-                                            fromProjectId,
-                                            restoreMembers,
-                                        );
-                                    }
-                                } catch (restoreError) {
-                                    console.error(
-                                        "Failed to restore member to original project:",
-                                        restoreError,
-                                    );
-                                }
-                            }
-                            return;
-                        }
+                        return;
                     }
                 }
 
@@ -313,7 +247,7 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                 toast.error("Failed to update team size");
             }
         },
-        [],
+        [projectTeams],
     );
 
     const renderMemberCard = useCallback(
@@ -368,11 +302,7 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                                     size="sm"
                                     className="h-8 px-2 text-red-500 hover:text-red-700 hover:bg-red-50"
                                     onClick={() =>
-                                        handleMemberMove(
-                                            memberEmail,
-                                            projectId,
-                                            null,
-                                        )
+                                        handleMemberMove(memberEmail, projectId, null)
                                     }
                                 >
                                     Remove
@@ -380,32 +310,28 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                             )}
                             {!projectId && projectTeams.length > 0 && (
                                 <Select
-                                    onValueChange={(selectedProjectId) =>
-                                        handleMemberMove(
-                                            memberEmail,
-                                            null,
-                                            selectedProjectId,
-                                        )
-                                    }
+                                    onValueChange={(selectedProjectId) => {
+                                        handleMemberMove(memberEmail, null, selectedProjectId);
+                                    }}
                                 >
                                     <SelectTrigger className="w-32 h-8">
                                         <SelectValue placeholder="Add to" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {projectTeams
-                                            .filter(
-                                                (team: ProjectTeam) =>
-                                                    team.members.length <
-                                                    team.teamSize,
-                                            )
-                                            .map((team: ProjectTeam) => (
+                                        {projectTeams.map((team: ProjectTeam) => {
+                                            // 检查成员是否已经在这个项目中
+                                            const isAlreadyMember = team.members.includes(memberEmail) || 
+                                                                   (team.admins && team.admins.includes(memberEmail));
+                                            return (
                                                 <SelectItem
                                                     key={team.projectId}
                                                     value={team.projectId}
+                                                    disabled={isAlreadyMember}
                                                 >
-                                                    {team.projectTitle}
+                                                    {team.projectTitle} {isAlreadyMember ? "(Already member)" : ""}
                                                 </SelectItem>
-                                            ))}
+                                            );
+                                        })}
                                     </SelectContent>
                                 </Select>
                             )}
@@ -422,7 +348,7 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
     );
     const totalMembers = [...admins, ...members].length;
     const assignedMembers = projectTeams.reduce(
-        (total: number, team: ProjectTeam) => total + team.members.length,
+        (total: number, team: ProjectTeam) => total + (team.members?.length || 0) + (team.admins?.length || 0),
         0,
     );
 
@@ -489,103 +415,99 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                     </div>
                 </div>
 
-                {/* Navigation */}
-                {userRole === "admin" && (
-                    <div className="p-4 border-b border-gray-200">
-                        <div className="grid grid-cols-2 gap-2">
-                            <Button
-                                variant={
-                                    selectedView === "overview"
-                                        ? "default"
-                                        : "outline"
-                                }
-                                size="sm"
-                                onClick={() => {
-                                    setSelectedView("overview");
-                                    setSelectedProject(null);
-                                }}
-                                className="flex items-center gap-2"
-                            >
-                                <Building2 className="h-4 w-4" />
-                                Overview
-                            </Button>
-                            <Button
-                                variant={
-                                    selectedView === "projects"
-                                        ? "default"
-                                        : "outline"
-                                }
-                                size="sm"
-                                onClick={() => setSelectedView("projects")}
-                                className="flex items-center gap-2"
-                            >
-                                <FolderOpen className="h-4 w-4" />
-                                Teams
-                            </Button>
-                        </div>
-                    </div>
-                )}
-
                 {/* Content Area */}
                 <div className="flex-1 overflow-y-auto p-4">
-                    {userRole === "admin" && selectedView === "overview" ? (
-                        <div className="space-y-4">
-                            <div className="text-sm font-medium text-gray-500">
-                                Group Overview
-                            </div>
-                            <Card className="border-0 shadow-sm">
-                                <CardContent className="p-4">
-                                    <div className="space-y-3">
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-sm text-gray-600">
-                                                Admins
-                                            </span>
-                                            <Badge variant="secondary">
-                                                {admins.length}
-                                            </Badge>
-                                        </div>
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-sm text-gray-600">
-                                                Members
-                                            </span>
-                                            <Badge variant="secondary">
-                                                {members.length}
-                                            </Badge>
-                                        </div>
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-sm text-gray-600">
-                                                Active Teams
-                                            </span>
-                                            <Badge variant="secondary">
-                                                {projectTeams.length}
-                                            </Badge>
-                                        </div>
-                                        <Separator />
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-sm text-gray-600">
-                                                Unassigned Members
-                                            </span>
-                                            <Badge
-                                                variant={
-                                                    unassignedMembers.length > 0
-                                                        ? "destructive"
-                                                        : "default"
-                                                }
-                                            >
-                                                {unassignedMembers.length}
-                                            </Badge>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
+                    <div className="space-y-4">
+                        {/* Overview Card */}
+                        <div className="text-sm font-medium text-gray-500">
+                            Group Overview
                         </div>
-                    ) : (
+                        <Card className="border-0 shadow-sm">
+                            <CardContent className="p-4">
+                                <div className="space-y-3">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm text-gray-600">
+                                            Admins
+                                        </span>
+                                        <Badge variant="secondary">
+                                            {admins.length}
+                                        </Badge>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm text-gray-600">
+                                            Members
+                                        </span>
+                                        <Badge variant="secondary">
+                                            {members.length}
+                                        </Badge>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm text-gray-600">
+                                            Active Teams
+                                        </span>
+                                        <Badge variant="secondary">
+                                            {projectTeams.length}
+                                        </Badge>
+                                    </div>
+                                    <Separator />
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm text-gray-600">
+                                            Available Members
+                                        </span>
+                                        <Badge variant="default">
+                                            {totalMembers}
+                                        </Badge>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                        
+                        {/* Team List */}
                         <div className="space-y-3">
                             <div className="text-sm font-medium text-gray-500">
                                 {userRole === "admin"
                                     ? "Team List"
                                     : "My Teams"}
                             </div>
+                            
+                            {/* All Team Members Option */}
+                            {userRole === "admin" && (
+                                <div
+                                    className={`p-4 rounded-xl cursor-pointer transition-all duration-200 ${
+                                        selectedProject === "all"
+                                            ? "bg-green-50 border-2 border-green-200 shadow-md"
+                                            : "bg-green-25 border border-green-200 hover:bg-green-50"
+                                    }`}
+                                    onClick={() => setSelectedProject("all")}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <Users
+                                            className={`h-5 w-5 ${
+                                                selectedProject === "all"
+                                                    ? "text-green-600"
+                                                    : "text-green-400"
+                                            }`}
+                                        />
+                                        <div className="flex-1">
+                                            <div
+                                                className={`font-medium ${
+                                                    selectedProject === "all"
+                                                        ? "text-green-900"
+                                                        : "text-green-700"
+                                                }`}
+                                            >
+                                                All Team Members
+                                            </div>
+                                            <div className="text-sm text-green-600">
+                                                {totalMembers} members
+                                            </div>
+                                        </div>
+                                        {selectedProject === "all" && (
+                                            <ArrowRight className="h-4 w-4 text-green-600" />
+                                        )}
+                                    </div>
+                                </div>
+                            )}
                             {userAssignedProjects.length === 0 ? (
                                 <div className="text-center py-8">
                                     <FolderOpen className="h-12 w-12 text-gray-400 mx-auto mb-3" />
@@ -638,25 +560,15 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                                                         {team.projectTitle}
                                                     </div>
                                                     <div className="text-sm text-gray-500">
-                                                        {team.members.length}/
-                                                        {team.teamSize} members
+                                                        {(team.members?.length || 0) + (team.admins?.length || 0)} members
                                                     </div>
                                                 </div>
                                                 <div className="flex flex-col items-end gap-1">
-                                                    <Badge
-                                                        variant={
-                                                            team.members
-                                                                .length ===
-                                                            team.teamSize
-                                                                ? "default"
-                                                                : "secondary"
-                                                        }
-                                                    >
-                                                        {team.members.length ===
-                                                        team.teamSize
-                                                            ? "Full"
-                                                            : "Available"}
-                                                    </Badge>
+                                                    <div className="flex gap-1">
+                                                        <Badge variant="secondary">
+                                                            Active
+                                                        </Badge>
+                                                    </div>
                                                     {selectedProject ===
                                                         team.projectId && (
                                                         <ArrowRight className="h-4 w-4 text-blue-600" />
@@ -668,50 +580,8 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                                 )
                             )}
 
-                            {/* Unassigned Section */}
-                            {userRole === "admin" && (
-                                <div
-                                    className={`p-4 rounded-xl cursor-pointer transition-all duration-200 ${
-                                        selectedProject === "unassigned"
-                                            ? "bg-orange-50 border-2 border-orange-200 shadow-md"
-                                            : "bg-orange-25 border border-orange-200 hover:bg-orange-50"
-                                    }`}
-                                    onClick={() =>
-                                        setSelectedProject("unassigned")
-                                    }
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <UserPlus
-                                            className={`h-5 w-5 ${
-                                                selectedProject === "unassigned"
-                                                    ? "text-orange-600"
-                                                    : "text-orange-400"
-                                            }`}
-                                        />
-                                        <div className="flex-1">
-                                            <div
-                                                className={`font-medium ${
-                                                    selectedProject ===
-                                                    "unassigned"
-                                                        ? "text-orange-900"
-                                                        : "text-orange-700"
-                                                }`}
-                                            >
-                                                Unassigned Members
-                                            </div>
-                                            <div className="text-sm text-orange-600">
-                                                {unassignedMembers.length}{" "}
-                                                members
-                                            </div>
-                                        </div>
-                                        {selectedProject === "unassigned" && (
-                                            <ArrowRight className="h-4 w-4 text-orange-600" />
-                                        )}
-                                    </div>
-                                </div>
-                            )}
                         </div>
-                    )}
+                    </div>
                 </div>
             </div>
 
@@ -719,25 +589,23 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
             <div className="flex-1 flex flex-col bg-white">
                 {/* Content Header */}
                 <div className="p-6 border-b border-gray-200 bg-white">
-                    {userRole === "admin" && selectedView === "overview" ? (
+                    {selectedProject === "all" ? (
                         <div>
                             <h3 className="text-lg font-semibold text-gray-900">
-                                Group Members Overview
+                                All Team Members
                             </h3>
                             <p className="text-sm text-gray-500">
-                                View detailed information about all group
-                                members
+                                View detailed information about all group members
                             </p>
                         </div>
-                    ) : selectedProject && selectedProject !== "unassigned" ? (
+                    ) : selectedProject ? (
                         <div className="flex items-center justify-between">
                             <div>
                                 <h3 className="text-lg font-semibold text-gray-900">
                                     {selectedProjectData?.projectTitle}
                                 </h3>
                                 <p className="text-sm text-gray-500">
-                                    {(selectedProjectData?.members.length || 0) + (selectedProjectData?.admins?.length || 0)}/
-                                    {selectedProjectData?.teamSize} team members
+                                    {(selectedProjectData?.members.length || 0) + (selectedProjectData?.admins?.length || 0)} team members
                                 </p>
                             </div>
                             {userRole === "admin" && selectedProjectData && (
@@ -761,30 +629,18 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {[2, 3, 4, 5, 6, 7, 8].map(
-                                                (size) => (
-                                                    <SelectItem
-                                                        key={size}
-                                                        value={size.toString()}
-                                                    >
-                                                        {size}
-                                                    </SelectItem>
-                                                ),
-                                            )}
+                                            {[2, 3, 4, 5, 6, 7, 8].map((size) => (
+                                                <SelectItem
+                                                    key={size}
+                                                    value={size.toString()}
+                                                >
+                                                    {size}
+                                                </SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
                                 </div>
                             )}
-                        </div>
-                    ) : selectedProject === "unassigned" ? (
-                        <div>
-                            <h3 className="text-lg font-semibold text-gray-900">
-                                Unassigned Members
-                            </h3>
-                            <p className="text-sm text-gray-500">
-                                {unassignedMembers.length} members not assigned
-                                to teams
-                            </p>
                         </div>
                     ) : (
                         <div>
@@ -804,23 +660,53 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
 
                 {/* Content Area */}
                 <div className="flex-1 overflow-y-auto p-6">
-                    {userRole === "admin" && selectedView === "overview" ? (
+                    {selectedProject === "all" ? (
                         <div className="space-y-6">
+                            {/* Search Bar */}
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <Search className="h-5 w-5 text-gray-400" />
+                                </div>
+                                <input
+                                    type="text"
+                                    placeholder="Search members by email..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                />
+                                {searchTerm && (
+                                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                        <button
+                                            onClick={() => setSearchTerm("")}
+                                            className="text-gray-400 hover:text-gray-600 focus:outline-none"
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
                             {/* Admins Section */}
                             <div>
                                 <div>
                                     <h4 className="text-sm font-medium text-gray-700 mb-4 flex items-center gap-2">
                                         <Crown className="h-4 w-4 text-yellow-500" />
-                                        Admins ({admins.length})
+                                        Admins ({filteredAdmins.length}{searchTerm ? ` of ${admins.length}` : ""})
                                         {userRole === "admin" && <InviteUserToOrganization defaultAccessRole="admin" />}
                                     </h4>
                                 </div>
                                 <div className="grid gap-3">
-                                    {admins.map((admin: string) => (
-                                        <div key={admin}>
-                                            {renderMemberCard(admin, true)}
+                                    {filteredAdmins.length > 0 ? (
+                                        filteredAdmins.map((admin: string) => (
+                                            <div key={`admin-${admin}`}>
+                                                {renderMemberCard(admin, true, true)}
+                                            </div>
+                                        ))
+                                    ) : searchTerm ? (
+                                        <div className="text-center py-4 text-gray-500 text-sm">
+                                            No admins found matching &quot;{searchTerm}&quot;
                                         </div>
-                                    ))}
+                                    ) : null}
                                 </div>
                             </div>
 
@@ -830,104 +716,57 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                             <div>
                                 <h4 className="text-sm font-medium text-gray-700 mb-4 flex items-center gap-2">
                                     <Users className="h-4 w-4 text-blue-500" />
-                                    Members ({members.length})
+                                    Members ({filteredMembers.length}{searchTerm ? ` of ${members.length}` : ""})
                                     {userRole === "admin" && <InviteUserToOrganization defaultAccessRole="member" />}
                                 </h4>
                                 <div className="grid gap-3">
-                                    {members.map((member: string) => (
-                                        <div key={member}>
-                                            {renderMemberCard(member, false)}
+                                    {filteredMembers.length > 0 ? (
+                                        filteredMembers.map((member: string) => (
+                                            <div key={`member-${member}`}>
+                                                {renderMemberCard(member, false, true)}
+                                            </div>
+                                        ))
+                                    ) : searchTerm ? (
+                                        <div className="text-center py-4 text-gray-500 text-sm">
+                                            No members found matching &quot;{searchTerm}&quot;
                                         </div>
-                                    ))}
+                                    ) : null}
                                 </div>
                             </div>
                         </div>
-                    ) : selectedProject && selectedProject !== "unassigned" ? (
+                    ) : selectedProject ? (
                         <div className="space-y-6">
                             {/* Project Team Members */}
-                            {selectedProjectData &&
-                                selectedProjectData.members.length > 0 && (
-                                    <div>
-                                        <h4 className="text-sm font-medium text-gray-700 mb-4">
-                                            Current Team Members
-                                        </h4>
-                                        <div className="grid gap-3">
-                                            {selectedProjectData.members.map(
-                                                (member: string) => (
-                                                    <div key={member}>
-                                                        {renderMemberCard(
-                                                            member,
-                                                            admins.includes(
-                                                                member,
-                                                            ),
-                                                            true,
-                                                            selectedProject,
-                                                        )}
-                                                    </div>
-                                                ),
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-
-                            {/* Available Spots */}
-                            {selectedProjectData &&
-                                selectedProjectData.members.length <
-                                    selectedProjectData.teamSize && (
-                                    <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center bg-gray-50">
-                                        <UserPlus className="h-8 w-8 text-gray-400 mx-auto mb-3" />
-                                        <p className="text-gray-600 font-medium">
-                                            {selectedProjectData.teamSize -
-                                                selectedProjectData.members
-                                                    .length}{" "}
-                                            spots available
-                                        </p>
-                                        {userRole === "admin" &&
-                                            unassignedMembers.length > 0 && (
-                                                <p className="text-sm text-gray-400 mt-2">
-                                                    Select &ldquo;Unassigned Members&rdquo;
-                                                    from the left to add members
-                                                </p>
-                                            )}
-                                    </div>
-                                )}
-                        </div>
-                    ) : selectedProject === "unassigned" ? (
-                        <div className="space-y-4">
-                            {unassignedMembers.length > 0 ? (
+                            {selectedProjectData && (
                                 <div>
                                     <h4 className="text-sm font-medium text-gray-700 mb-4">
-                                        Members to be assigned
+                                        Current Team Members
                                     </h4>
                                     <div className="grid gap-3">
-                                        {unassignedMembers.map((member) => (
-                                            <div key={member}>
-                                                {renderMemberCard(
-                                                    member,
-                                                    admins.includes(member),
-                                                    true,
-                                                )}
-                                            </div>
-                                        ))}
+                                        {/* 显示项目管理员 */}
+                                        {selectedProjectData.admins?.map(
+                                            (admin: string) => (
+                                                <div key={`admin-${admin}`}>
+                                                    {renderMemberCard(admin, true, true, selectedProject)}
+                                                </div>
+                                            ),
+                                        )}
+                                        {/* 显示项目成员 */}
+                                        {selectedProjectData.members?.map(
+                                            (member: string) => (
+                                                <div key={`member-${member}`}>
+                                                    {renderMemberCard(member, admins.includes(member), true, selectedProject)}
+                                                </div>
+                                            ),
+                                        )}
                                     </div>
-                                </div>
-                            ) : (
-                                <div className="text-center py-12">
-                                    <UserCheck className="h-16 w-16 text-green-500 mx-auto mb-4" />
-                                    <h3 className="text-lg font-medium text-gray-900 mb-2">
-                                        All members assigned
-                                    </h3>
-                                    <p className="text-gray-500">
-                                        All group members have been
-                                        assigned to teams.
-                                    </p>
                                 </div>
                             )}
                         </div>
                     ) : (
                         <div className="text-center py-12">
                             <FolderOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                            {userAssignedProjects.length === 0 ? (
+                            {userAssignedProjects.length === 0 && (
                                 <div>
                                     <h3 className="text-lg font-medium text-gray-900 mb-2">
                                         {userRole === "admin"
@@ -938,19 +777,6 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                                         {userRole === "admin"
                                             ? "There are no teams in this group. Please check the following:"
                                             : "Please contact the administrator to be assigned to a team."}
-                                    </p>
-                                </div>
-                            ) : (
-                                <div>
-                                    <h3 className="text-lg font-medium text-gray-900 mb-2">
-                                        {userRole === "admin"
-                                            ? "Select a team to view details"
-                                            : "Select a team to view team members"}
-                                    </h3>
-                                    <p className="text-gray-500">
-                                        {userRole === "admin"
-                                            ? "Select a team from the left team list to view team members."
-                                            : "Select a team from the left team list to view your team members."}
                                     </p>
                                 </div>
                             )}

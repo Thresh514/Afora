@@ -2,11 +2,10 @@
 import { db } from "@/firebase";
 import { Project, Task, Organization } from "@/types/types";
 import {collection, getDocs, query, where, doc} from "firebase/firestore";
-import { batchInQuery } from "@/lib/batchQuery";
 import React, { useEffect, useState, useTransition } from "react";
 import { useCollection, useDocument } from "react-firebase-hooks/firestore";
 import { Button } from "./ui/button";
-import { updateProjects, previewSmartAssignment, removeProjectMember, addProjectMember } from "@/actions/actions";
+import { previewSmartAssignment, applyGroupAssignments } from "@/actions/actions";
 import { toast } from "sonner";
 import ProjectCard from "./ProjectCard";
 import {Folder, Users, Briefcase, Loader2, Shuffle, ArrowRightLeft} from "lucide-react";
@@ -25,10 +24,10 @@ import {
     AlertDialogTitle,
 } from "./ui/alert-dialog";
 
-type MatchingOutput = {
-    groupSize: number;
-    groups: string[][];
-};
+// type MatchingOutput = {
+//     groupSize: number;
+//     groups: string[][];
+// };
 
 const ProjTab = ({
     orgId,
@@ -42,8 +41,8 @@ const ProjTab = ({
     const [isPending, startTransition] = useTransition();
     const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-    const [output, setOutput] = useState("");
-    const [parsedOutput, setParsedOutput] = useState<MatchingOutput | null>(null);
+    // const [output, setOutput] = useState("");
+    // const [parsedOutput, setParsedOutput] = useState<MatchingOutput | null>(null);
     const [projectTasks, setProjectTasks] = useState<{[key: string]: Task[]}>({});
     const [defaultTeamSize] = useState(3); // Default team size for smart matching
     
@@ -86,73 +85,30 @@ const ProjTab = ({
     // Error handling state
     const [smartMatchingError, setSmartMatchingError] = useState<ErrorInfo | null>(null);
 
-    const adminQ = query(collection(db, "projects"), where("orgId", "==", orgId));
-    const [allProjects] = useCollection(adminQ);
+    // 从组织的 projs 子集合读取基本项目数据
+    const orgProjectsQ = query(collection(db, "organizations", orgId, "projs"));
+    const [orgProjects] = useCollection(orgProjectsQ);
+    
+    // 从主 projects 集合读取完整项目数据（包含 title）
+    const projectsQ = query(collection(db, "projects"), where("orgId", "==", orgId));
+    const [allProjects] = useCollection(projectsQ);
     
     // 获取组织数据
     const [org] = useDocument(doc(db, "organizations", orgId));
     const orgData = org?.data() as Organization;
 
-    const userQ = query(
-        collection(db, "users", userId, "projs"),
-        where("orgId", "==", orgId),
-    );
-    const [userProjects, userLoading, userError] = useCollection(userQ);
-    const [userProjList, setUserProjList] = useState<Project[]>([]);
+    // 移除旧的用户项目获取逻辑，现在直接使用组织的项目数据
 
-    useEffect(() => {
-        const fetchProjects = async () => {
-            if (
-                !userLoading &&
-                !userError &&
-                userProjects &&
-                userProjects.docs.length > 0
-            ) {
-                const projectIds = userProjects.docs
-                    .map((doc) => doc.id)
-                    .filter(Boolean);
-                if (projectIds.length > 0) {
-                    try {
-                        // 使用批量查询来避免 Firebase IN 查询超过30个值的限制
-                        const projectDocs = await batchInQuery(
-                            collection(db, "projects"),
-                            "__name__",
-                            projectIds
-                        );
-                        const projects = projectDocs.docs.map(
-                            (doc) => ({
-                                ...(doc.data() as Project),
-                                projId: doc.id
-                            }),
-                            
-                        );
-                        setUserProjList(projects);
-                    } catch (error) {
-                        console.error("Error fetching user projects:", error);
-                        toast.error("Failed to fetch your projects");
-                    }
-                }
-            } else if (
-                !userLoading &&
-                !userError &&
-                (!userProjects || userProjects.docs.length === 0)
-            ) {
-                setUserProjList([]);
-            }
-        };
-        fetchProjects();
-    }, [userProjects, userLoading, userError]);
-
-    useEffect(() => {
-        if (output) {
-            try {
-                const parsed: MatchingOutput = JSON.parse(output);
-                setParsedOutput(parsed);
-            } catch (error) {
-                console.error("Error parsing output:", error);
-            }
-        }
-    }, [output]);
+    // useEffect(() => {
+    //     if (output) {
+    //         try {
+    //             const parsed: MatchingOutput = JSON.parse(output);
+    //             setParsedOutput(parsed);
+    //         } catch (error) {
+    //             console.error("Error parsing output:", error);
+    //         }
+    //     }
+    // }, [output]);
 
     // Fetch project tasks for each project
     useEffect(() => {
@@ -197,26 +153,26 @@ const ProjTab = ({
         fetchProjectTasks();
     }, [allProjects, refreshTrigger]);
 
-    const handleAccept = () => {
-        if (!parsedOutput) return;
+    // const handleAccept = () => {
+    //     if (!parsedOutput) return;
 
-        startTransition(async () => {
-            try {
-                const result = await updateProjects(orgId, parsedOutput.groups);
-                if (result?.success) {
-                    toast.success("Teams updated successfully!");
-                    setOutput("");
-                    setParsedOutput(null);
-                    setRefreshTrigger((prev: number) => prev + 1);
-                } else {
-                    toast.error(result?.message || "Failed to update projects");
-                }
-            } catch (error) {
-                console.error("Failed to update projects:", error);
-                toast.error("Failed to update teams");
-            }
-        });
-    };
+    //     startTransition(async () => {
+    //         try {
+    //             const result = await updateProjects(orgId, parsedOutput.groups);
+    //             if (result?.success) {
+    //                 toast.success("Teams updated successfully!");
+    //                 setOutput("");
+    //                 setParsedOutput(null);
+    //                 setRefreshTrigger((prev: number) => prev + 1);
+    //             } else {
+    //                 toast.error(result?.message || "Failed to update projects");
+    //             }
+    //         } catch (error) {
+    //             console.error("Failed to update projects:", error);
+    //             toast.error("Failed to update teams");
+    //         }
+    //     });
+    // };
 
     const handleProjectCreated = () => {
         setRefreshTrigger((prev: number) => prev + 1);
@@ -279,43 +235,51 @@ const ProjTab = ({
     const handleConfirmAssignment = async () => {
         startTransition(async () => {
             try {
-                // console.log("🚀 Applying preview changes:", previewChanges);
-                
-                // Apply all preview changes to the database
-                for (const [projectId, changes] of Object.entries(previewChanges)) {
-                    // Remove members
-                    for (const memberEmail of changes.removedMembers) {
-                        const removeResult = await removeProjectMember(projectId, memberEmail);
-                        if (!removeResult.success) {
-                            console.error(`Failed to remove member ${memberEmail} from project ${projectId}`);
-                        }
-                    }
-                    
-                    // Remove admins
-                    for (const adminEmail of changes.removedAdmins) {
-                        const removeResult = await removeProjectMember(projectId, adminEmail);
-                        if (!removeResult.success) {
-                            console.error(`Failed to remove admin ${adminEmail} from project ${projectId}`);
-                        }
-                    }
-                    
-                    // Add members
-                    for (const memberEmail of changes.addedMembers) {
-                        const addResult = await addProjectMember(projectId, memberEmail, "member");
-                        if (!addResult.success) {
-                            console.error(`Failed to add member ${memberEmail} to project ${projectId}`);
-                        }
-                    }
-                    
-                    // Add admins
-                    for (const adminEmail of changes.addedAdmins) {
-                        const addResult = await addProjectMember(projectId, adminEmail, "admin");
-                        if (!addResult.success) {
-                            console.error(`Failed to add admin ${adminEmail} to project ${projectId}`);
-                        }
-                    }
+                // 汇总所有项目的最终成员/管理员（包含预览变更与未拖动的 AI 建议）
+                const addedEverywhere = new Set<string>();
+                Object.values(previewChanges).forEach((c) => {
+                    c.addedMembers.forEach((e) => addedEverywhere.add(e));
+                    c.addedAdmins.forEach((e) => addedEverywhere.add(e));
+                });
+
+                const updates = displayProjects.map((project) => {
+                    const aiPreview = previewData?.preview?.find((p) => p.projectId === project.projId);
+                    const proposedNewMembers = aiPreview?.proposedNewMembers || [];
+                    const projectChanges = previewChanges[project.projId] || {
+                        addedMembers: [],
+                        removedMembers: [],
+                        addedAdmins: [],
+                        removedAdmins: [],
+                    };
+
+                    // 当前成员/管理员
+                    const baseMembers = (project.members || []).filter((m) => !projectChanges.removedMembers.includes(m));
+                    const baseAdmins = (project.admins || []).filter((a) => !projectChanges.removedAdmins.includes(a));
+
+                    // 叠加新增
+                    let members = [...baseMembers, ...projectChanges.addedMembers];
+                    const admins: string[] = [...baseAdmins, ...projectChanges.addedAdmins];
+
+                    // 将仍未拖动的 AI 建议加入成员（排除已被手动添加到任意项目的人）
+                    const remainingProposed = proposedNewMembers.filter((email: string) => !addedEverywhere.has(email));
+                    members = [...members, ...remainingProposed];
+
+                    // 去重与互斥（管理员从成员里移除）
+                    const uniqueAdmins = Array.from(new Set(admins));
+                    const uniqueMembers = Array.from(new Set(members)).filter((m) => !uniqueAdmins.includes(m));
+
+                    return {
+                        projectId: project.projId,
+                        members: uniqueMembers,
+                        admins: uniqueAdmins,
+                    };
+                });
+
+                const result = await applyGroupAssignments(orgId, updates);
+                if (!result?.success) {
+                    throw new Error(result?.message || "Apply group assignments failed");
                 }
-                
+
                 toast.success("All changes applied successfully!");
                 setIsPreviewDialogOpen(false);
                 setPreviewData(null);
@@ -329,7 +293,7 @@ const ProjTab = ({
                     message: "Failed to apply some changes",
                     details: error instanceof Error ? error.message : String(error),
                     timestamp: new Date(),
-                    canRetry: true
+                    canRetry: true,
                 });
             }
         });
@@ -387,8 +351,10 @@ const ProjTab = ({
             }
 
             if (fromProjectId === "unassigned") {
-                // AI suggested member - just add to target
-                newChanges[toProjectId].addedMembers.push(memberEmail);
+                // AI suggested member - just add to target if not already added
+                if (!newChanges[toProjectId].addedMembers.includes(memberEmail) && !newChanges[toProjectId].addedAdmins.includes(memberEmail)) {
+                    newChanges[toProjectId].addedMembers.push(memberEmail);
+                }
             } else {
                 // Initialize source project changes if not exists
                 if (!newChanges[fromProjectId]) {
@@ -396,12 +362,18 @@ const ProjTab = ({
                 }
 
                 if (isAdminInSource) {
-                    // Admin can be in multiple projects - copy
-                    newChanges[toProjectId].addedAdmins.push(memberEmail);
+                    // Admin can be in multiple projects - copy (avoid duplicates)
+                    if (!newChanges[toProjectId].addedAdmins.includes(memberEmail)) {
+                        newChanges[toProjectId].addedAdmins.push(memberEmail);
+                    }
                 } else {
                     // Regular member - move (remove from source, add to target)
-                    newChanges[fromProjectId].removedMembers.push(memberEmail);
-                    newChanges[toProjectId].addedMembers.push(memberEmail);
+                    if (!newChanges[fromProjectId].removedMembers.includes(memberEmail)) {
+                        newChanges[fromProjectId].removedMembers.push(memberEmail);
+                    }
+                    if (!newChanges[toProjectId].addedMembers.includes(memberEmail)) {
+                        newChanges[toProjectId].addedMembers.push(memberEmail);
+                    }
                 }
             }
             
@@ -416,17 +388,46 @@ const ProjTab = ({
 
 
     const totalProjects = allProjects?.docs.length || 0;
-    const activeProjects = userRole === "admin" 
-        ? (allProjects?.docs || []).filter(proj => (proj.data() as Project).members?.length > 0).length
-        : userProjList.length;
-
-    // 根据用户角色决定显示哪些项目
+    
+    // 合并项目数据：从主集合获取 title，从组织子集合获取成员信息
+    const allProjectsData = (allProjects?.docs || []).map((doc) => {
+        const mainData = doc.data(); // 主集合数据（包含 title）
+        const orgProjectDoc = orgProjects?.docs.find(orgDoc => orgDoc.id === doc.id);
+        const orgData = orgProjectDoc?.data(); // 组织子集合数据（包含成员信息）
+        
+        return {
+            projId: doc.id,
+            orgId: orgId,
+            title: mainData?.title, // 从主集合读取 title
+            members: orgData?.members || [], // 从组织子集合读取成员
+            admins: orgData?.admins || [], // 从组织子集合读取管理员
+            adminsAsUsers: orgData?.adminsAsUsers || [],
+            teamCharterResponse: mainData?.teamCharterResponse || [],
+            teamSize: orgData?.teamSize, // 从组织子集合读取团队大小
+            createdAt: mainData?.createdAt,
+            description: mainData?.description,
+            projectType: mainData?.projectType,
+            ...mainData,
+            // 用组织子集合的数据覆盖成员相关字段
+            ...(orgData && {
+                members: orgData.members || [],
+                admins: orgData.admins || [],
+                teamSize: orgData.teamSize
+            })
+        } as Project;
+    });
+    
+    // 根据用户角色过滤项目
     const displayProjects = userRole === "admin" 
-        ? (allProjects?.docs || []).map((doc) => ({
-            ...(doc.data() as Project),
-            projId: doc.id
-        }))
-        : userProjList;
+        ? allProjectsData // 管理员显示所有项目
+        : allProjectsData.filter(proj => 
+            // 普通用户只显示自己参与的项目
+            proj.members?.includes(userId) || proj.admins?.includes(userId)
+        );
+    
+    const activeProjects = displayProjects.filter(proj => 
+        (proj.members?.length || 0) > 0 || (proj.admins?.length || 0) > 0
+    ).length;
 
     return (
         <>
@@ -435,7 +436,7 @@ const ProjTab = ({
                 message="Processing Team Groups..."
                 description="Applying new team group configuration, please wait..."
             />
-            <div className="flex h-auto bg-gradient-to-br from-gray-50 to-purple-50 rounded-lg overflow-hidden py-12">
+            <div className="flex h-auto bg-gradient-to-br from-gray-50 to-purple-50 rounded-lg overflow-hidden">
             {/* Left Sidebar */}
             <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
                 {/* Header */}
@@ -569,7 +570,7 @@ const ProjTab = ({
             {/* Right Content Area */}
             <div className="flex-1 flex flex-col bg-white">
                 {/* Team Generation Results */}
-                {output && parsedOutput && parsedOutput.groups && (
+                {/* {output && parsedOutput && parsedOutput.groups && (
                     <div className="p-6 border-b border-gray-200 bg-blue-50">
                         <h3 className="text-lg font-semibold text-gray-900 mb-4">
                             Generated Team Groups
@@ -616,7 +617,7 @@ const ProjTab = ({
                             </Button>
                         </div>
                     </div>
-                )}
+                )} */}
 
                 {/* Content Header */}
                 <div className="p-6 border-b border-gray-200 bg-white">
@@ -635,7 +636,7 @@ const ProjTab = ({
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                     {displayProjects
                                         .sort((a, b) =>
-                                            a.title.localeCompare(b.title),
+                                            (a.title || "").localeCompare(b.title || ""),
                                         )
                                         .map((proj) => (
                                             <div
@@ -726,22 +727,28 @@ const ProjTab = ({
                                         addedMembers: [], removedMembers: [], addedAdmins: [], removedAdmins: [] 
                                     };
                                     
-                                    const effectiveMembers = [
+                                    const effectiveMembersRaw = [
                                         ...(project.members || []).filter(m => !projectChanges.removedMembers.includes(m)),
                                         ...projectChanges.addedMembers
                                     ];
                                     
-                                    const effectiveAdmins = [
+                                    const effectiveAdminsRaw = [
                                         ...(project.admins || []).filter(a => !projectChanges.removedAdmins.includes(a)),
                                         ...projectChanges.addedAdmins
                                     ];
+
+                                    // 去重并确保管理员不出现在成员列表
+                                    const effectiveAdmins = Array.from(new Set(effectiveAdminsRaw));
+                                    const effectiveMembers = Array.from(new Set(effectiveMembersRaw)).filter(m => !effectiveAdmins.includes(m));
                                     
-                                    // Filter out AI proposed members that have been manually moved
-                                    const remainingProposedMembers = proposedNewMembers.filter((email: string) => 
-                                        !Object.values(previewChanges).some(changes => 
-                                            changes.addedMembers.includes(email) || changes.addedAdmins.includes(email)
+                                    // 过滤 AI 提议：去重，排除已在任一项目被手动加入，且排除已在当前有效成员/管理员中的邮箱
+                                    const remainingProposedMembers = Array.from(new Set(proposedNewMembers))
+                                        .filter((email: string) => 
+                                            !Object.values(previewChanges).some(changes => 
+                                                changes.addedMembers.includes(email) || changes.addedAdmins.includes(email)
+                                            )
                                         )
-                                    );
+                                        .filter((email: string) => !effectiveMembers.includes(email) && !effectiveAdmins.includes(email));
                                     
                                     return (
                                         <motion.div
@@ -796,11 +803,11 @@ const ProjTab = ({
                                                 <h3 className="font-semibold text-gray-900 mb-1">{project.title}</h3>
                                                 <div className="text-sm text-gray-500">
                                                     {effectiveMembers.length + effectiveAdmins.length + remainingProposedMembers.length} members
-                                                    {aiPreview && (
+                                                    {/* {aiPreview && (
                                                         <span className="ml-2 text-xs text-purple-600 font-medium">
                                                             Score: {aiPreview.aiMatchingScore || 'N/A'}
                                                         </span>
-                                                    )}
+                                                    )} */}
                                                 </div>
                                             </div>
                                             
@@ -808,35 +815,16 @@ const ProjTab = ({
                                                 {/* Effective Admins */}
                                                 {effectiveAdmins.map((adminEmail) => {
                                                     const isBeingDragged = draggedMember?.email === adminEmail && draggedMember?.fromProject === project.projId;
-                                                    const isNewlyAdded = projectChanges.addedAdmins.includes(adminEmail);
+                                                    // const isNewlyAdded = projectChanges.addedAdmins.includes(adminEmail);
                                                     return (
                                                         <div
                                                             key={`admin-${adminEmail}`}
-                                                            className={`flex items-center gap-2 p-2 rounded-md cursor-move transition-all duration-200 ${
-                                                                isNewlyAdded 
-                                                                    ? 'bg-yellow-100 border-2 border-yellow-300' 
-                                                                    : 'bg-red-100'
-                                                            } ${
-                                                                isBeingDragged ? 'opacity-30 scale-95 shadow-none' : 'opacity-100 scale-100 shadow-sm hover:shadow-md'
-                                                            }`}
-                                                            draggable={true}
-                                                            onDragStart={(e) => {
-                                                                // console.log("Dragging admin:", adminEmail, "userRole:", userRole);
-                                                                setDraggedMember({
-                                                                    email: adminEmail,
-                                                                    name: adminEmail,
-                                                                    fromProject: project.projId
-                                                                });
-                                                                e.dataTransfer.effectAllowed = "move";
-                                                                e.dataTransfer.setData("text/plain", adminEmail);
-                                                            }}
-                                                            onDragEnd={() => {
-                                                                // console.log("Drag ended for admin:", adminEmail);
-                                                                setDraggedMember(null);
-                                                            }}
+                                                            className={`flex items-center gap-2 p-2 rounded-md transition-all duration-200 bg-red-100 border border-red-300 ${
+                                                                isBeingDragged ? 'opacity-30 scale-95 shadow-none' : 'opacity-100 scale-100 shadow-sm'
+                                                            } cursor-default`}
+                                                            draggable={false}
                                                         >
                                                             <span className="text-sm truncate">{adminEmail}</span>
-                                                            {isNewlyAdded && <span className="text-xs text-yellow-600">(Preview)</span>}
                                                         </div>
                                                     );
                                                 })}
@@ -844,16 +832,12 @@ const ProjTab = ({
                                                 {/* Effective Members */}
                                                 {effectiveMembers.map((memberEmail) => {
                                                     const isBeingDragged = draggedMember?.email === memberEmail && draggedMember?.fromProject === project.projId;
-                                                    const isNewlyAdded = projectChanges.addedMembers.includes(memberEmail);
+                                                    // const isNewlyAdded = projectChanges.addedMembers.includes(memberEmail);
                                                     return (
                                                         <div
                                                             key={`member-${memberEmail}`}
-                                                            className={`flex items-center gap-2 p-2 rounded-md cursor-move transition-all duration-200 ${
-                                                                isNewlyAdded 
-                                                                    ? 'bg-yellow-100 border-2 border-yellow-300' 
-                                                                    : 'bg-blue-100'
-                                                            } ${
-                                                                isBeingDragged ? 'opacity-30 scale-95 shadow-none' : 'opacity-100 scale-100 shadow-sm hover:shadow-md'
+                                                            className={`flex items-center gap-2 p-2 rounded-md cursor-move transition-all duration-200 bg-green-100 border border-green-300 ${
+                                                                isBeingDragged ? 'opacity-30 scale-95 shadow-none' : 'opacity-100 scale-100 shadow-sm hover:shadow-md hover:border-green-400'
                                                             }`}
                                                             draggable={true}
                                                             onDragStart={(e) => {
@@ -872,7 +856,6 @@ const ProjTab = ({
                                                             }}
                                                         >
                                                             <span className="text-sm truncate">{memberEmail}</span>
-                                                            {isNewlyAdded && <span className="text-xs text-yellow-600">(Preview)</span>}
                                                         </div>
                                                     );
                                                 })}
@@ -883,8 +866,8 @@ const ProjTab = ({
                                                     return (
                                                         <div
                                                             key={`proposed-${memberEmail}`}
-                                                            className={`flex items-center gap-2 p-2 bg-green-100 border-2 border-green-300 rounded-md cursor-move transition-all duration-200 ${
-                                                                isBeingDragged ? 'opacity-30 scale-95 shadow-none border-green-200' : 'opacity-100 scale-100 shadow-sm hover:shadow-md hover:border-green-400'
+                                                            className={`flex items-center gap-2 p-2 rounded-md cursor-move transition-all duration-200 bg-green-100 border border-green-300 ${
+                                                                isBeingDragged ? 'opacity-30 scale-95 shadow-none' : 'opacity-100 scale-100 shadow-sm hover:shadow-md hover:border-green-400'
                                                             }`}
                                                             draggable={true}
                                                             onDragStart={(e) => {
@@ -919,12 +902,12 @@ const ProjTab = ({
                                             </div>
                                             
                                             {/* AI Insight */}
-                                            {aiPreview && (
+                                            {/* {aiPreview && (
                                                 <div className="mt-3 p-2 bg-purple-50 rounded-md pointer-events-none">
                                                     <div className="text-xs text-purple-700 font-medium mb-1">AI Insight:</div>
                                                     <div className="text-xs text-purple-600">{aiPreview.matchingReasoning}</div>
                                                 </div>
-                                            )}
+                                            )} */}
                                         </motion.div>
                                     );
                                 })}

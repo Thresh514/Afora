@@ -6,7 +6,7 @@ import { useRouter, useParams } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition, useCallback } from "react";
 import React from "react";
 import Link from "next/link";
-import { getOverdueTasks, assignTask, unassignTask, reassignTask } from "@/actions/actions";
+import { getOverdueTasks, assignTask, reassignTask, completeTaskWithProgress } from "@/actions/actions";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCollection, useDocument } from "react-firebase-hooks/firestore";
 import { db } from "@/firebase";
@@ -177,6 +177,11 @@ function StagePage() {
         }
     };
 
+    const handleCompleteTask = (taskId: string) => {
+        completeTaskWithProgress(projId, stageId, taskId, 100)
+        toast.success("🎉 Task marked as complete!");
+    }
+
     const handleDeleteTask = (taskId: string) => {
         startTransition(() => {
             deleteTask(projId, stageId, taskId)
@@ -216,11 +221,11 @@ function StagePage() {
         });
     };
 
-    const handleSwapTask = async (taskId: string) => {
-        setCurrentTaskId(taskId);
-        setSwapAssigneeEmail("");
-        setSwapTaskDialogOpen(true);
-    };
+    // const handleSwapTask = async (taskId: string) => {
+    //     setCurrentTaskId(taskId);
+    //     setSwapAssigneeEmail("");
+    //     setSwapTaskDialogOpen(true);
+    // };
 
     const handleSwapTaskConfirm = async () => {
         if (!swapAssigneeEmail.trim()) {
@@ -252,17 +257,17 @@ function StagePage() {
         });
     };
 
-    const handleDropTask = async (taskId: string) => {
-        startTransition(async () => {
-            const result = await unassignTask(projId, stageId, taskId);
+    // const handleDropTask = async (taskId: string) => {
+    //     startTransition(async () => {
+    //         const result = await unassignTask(projId, stageId, taskId);
             
-            if (result.success) {
-                toast.success("Task dropped successfully!");
-            } else {
-                toast.error(result.message || "Failed to drop task");
-            }
-        });
-    };
+    //         if (result.success) {
+    //             toast.success("Task dropped successfully!");
+    //         } else {
+    //             toast.error(result.message || "Failed to drop task");
+    //         }
+    //     });
+    // };
 
     return (
         <div className="w-full h-full flex flex-col bg-gray-100">
@@ -617,9 +622,8 @@ function StagePage() {
                     isEditing={isEditing}
                     handleNewTask={handleNewTask}
                     handleDeleteTask={handleDeleteTask}
-                    handleSwapTask={handleSwapTask}
-                    handleDropTask={handleDropTask}
                     handleAcceptTask={handleAcceptTask}
+                    handleCompleteTask={handleCompleteTask}
                     isPending={isPending}
                     isOpen={isDeleteTaskOpen} // Pass Delete Task state
                     setIsOpen={setIsDeleteTaskOpen} // Pass Delete Task state setter

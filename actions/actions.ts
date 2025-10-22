@@ -474,7 +474,8 @@ export async function updateProjects(orgId: string, groups: string[][]) {
                 .collection("organizations")
                 .doc(orgId)
                 .collection("projs")
-                .add({
+                .doc(projectId)
+                .set({
                     projId: projectId,
                     members: group,
                 });
@@ -503,7 +504,6 @@ export async function createProject(
     orgId: string,
     projectTitle: string,
     members: string[] = [],
-    teamSize?: number,
     admins: string[] = [],
 ) {
     const { sessionClaims } = await auth();
@@ -556,35 +556,37 @@ export async function createProject(
             throw new Error("Organization not found");
         }
 
+        const finalAdmins = admins.includes(userId) ? admins : [...admins, userId];
+        const finalTeamSize = finalAdmins.length + members.length;
+
         // 创建项目文档
         const projectData: any = {
             orgId: orgId,
             title: projectTitle.trim(),
             members: members,
-            admins: admins.length > 0 ? admins : [userId], // Use provided admins or fallback to creator
+            admins: finalAdmins,
+            teamSize: finalTeamSize,
             createdAt: Timestamp.now(),
         };
-        
-        // 如果提供了团队大小，则添加到项目数据中
-        if (teamSize && teamSize > 0) {
-            projectData.teamSize = teamSize;
-        }
         
         const projectRef = await adminDb.collection("projects").add(projectData);
 
         const projectId = projectRef.id;
 
-        // 更新项目文档添加 projId 字段
         await projectRef.update({ projId: projectId });
 
-        // 在组织的项目子集合中添加引用
         await adminDb
             .collection("organizations")
             .doc(orgId)
             .collection("projs")
-            .add({
+            .doc(projectId)
+            .set({
                 projId: projectId,
+                title: projectTitle.trim(),
                 members: members,
+                admins: finalAdmins,
+                teamSize: finalTeamSize,
+                createdAt: Timestamp.now(),
             });
 
         // 为创建者添加项目引用
@@ -593,12 +595,26 @@ export async function createProject(
             .doc(userId)
             .collection("projs")
             .doc(projectId)
-            .set(
-                {
-                    orgId: orgId,
-                },
+            .set({orgId: orgId,},
                 { merge: true },
             );
+
+        // 为所有管理员添加项目引用
+        for (const adminEmail of finalAdmins) {
+            try {
+                await adminDb
+                    .collection("users")
+                    .doc(adminEmail)
+                    .collection("projs")
+                    .doc(projectId)
+                    .set({orgId: orgId,},{ merge: true },);
+            } catch (error) {
+                console.error(
+                    `Failed to add project reference for admin ${adminEmail}:`,
+                    error,
+                );
+            }
+        }
 
         // 为所有成员添加项目引用
         for (const memberEmail of members) {
@@ -1146,7 +1162,7 @@ export async function getProjectMembersResponses(projId: string) {
         const projectData = projectDoc.data();
         const allMembers = [
             ...(projectData?.members || []),
-            ...(projectData?.admins || []),
+            ...(projectData?.adminsAsUsers || []),
         ];
         
         // 去重，确保没有重复的成员
@@ -1759,7 +1775,7 @@ export async function getProjectLeaderboard(projId: string) {
         const projectData = projectDoc.data();
         const allMembers = [
             ...(projectData?.members || []),
-            ...(projectData?.admins || []),
+            ...(projectData?.adminsAsUsers || []),
         ];
 
         const scores = await adminDb
@@ -1909,7 +1925,22 @@ export async function getProjectStats(projId: string) {
     }
 }
 
-// ================ 团队管理系统 ================
+
+async function findOrgProject(orgId: string, projId: string) {
+    const orgProjectsQuery = adminDb.collection("organizations").doc(orgId).collection("projs").where("projId", "==", projId);
+    const orgProjectsSnapshot = await orgProjectsQuery.get();
+
+    if (orgProjectsSnapshot.empty) {
+        return null;
+    }
+
+    const orgProjectDoc = orgProjectsSnapshot.docs[0];
+    return {
+        doc: orgProjectDoc,
+        ref: orgProjectDoc.ref,
+        data: orgProjectDoc.data()
+    };
+}
 
 export async function addProjectMember(
     projId: string,
@@ -1932,7 +1963,7 @@ export async function addProjectMember(
             return { success: false, message: `User with email ${userEmail} not found` };
         }
 
-        // Check if project exists
+        // First get the project from the projects collection to get orgId
         const projectRef = adminDb.collection("projects").doc(projId);
         const projectDoc = await projectRef.get();
 
@@ -1942,27 +1973,63 @@ export async function addProjectMember(
         }
 
         const projectData = projectDoc.data();
-        const currentMembers = projectData?.members || [];
-        const currentAdmins = projectData?.admins || [];
+        const orgId = projectData?.orgId;
+        
+        if (!orgId) {
+            console.error(`No orgId found for project: ${projId}`);
+            return { success: false, message: "Project organization not found" };
+        }
+
+        // Now work with the organization's subcollection
+        const orgProject = await findOrgProject(orgId, projId);
+        if (!orgProject) {
+            console.error(`Project not found in organization subcollection: ${projId}`);
+            return { success: false, message: "Project not found in organization" };
+        }
+
+        const orgProjectRef = orgProject.ref;
+        const orgProjectData = orgProject.data;
+        const currentMembers = orgProjectData?.members || [];
+        const currentAdmins = orgProjectData?.admins || [];
 
         // Check if user is already a member
-        if (
-            currentMembers.includes(userEmail) ||
-            currentAdmins.includes(userEmail)
-        ) {
-            console.error(`User already member: ${userEmail}`);
+        const isAlreadyMember = currentMembers.includes(userEmail) || currentAdmins.includes(userEmail);
+        if (isAlreadyMember) {
             return { success: false, message: "User is already a member of this project" };
         }
 
-        // Add user to project
+        // Check team capacity before adding
+        const teamSize = orgProjectData?.teamSize || projectData?.teamSize || 3; // Default to 3 if not set
+        const currentTotalMembers = currentMembers.length + currentAdmins.length;
+        
+        if (currentTotalMembers >= teamSize) {
+            return { 
+                success: false, 
+                message: `Project is full (${currentTotalMembers}/${teamSize} members). Cannot add more members.` 
+            };
+        }
+
+        // Add user to project in both collections
         if (role === "admin") {
-            await projectRef.update({
-                admins: [...currentAdmins, userEmail],
-            });
+            const updatedAdmins = [...currentAdmins, userEmail];
+            await Promise.all([
+                projectRef.update({
+                    admins: updatedAdmins,
+                }),
+                orgProjectRef.update({
+                    admins: updatedAdmins,
+                })
+            ]);
         } else {
-            await projectRef.update({
-                members: [...currentMembers, userEmail],
-            });
+            const updatedMembers = [...currentMembers, userEmail];
+            await Promise.all([
+                projectRef.update({
+                    members: updatedMembers,
+                }),
+                orgProjectRef.update({
+                    members: updatedMembers,
+                })
+            ]);
         }
 
         // Add project to user's projs collection
@@ -2018,10 +2085,21 @@ export async function updateProjectMembers(
         const projectData = projectDoc.data();
         const orgId = projectData?.orgId;
 
-        // update the project members list
-        await projectRef.update({
-            members: memberEmails,
-        });
+        if (!orgId) {
+            throw new Error("Project organization not found");
+        }
+
+        // Update both the main projects collection and organization subcollection
+        const orgProjectRef = adminDb.collection("organizations").doc(orgId).collection("projs").doc(projId);
+        
+        await Promise.all([
+            projectRef.update({
+                members: memberEmails,
+            }),
+            orgProjectRef.update({
+                members: memberEmails,
+            })
+        ]);
 
         // add the project to the new members' projs collection
         for (const memberEmail of memberEmails) {
@@ -2066,7 +2144,7 @@ export async function removeProjectMember(projId: string, userEmail: string) {
 
         // console.log(`Removing member: ${userEmail} from project: ${projId}`);
 
-        // Check if project exists
+        // First get the project from the projects collection to get orgId
         const projectRef = adminDb.collection("projects").doc(projId);
         const projectDoc = await projectRef.get();
 
@@ -2076,16 +2154,27 @@ export async function removeProjectMember(projId: string, userEmail: string) {
         }
 
         const projectData = projectDoc.data();
-        const currentMembers = projectData?.members || [];
-        const currentAdmins = projectData?.admins || [];
-
-        // Check if user is actually a member
-        if (!currentMembers.includes(userEmail) && !currentAdmins.includes(userEmail)) {
-            console.error(`User not a member: ${userEmail}`);
-            return { success: false, message: "User is not a member of this project" };
+        const orgId = projectData?.orgId;
+        
+        if (!orgId) {
+            console.error(`No orgId found for project: ${projId}`);
+            return { success: false, message: "Project organization not found" };
         }
 
-        // Remove user from the members or admins list
+        // Now work with the organization's subcollection
+        const orgProject = await findOrgProject(orgId, projId);
+        if (!orgProject) {
+            console.error(`Project not found in organization subcollection: ${projId}`);
+            return { success: false, message: "Project not found in organization" };
+        }
+
+        const orgProjectRef = orgProject.ref;
+        const orgProjectData = orgProject.data;
+        const currentMembers = orgProjectData?.members || [];
+        const currentAdmins = orgProjectData?.admins || [];
+
+
+        // Remove user from the members and admins lists
         const updatedMembers = currentMembers.filter(
             (email: string) => email !== userEmail,
         );
@@ -2093,10 +2182,17 @@ export async function removeProjectMember(projId: string, userEmail: string) {
             (email: string) => email !== userEmail,
         );
 
-        await projectRef.update({
-            members: updatedMembers,
-            admins: updatedAdmins,
-        });
+        // Update both the main projects collection and organization subcollection
+        await Promise.all([
+            projectRef.update({
+                members: updatedMembers,
+                admins: updatedAdmins,
+            }),
+            orgProjectRef.update({
+                members: updatedMembers,
+                admins: updatedAdmins,
+            })
+        ]);
 
         // Remove the project from the user's projs collection
         try {
@@ -2143,7 +2239,7 @@ export async function changeProjectMemberRole(
 
         // console.log(`Changing role for: ${userEmail} in project: ${projId} to: ${newRole}`);
 
-        // Check if project exists
+        // First get the project from the projects collection to get orgId
         const projectRef = adminDb.collection("projects").doc(projId);
         const projectDoc = await projectRef.get();
 
@@ -2153,16 +2249,27 @@ export async function changeProjectMemberRole(
         }
 
         const projectData = projectDoc.data();
-        const currentMembers = projectData?.members || [];
-        const currentAdmins = projectData?.admins || [];
-
-        // Check if user is actually a member
-        if (!currentMembers.includes(userEmail) && !currentAdmins.includes(userEmail)) {
-            console.error(`User not a member: ${userEmail}`);
-            return { success: false, message: "User is not a member of this project" };
+        const orgId = projectData?.orgId;
+        
+        if (!orgId) {
+            console.error(`No orgId found for project: ${projId}`);
+            return { success: false, message: "Project organization not found" };
         }
 
-        // Remove user from both lists first
+        // Now work with the organization's subcollection
+        const orgProject = await findOrgProject(orgId, projId);
+        if (!orgProject) {
+            console.error(`Project not found in organization subcollection: ${projId}`);
+            return { success: false, message: "Project not found in organization" };
+        }
+
+        const orgProjectRef = orgProject.ref;
+        const orgProjectData = orgProject.data;
+        const currentMembers = orgProjectData?.members || [];
+        const currentAdmins = orgProjectData?.admins || [];
+
+
+        // Remove user from all lists first
         const updatedMembers = currentMembers.filter(
             (email: string) => email !== userEmail,
         );
@@ -2177,10 +2284,17 @@ export async function changeProjectMemberRole(
             updatedMembers.push(userEmail);
         }
 
-        await projectRef.update({
-            members: updatedMembers,
-            admins: updatedAdmins,
-        });
+        // Update both the main projects collection and organization subcollection
+        await Promise.all([
+            projectRef.update({
+                members: updatedMembers,
+                admins: updatedAdmins,
+            }),
+            orgProjectRef.update({
+                members: updatedMembers,
+                admins: updatedAdmins,
+            })
+        ]);
 
         // console.log(`Successfully changed ${userEmail} role to ${newRole} in project ${projId}`);
         return {
@@ -2266,9 +2380,31 @@ export async function updateProjectTeamSize(projId: string, teamSize: number) {
             throw new Error("Project not found");
         }
 
-        await projectRef.update({
-            teamSize: teamSize,
-        });
+        const projectData = projectDoc.data();
+        const orgId = projectData?.orgId;
+
+        if (!orgId) {
+            throw new Error("Project organization not found");
+        }
+
+        // Get current member count from organization subcollection
+        const orgProject = await findOrgProject(orgId, projId);
+        if (!orgProject) {
+            throw new Error("Project not found in organization");
+        }
+
+        const orgProjectRef = orgProject.ref;
+        const orgProjectData = orgProject.data;
+
+        // Update both the main projects collection and organization subcollection
+        await Promise.all([
+            projectRef.update({
+                teamSize: teamSize,
+            }),
+            orgProjectRef.update({
+                teamSize: teamSize,
+            })
+        ]);
 
         return {
             success: true,
@@ -2354,6 +2490,18 @@ export async function deleteProject(projId: string) {
         console.error("Error deleting project:", error);
         return { success: false, message: (error as Error).message };
     }
+}
+
+// Simple random matching helper used for temporary assignment without GPT
+function randomMatching(availableMembers: Array<{ email: string }>, teamSize: number): string[] {
+    const shuffled = [...availableMembers];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const temp = shuffled[i];
+        shuffled[i] = shuffled[j];
+        shuffled[j] = temp;
+    }
+    return shuffled.slice(0, teamSize).map(m => m.email);
 }
 
 // Backtracking algorithm to find optimal allocation strategy
@@ -2627,93 +2775,25 @@ export async function previewSmartAssignment(orgId: string, teamSize?: number) {
                     const plannedAllocation = (project as any).plannedAllocation || project.spotsAvailable;
                     const actualAllocationSize = Math.min(plannedAllocation, remainingMembers.length);
 
-                    // Call AI matching API
-                    let matchingResultRaw;
-                    if (existingMembersInfo.length > 0) {
-                        const matchingModule = await import("@/ai_scripts/matching");
-                        const { matchingWithExistingTeam } = matchingModule as any;
-                        matchingResultRaw = await matchingWithExistingTeam(
-                            actualAllocationSize,
-                            ["What is your primary area of expertise and main professional skills?", 
-                             "What industries or fields are you currently most interested in some levels of skills and experiences?", 
-                             "What future roles or job titles are you aiming for?"],
-                            matchingInput,
-                            existingMembersInfo
-                        );
-                    } else {
-                        const { matching } = await import("@/ai_scripts/matching");
-                        matchingResultRaw = await matching(
-                            actualAllocationSize,
-                            ["What is your primary area of expertise and main professional skills?", 
-                             "What industries or fields are you currently most interested in some levels of skills and experiences?", 
-                             "What future roles or job titles are you aiming for?"],
-                            matchingInput
-                        );
-                    }
-                    
-                    // Parse JSON string
-                    let matchingResult;
-                    try {
-                        matchingResult = typeof matchingResultRaw === 'string' 
-                            ? JSON.parse(matchingResultRaw) 
-                            : matchingResultRaw;
-                    } catch (parseError) {
-                        console.error(`Failed to parse AI matching result:`, parseError);
-                        throw new Error("Failed to parse AI matching result");
-                    }
+					// Random matching (temporary replacement for GPT)
+					const assignedEmails: string[] = randomMatching(remainingMembers, actualAllocationSize);
+					// Remove assigned members from remaining pool
+					remainingMembers = remainingMembers.filter(member => 
+						!assignedEmails.includes(member.email)
+					);
 
-                    // Check AI matching result
-                    let groups = null;
-                    if (matchingResult?.success && matchingResult.data?.groups) {
-                        groups = matchingResult.data.groups;
-                    } else if (matchingResult?.groups) {
-                        groups = matchingResult.groups;
-                    } else if (Array.isArray(matchingResult)) {
-                        groups = matchingResult;
-                    }
-
-                    let assignedEmails: string[] = [];
-                    if (groups && groups.length > 0) {
-                        // Take the first best matched group
-                        const bestGroup = groups[0];
-                        assignedEmails = Array.isArray(bestGroup) ? bestGroup : bestGroup.members || [];
-                        
-                        // Remove assigned members from remaining pool
-                        remainingMembers = remainingMembers.filter(member => 
-                            !assignedEmails.includes(member.email)
-                        );
-                    }
-
-                    preview.push({
-                        projectId: project.id,
-                        projectTitle: project.title,
-                        currentMembers: project.currentMembers,
-                        spotsAvailable: project.spotsAvailable,
-                        proposedNewMembers: assignedEmails,
-                        aiMatchingScore: matchingResult?.score || null,
-                        matchingReasoning: matchingResult?.reasoning || "AI matching completed"
-                    });
+					preview.push({
+						projectId: project.id,
+						projectTitle: project.title,
+						currentMembers: project.currentMembers,
+						spotsAvailable: project.spotsAvailable,
+						proposedNewMembers: assignedEmails,
+						aiMatchingScore: null,
+						matchingReasoning: "Random assignment (temporary)"
+					});
 
                 } catch (error) {
-                    console.error(`AI matching failed for project ${project.id}:`, error);
-                    // Fallback to simple assignment for this project
-                    const fallbackMembers = remainingMembers
-                        .slice(0, Math.min(project.spotsAvailable, remainingMembers.length))
-                        .map(member => member.email);
-                    
-                    remainingMembers = remainingMembers.filter(member => 
-                        !fallbackMembers.includes(member.email)
-                    );
-
-                    preview.push({
-                        projectId: project.id,
-                        projectTitle: project.title,
-                        currentMembers: project.currentMembers,
-                        spotsAvailable: project.spotsAvailable,
-                        proposedNewMembers: fallbackMembers,
-                        aiMatchingScore: null,
-                        matchingReasoning: "Fallback assignment (AI matching failed)"
-                    });
+					console.error(`Random matching failed for project ${project.id}:`, error);
                 }
             }
         }
@@ -2772,6 +2852,8 @@ export async function autoAssignMembersToProjects(orgId: string, teamSize?: numb
                 id: doc.id,
                 members: data.members || [],
                 title: data.title || "",
+                admins: data.admins || [],
+                adminsAsUsers: data.adminsAsUsers || [],
                 teamSize: data.teamSize || teamSize, // Use project's own team size or passed parameter
                 ...data,
             };
@@ -2781,7 +2863,9 @@ export async function autoAssignMembersToProjects(orgId: string, teamSize?: numb
         const assignedMembers = new Set();
         projects.forEach((project) => {
             const projectMembers = (project.members as string[]) || [];
-            projectMembers.forEach((member: string) =>
+            const participatingAdmins = (project.adminsAsUsers as string[]) || [];
+
+            [...projectMembers, ...participatingAdmins].forEach((member: string) =>
                 assignedMembers.add(member),
             );
         });
@@ -2848,9 +2932,10 @@ export async function autoAssignMembersToProjects(orgId: string, teamSize?: numb
             .map(project => {
                 const currentMembers = (project.members as string[]) || [];
                 const currentAdmins = ((project as any).admins as string[]) || [];
+                const participatingAdmins = (project.adminsAsUsers as string[]) || [];
                 // 合并成员和管理员，确保管理员的技能也被考虑
-                const allCurrentMembers = [...new Set([...currentMembers, ...currentAdmins])];
-                const projectTeamSize = project.teamSize || teamSize || 3; // Use project config > passed parameter > default
+                const allCurrentMembers = [...new Set([...currentMembers, ...currentAdmins, ...participatingAdmins])];
+                const projectTeamSize = project.teamSize || teamSize; // Use project config > passed parameter
                 const spotsAvailable = projectTeamSize - allCurrentMembers.length;
                 return {
                     ...project,
@@ -2916,107 +3001,51 @@ export async function autoAssignMembersToProjects(orgId: string, teamSize?: numb
                     const plannedAllocation = (project as any).plannedAllocation || project.spotsAvailable;
                     const actualAllocationSize = Math.min(plannedAllocation, memberSurveyData.length);
 
-                    // Call AI matching API, choose different strategy based on existing members
-                    let matchingResultRaw;
-                    if (existingMembersInfo.length > 0) {
-                        const matchingModule = await import("@/ai_scripts/matching");
-                        const { matchingWithExistingTeam } = matchingModule as any;
-                        matchingResultRaw = await matchingWithExistingTeam(
-                            actualAllocationSize, // Use actual allocatable member count
-                            ["What is your primary area of expertise and main professional skills?", 
-                             "What industries or fields are you currently most interested in some levels of skills and experiences?", 
-                             "What future roles or job titles are you aiming for?"], // Question list
-                            matchingInput, // New member data
-                            existingMembersInfo // Existing member data
-                        );
-                    } else {
-                        const { matching } = await import("@/ai_scripts/matching");
-                        matchingResultRaw = await matching(
-                            actualAllocationSize, // Use actual allocatable member count
-                            ["What is your primary area of expertise and main professional skills?", 
-                             "What industries or fields are you currently most interested in some levels of skills and experiences?", 
-                             "What future roles or job titles are you aiming for?"], // Question list
-                            matchingInput // New member data
-                        );
-                    }
-                    
-                    // Parse JSON string
-                    let matchingResult;
-                    try {
-                        matchingResult = typeof matchingResultRaw === 'string' 
-                            ? JSON.parse(matchingResultRaw) 
-                            : matchingResultRaw;
-                    } catch (parseError) {
-                        console.error(`Failed to parse AI matching result:`, parseError);
-                        throw new Error("Failed to parse AI matching result");
-                    }
+					// Random matching (temporary replacement for GPT)
+					const membersToAdd: string[] = randomMatching(memberSurveyData, actualAllocationSize);
+					if (membersToAdd.length > 0) {
+						const projectDoc = await adminDb.collection("projects").doc(project.id).get();
+						const projectData = projectDoc.data();
+						const currentMembers = (projectData?.members as string[]) || [];
+						const updatedMembers = [...currentMembers, ...membersToAdd];
 
-                    // Check AI matching result - handle different return formats
-                    let groups = null;
-                    if (matchingResult?.success && matchingResult.data?.groups) {
-                        // If has success field and nested data
-                        groups = matchingResult.data.groups;
-                    } else if (matchingResult?.groups) {
-                        // If directly returns groups
-                        groups = matchingResult.groups;
-                    } else if (Array.isArray(matchingResult)) {
-                        // If directly returns array
-                        groups = matchingResult;
-                    }
+						await adminDb.collection("projects").doc(project.id).update({
+							members: updatedMembers,
+						});
 
-                    if (groups && groups.length > 0) {
-                        // Take the first best matched group, ensure not exceeding actual allocatable members
-                        const bestGroup: string[] = groups[0];
-                        const membersToAdd: string[] = bestGroup.slice(0, actualAllocationSize);
-                        
-                        if (membersToAdd.length > 0) {
-                            // 获取当前项目的实际members和admins，只更新members字段
-                            const projectDoc = await adminDb.collection("projects").doc(project.id).get();
-                            const projectData = projectDoc.data();
-                            const currentMembers = (projectData?.members as string[]) || [];
-                            const updatedMembers = [...currentMembers, ...membersToAdd];
+						for (const memberEmail of membersToAdd) {
+							try {
+								await adminDb
+									.collection("users")
+									.doc(memberEmail)
+									.collection("projs")
+									.doc(project.id)
+									.set(
+										{
+											orgId: orgId,
+										},
+										{ merge: true },
+									);
+							} catch (error) {
+								console.error(
+									`Failed to add project reference for user ${memberEmail}:`,
+									error,
+								);
+							}
+						}
 
-                            // Update the project members (只更新普通成员，不影响管理员)
-                            await adminDb.collection("projects").doc(project.id).update({
-                                members: updatedMembers,
-                            });
+						memberSurveyData = memberSurveyData.filter(
+							member => !membersToAdd.includes(member.email)
+						);
 
-                            // Add the project to the new members' projs collection
-                            for (const memberEmail of membersToAdd) {
-                                try {
-                                    await adminDb
-                                        .collection("users")
-                                        .doc(memberEmail)
-                                        .collection("projs")
-                                        .doc(project.id)
-                                        .set(
-                                            {
-                                                orgId: orgId,
-                                            },
-                                            { merge: true },
-                                        );
-                                } catch (error) {
-                                    console.error(
-                                        `Failed to add project reference for user ${memberEmail}:`,
-                                        error,
-                                    );
-                                }
-                            }
-
-                            // Remove assigned members from the pending assignment list
-                            memberSurveyData = memberSurveyData.filter(
-                                member => !membersToAdd.includes(member.email)
-                            );
-
-                            totalAssignedCount += membersToAdd.length;
-                            assignmentResults.push({
-                                projectId: project.id,
-                                projectTitle: project.title,
-                                assignedMembers: membersToAdd,
-                                count: membersToAdd.length
-                            });
-                        }
-                    }
+						totalAssignedCount += membersToAdd.length;
+						assignmentResults.push({
+							projectId: project.id,
+							projectTitle: project.title,
+							assignedMembers: membersToAdd,
+							count: membersToAdd.length
+						});
+					}
                 } catch (error) {
                     console.error(`AI matching failed for project ${project.id}:`, error);
                     // If AI matching fails, could implement simple round-robin assignment as fallback
@@ -3453,7 +3482,7 @@ export async function initializeUserScores(projId?: string) {
             const projectData = projectDoc.data();
             const allMembers = [
                 ...(projectData?.members || []),
-                ...(projectData?.admins || []),
+                ...(projectData?.adminsAsUsers || []),
             ];
 
             for (const userEmail of allMembers) {
@@ -4024,5 +4053,294 @@ export async function autoDropOverdueTasksInternal(executedBy: string = "system"
             success: false, 
             message: `自动 drop 过期任务失败: ${(error as Error).message}` 
         };
+    }
+}
+
+// 修复 toggleAdminUserParticipation 函数
+export async function toggleAdminUserParticipation(
+    projId: string,
+    participate: boolean = true
+) {
+    try {
+        const { userId, sessionClaims } = await auth();
+        if (!userId) {
+            console.error("Auth failed: No userId");
+            return { success: false, message: "Unauthorized - Please sign in again" };
+        }
+
+        // 使用和其他函数相同的模式获取用户邮箱
+        let userEmail: string | undefined;
+
+        // 检查 sessionClaims 中的各种可能的邮箱字段
+        if (sessionClaims?.email && typeof sessionClaims.email === "string") {
+            userEmail = sessionClaims.email;
+        } else if (
+            sessionClaims?.primaryEmailAddress &&
+            typeof sessionClaims.primaryEmailAddress === "string"
+        ) {
+            userEmail = sessionClaims.primaryEmailAddress;
+        } else if (
+            sessionClaims?.emailAddresses &&
+            Array.isArray(sessionClaims.emailAddresses) &&
+            sessionClaims.emailAddresses.length > 0
+        ) {
+            userEmail = sessionClaims.emailAddresses[0] as string;
+        }
+
+        // 如果仍然没有邮箱，尝试从 Clerk API 获取
+        if (!userEmail) {
+            try {
+                const { currentUser } = await import("@clerk/nextjs/server");
+                const user = await currentUser();
+                userEmail =
+                    user?.emailAddresses?.[0]?.emailAddress ||
+                    user?.primaryEmailAddress?.emailAddress;
+            } catch (clerkError) {
+                console.error("Failed to get user from Clerk:", clerkError);
+            }
+        }
+
+        if (
+            !userEmail ||
+            typeof userEmail !== "string" ||
+            userEmail.trim().length === 0
+        ) {
+            console.error("Authentication failed: no valid email found");
+            return { 
+                success: false, 
+                message: `Unauthorized - no valid email found. Got: ${userEmail}` 
+            };
+        }
+
+        // 检查项目是否存在
+        const projectRef = adminDb.collection("projects").doc(projId);
+        const projectDoc = await projectRef.get();
+
+        if (!projectDoc.exists) {
+            console.error(`Project not found: ${projId}`);
+            return { success: false, message: "Project not found" };
+        }
+
+        const projectData = projectDoc.data();
+        const currentAdmins = projectData?.admins || [];
+        const currentAdminsAsUsers = projectData?.adminsAsUsers || [];
+
+        // 检查用户是否是admin
+        if (!currentAdmins.includes(userEmail)) {
+            console.error(`User is not an admin: ${userEmail}`);
+            return { success: false, message: "Only admins can toggle user participation" };
+        }
+
+        let updatedAdminsAsUsers = [...currentAdminsAsUsers];
+
+        if (participate) {
+            // 添加到参与用户活动的admin列表
+            if (!updatedAdminsAsUsers.includes(userEmail)) {
+                updatedAdminsAsUsers.push(userEmail);
+            }
+        } else {
+            // 从参与用户活动的admin列表中移除
+            updatedAdminsAsUsers = updatedAdminsAsUsers.filter(
+                (email: string) => email !== userEmail
+            );
+        }
+
+        await projectRef.update({
+            adminsAsUsers: updatedAdminsAsUsers,
+        });
+
+        return {
+            success: true,
+            message: participate 
+                ? "You are now participating in user activities" 
+                : "You are no longer participating in user activities",
+        };
+    } catch (error) {
+        console.error("Error toggling admin user participation:", error);
+        return { 
+            success: false, 
+            message: error instanceof Error ? error.message : "An unexpected error occurred" 
+        };
+    }
+}
+
+// 修复 checkAdminUserParticipation 函数
+export async function checkAdminUserParticipation(projId: string) {
+    try {
+        const { userId, sessionClaims } = await auth();
+        if (!userId) {
+            return { success: false, participating: false };
+        }
+
+        // 使用和其他函数相同的模式获取用户邮箱
+        let userEmail: string | undefined;
+
+        // 检查 sessionClaims 中的各种可能的邮箱字段
+        if (sessionClaims?.email && typeof sessionClaims.email === "string") {
+            userEmail = sessionClaims.email;
+        } else if (
+            sessionClaims?.primaryEmailAddress &&
+            typeof sessionClaims.primaryEmailAddress === "string"
+        ) {
+            userEmail = sessionClaims.primaryEmailAddress;
+        } else if (
+            sessionClaims?.emailAddresses &&
+            Array.isArray(sessionClaims.emailAddresses) &&
+            sessionClaims.emailAddresses.length > 0
+        ) {
+            userEmail = sessionClaims.emailAddresses[0] as string;
+        }
+
+        // 如果仍然没有邮箱，尝试从 Clerk API 获取
+        if (!userEmail) {
+            try {
+                const { currentUser } = await import("@clerk/nextjs/server");
+                const user = await currentUser();
+                userEmail =
+                    user?.emailAddresses?.[0]?.emailAddress ||
+                    user?.primaryEmailAddress?.emailAddress;
+            } catch (clerkError) {
+                console.error("Failed to get user from Clerk:", clerkError);
+            }
+        }
+
+        if (
+            !userEmail ||
+            typeof userEmail !== "string" ||
+            userEmail.trim().length === 0
+        ) {
+            return { success: false, participating: false };
+        }
+
+        const projectRef = adminDb.collection("projects").doc(projId);
+        const projectDoc = await projectRef.get();
+
+        if (!projectDoc.exists) {
+            return { success: false, participating: false };
+        }
+
+        const projectData = projectDoc.data();
+        const adminsAsUsers = projectData?.adminsAsUsers || [];
+        const isAdmin = projectData?.admins?.includes(userEmail) || false;
+
+        return {
+            success: true,
+            participating: adminsAsUsers.includes(userEmail),
+            isAdmin: isAdmin,
+        };
+    } catch (error) {
+        console.error("Error checking admin user participation:", error);
+        return { success: false, participating: false };
+    }
+}
+
+export async function applyGroupAssignments(
+    orgId: string,
+    updates: Array<{ projectId: string; members: string[]; admins: string[] }>,
+) {
+    const { userId } = await auth();
+    if (!userId) {
+        throw new Error("Unauthorized");
+    }
+
+    try {
+        if (!orgId || !Array.isArray(updates)) {
+            throw new Error("Invalid parameters");
+        }
+
+        for (const update of updates) {
+            const projectId = update.projectId;
+            const members = Array.from(
+                new Set((update.members || []).map((e) => e.trim()).filter(Boolean)),
+            );
+            const admins = Array.from(
+                new Set((update.admins || []).map((e) => e.trim()).filter(Boolean)),
+            );
+
+            const projectRef = adminDb.collection("projects").doc(projectId);
+            const projectSnap = await projectRef.get();
+            if (!projectSnap.exists) {
+                throw new Error(`Project not found: ${projectId}`);
+            }
+
+            const projectData = projectSnap.data() || {};
+            const projectOrgId = projectData.orgId;
+            if (!projectOrgId || projectOrgId !== orgId) {
+                throw new Error(
+                    `Project ${projectId} does not belong to organization ${orgId}`,
+                );
+            }
+
+            const orgProjRef = adminDb
+                .collection("organizations")
+                .doc(orgId)
+                .collection("projs")
+                .doc(projectId);
+
+            const currentMembers: string[] = (projectData.members as string[]) || [];
+            const currentAdmins: string[] = (projectData.admins as string[]) || [];
+            const currentParticipants = new Set([
+                ...currentMembers,
+                ...currentAdmins,
+            ]);
+            const newParticipants = new Set([...members, ...admins]);
+
+            // Always update main project doc
+            await projectRef.update({ members, admins });
+
+            // Only update org subcollection mirror if it already exists
+            try {
+                const orgProjSnap = await orgProjRef.get();
+                if (orgProjSnap.exists) {
+                    await orgProjRef.update({ members, admins });
+                }
+            } catch (err) {
+                // Intentionally ignore missing org mirror to avoid creating extra docs
+                // console.warn("Org project mirror update skipped:", err);
+            }
+
+            // Add references for newly added users
+            for (const email of newParticipants) {
+                if (!currentParticipants.has(email)) {
+                    try {
+                        await adminDb
+                            .collection("users")
+                            .doc(email)
+                            .collection("projs")
+                            .doc(projectId)
+                            .set({ orgId }, { merge: true });
+                    } catch (error) {
+                        console.warn(
+                            `Failed to add project reference for user ${email}:`,
+                            error,
+                        );
+                    }
+                }
+            }
+
+            // Remove references for users no longer in the project
+            for (const email of currentParticipants) {
+                if (!newParticipants.has(email)) {
+                    try {
+                        await adminDb
+                            .collection("users")
+                            .doc(email)
+                            .collection("projs")
+                            .doc(projectId)
+                            .delete();
+                    } catch (error) {
+                        console.warn(
+                            `Failed to remove project reference for user ${email}:`,
+                            error,
+                        );
+                    }
+                }
+            }
+        }
+
+        return { success: true, message: "Group assignments applied successfully" };
+    } catch (error) {
+        console.error("Error applying group assignments:", error);
+        return { success: false, message: (error as Error).message };
     }
 }

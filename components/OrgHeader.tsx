@@ -71,7 +71,7 @@ const OrgHeader = ({ id }: OrgHeaderProps) => {
     }
 
     return (
-        <div className="overflow-x-hidden p-4">
+        <div className="overflow-x-hidden">
             {/* Hero Section with Background Image */}
             <div className="relative w-full h-80 rounded-lg overflow-hidden">
                 {/* Background Image */}
@@ -107,13 +107,13 @@ const OrgHeader = ({ id }: OrgHeaderProps) => {
                     {/* Bottom Section */}
                     <div className="flex justify-between items-end">
                         {/* Organization Title */}
-                        <div className="flex-1">
+                        <div className="flex">
                             <div className="backdrop-blur-md bg-white/75 rounded-xl p-4 inline-block">
-                                <h1 className="text-5xl font-lighter tracking-wide text-gray-900 mb-2">
-                                    {orgData.title}
+                                <h1 title={orgData.title} className="text-5xl font-lighter tracking-wide text-gray-900 mb-2 truncate">
+                                    {orgData.title.slice(0, 60).trim() + (orgData.title.length>60? "..." : "")}
                                 </h1>
                                 {orgData.description && (
-                                    <p className="text-gray-700 text-lg max-w-2xl tracking-wide pl-2">
+                                    <p title={orgData.description} className="text-gray-700 text-lg max-w-2xl tracking-wide pl-2 truncate">
                                         {orgData.description}
                                     </p>
                                 )}

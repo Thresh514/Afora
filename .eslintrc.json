@@ -1,5 +1,5 @@
 {
-  "extends": ["next/core-web-vitals", "next/typescript"],
+  "extends": ["next/core-web-vitals", "next/typescript", "prettier"],
   "plugins": ["@typescript-eslint"],
   "rules": {
     "@typescript-eslint/ban-types": "off",
