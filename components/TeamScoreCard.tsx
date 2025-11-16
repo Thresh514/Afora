@@ -48,33 +48,65 @@ const TeamScoreCard = ({
                         !membersData.data ||
                         membersData.data.length === 0
                     ) {
-                        toast.error("No team member survey responses found");
+                        toast.error("No team member survey responses found. All team members must complete both app onboarding and project onboarding surveys before analysis can proceed.");
+                        return;
+                    }
 
-                        const memberResponses: string[] = [];
-                        
-                        // 获取 team charter 数据
-                        const teamCharterData = await getProjectTeamCharter(projectFilter);
-                        const teamCharterResponse = teamCharterData.success ? teamCharterData.data : [];
-                        
-                        // console.log("Team charter data (no members):", teamCharterResponse);
+                    // 验证所有成员是否都完成了调查
+                    const requiredAppQuestions = 3; // appQuestions 有 3 个问题
+                    const requiredProjQuestions = 5; // projQuestions 有 5 个问题
+                    
+                    const incompleteMembers: string[] = [];
+                    const membersWithMissingData: Array<{
+                        email: string;
+                        missingApp: boolean;
+                        missingProj: boolean;
+                    }> = [];
 
-                        const result = await analyzeTeamCompatibility(
-                            appQuestions,
-                            memberResponses,
-                            teamCharterResponse,
-                            projQuestions
-                        );
-                        const parsedResult: TeamCompatibilityAnalysis = JSON.parse(result);
-                        setAnalysis(parsedResult);
+                    // 检查每个成员的响应是否完整
+                    for (const member of membersData.data) {
+                        const appResponses = member.onboardingResponses || [];
+                        const projResponses = member.projResponses || [];
                         
-                        // 保存分析结果
-                        if (projectFilter) {
-                            await saveTeamAnalysis(projectFilter, parsedResult);
-                            setAnalysisTime(new Date());
-                            toast.success("Team analysis completed and saved!");
-                        } else {
-                            toast.success("Team analysis completed!");
+                        const hasCompleteApp = appResponses.length >= requiredAppQuestions && 
+                            appResponses.every((resp: string) => resp && resp.trim() !== "");
+                        const hasCompleteProj = projResponses.length >= requiredProjQuestions && 
+                            projResponses.every((resp: string) => resp && resp.trim() !== "");
+                        
+                        if (!hasCompleteApp || !hasCompleteProj) {
+                            incompleteMembers.push(member.email);
+                            membersWithMissingData.push({
+                                email: member.email,
+                                missingApp: !hasCompleteApp,
+                                missingProj: !hasCompleteProj,
+                            });
                         }
+                    }
+
+                    // 如果有成员没有完成调查，阻止分析
+                    if (incompleteMembers.length > 0) {
+                        const missingDetails = membersWithMissingData.map(m => {
+                            const missing = [];
+                            if (m.missingApp) missing.push("app onboarding survey");
+                            if (m.missingProj) missing.push("project onboarding survey");
+                            return `${m.email} (missing: ${missing.join(", ")})`;
+                        }).join("\n");
+                        
+                        toast.error(
+                            `Cannot proceed with analysis. The following team members have not completed their surveys:\n${missingDetails}`,
+                            { duration: 8000 }
+                        );
+                        return;
+                    }
+
+                    // 检查是否所有团队成员都有响应数据
+                    if (membersData.data.length < members.length) {
+                        const membersWithData = new Set(membersData.data.map((m: MemberData) => m.email));
+                        const missingMembers = members.filter(email => !membersWithData.has(email));
+                        toast.error(
+                            `Cannot proceed with analysis. The following team members have no survey data:\n${missingMembers.join(", ")}`,
+                            { duration: 8000 }
+                        );
                         return;
                     }
 
@@ -215,7 +247,10 @@ const TeamScoreCard = ({
                             : "Team Compatibility Analysis"}
                     </CardTitle>
                     <CardDescription>
-                        Analyze team&apos;s overall compatibility and collaboration potential based on member onboarding surveys
+                        Analyze team&apos;s overall compatibility and collaboration potential based on member onboarding surveys.
+                        <div className="mt-2 text-sm text-amber-600 font-medium">
+                            ⚠️ All team members must complete both app onboarding and project onboarding surveys before analysis can proceed.
+                        </div>
                         {analysisTime && (
                             <div className="mt-2 text-sm text-muted-foreground">
                                 Last analysis: {analysisTime.toLocaleString()}
