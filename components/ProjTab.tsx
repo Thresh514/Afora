@@ -16,6 +16,7 @@ import { Separator } from "./ui/separator";
 import ErrorDisplay, { ErrorInfo, showErrorToast } from "./ErrorDisplay";
 import AddNewTeamDialog from "./AddNewTeamDialog";
 import LoadingOverlay from "./LoadingOverlay";
+import SmartMatchingDragDrop from "./SmartMatchingDragDrop";
 import {
     AlertDialog,
     AlertDialogContent,
@@ -69,8 +70,6 @@ const ProjTab = ({
     
     // Member Transfer State (integrated with Smart Matching)
     const [transferLoading] = useState(false);
-    const [draggedMember, setDraggedMember] = useState<{email: string, name: string, fromProject: string} | null>(null);
-    const [dragOverProject, setDragOverProject] = useState<string | null>(null);
     
     // Preview state for temporary changes (not saved until confirm)
     const [previewChanges, setPreviewChanges] = useState<{
@@ -284,7 +283,6 @@ const ProjTab = ({
                 setIsPreviewDialogOpen(false);
                 setPreviewData(null);
                 setPreviewChanges({});
-                setDraggedMember(null);
                 setRefreshTrigger((prev: number) => prev + 1);
             } catch (error) {
                 console.error("Error applying changes:", error);
@@ -382,7 +380,6 @@ const ProjTab = ({
 
         const actionType = isAdminInSource ? "copied" : "moved";
         toast.success(`Member ${actionType} in preview! Click "Confirm Assignment" to apply.`);
-        setDraggedMember(null);
     };
 
 
@@ -709,210 +706,13 @@ const ProjTab = ({
                             </div>
                         </div> */}
 
-                        {/* Simple Project Grid with Drag & Drop */}
-                        <div className="space-y-4">
-                            <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                                <ArrowRightLeft className="h-4 w-4" />
-                                Drag members between projects to adjust assignments
-                            </div>
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {displayProjects.map((project) => {
-                                    // Find AI preview data for this project
-                                    const aiPreview = previewData.preview?.find((p) => p.projectId === project.projId);
-                                    const proposedNewMembers = aiPreview?.proposedNewMembers || [];
-                                    
-                                    // Calculate effective members/admins including preview changes
-                                    const projectChanges = previewChanges[project.projId] || { 
-                                        addedMembers: [], removedMembers: [], addedAdmins: [], removedAdmins: [] 
-                                    };
-                                    
-                                    const effectiveMembersRaw = [
-                                        ...(project.members || []).filter(m => !projectChanges.removedMembers.includes(m)),
-                                        ...projectChanges.addedMembers
-                                    ];
-                                    
-                                    const effectiveAdminsRaw = [
-                                        ...(project.admins || []).filter(a => !projectChanges.removedAdmins.includes(a)),
-                                        ...projectChanges.addedAdmins
-                                    ];
-
-                                    // 去重并确保管理员不出现在成员列表
-                                    const effectiveAdmins = Array.from(new Set(effectiveAdminsRaw));
-                                    const effectiveMembers = Array.from(new Set(effectiveMembersRaw)).filter(m => !effectiveAdmins.includes(m));
-                                    
-                                    // 过滤 AI 提议：去重，排除已在任一项目被手动加入，且排除已在当前有效成员/管理员中的邮箱
-                                    const remainingProposedMembers = Array.from(new Set(proposedNewMembers))
-                                        .filter((email: string) => 
-                                            !Object.values(previewChanges).some(changes => 
-                                                changes.addedMembers.includes(email) || changes.addedAdmins.includes(email)
-                                            )
-                                        )
-                                        .filter((email: string) => !effectiveMembers.includes(email) && !effectiveAdmins.includes(email));
-                                    
-                                    return (
-                                        <motion.div
-                                            key={project.projId}
-                                            className={`border-2 border-dashed rounded-lg p-4 min-h-[200px] transition-all duration-200 relative ${
-                                                dragOverProject === project.projId 
-                                                    ? 'border-blue-400 bg-blue-50 shadow-md scale-[1.02]' 
-                                                    : draggedMember && draggedMember.fromProject !== project.projId
-                                                        ? 'border-gray-400 bg-gray-100 hover:border-blue-300 hover:bg-blue-25'
-                                                        : 'border-gray-300 bg-gray-50 hover:border-gray-400'
-                                            }`}
-                                            whileHover={!draggedMember ? { scale: 1.02 } : {}}
-                                            onDragOver={(e) => {
-                                                e.preventDefault();
-                                                e.dataTransfer.dropEffect = "move";
-                                                setDragOverProject(project.projId);
-                                                // console.log("Drag over project:", project.projId);
-                                            }}
-                                            onDragLeave={() => {
-                                                setDragOverProject(null);
-                                            }}
-                                            onDrop={(e) => {
-                                                e.preventDefault();
-                                                setDragOverProject(null);
-                                                // console.log("Drop event triggered on project:", project.projId);
-                                                // console.log("draggedMember:", draggedMember);
-                                                if (draggedMember && draggedMember.fromProject !== project.projId) {
-                                                    // Check if this would be a valid drop before attempting transfer
-                                                    const isAlreadyInTarget = 
-                                                        (project.members?.includes(draggedMember.email)) || 
-                                                        (project.admins?.includes(draggedMember.email));
-                                                    
-                                                    if (isAlreadyInTarget) {
-                                                        showErrorToast({
-                                                            type: "smart_matching",
-                                                            message: "Member is already in this project",
-                                                            canRetry: false
-                                                        });
-                                                        return;
-                                                    }
-
-                                                    // console.log("Transferring member:", draggedMember.email, "from", draggedMember.fromProject, "to", project.projId);
-                                                    handlePreviewMemberTransfer(draggedMember.email, draggedMember.fromProject, project.projId);
-                                                } else {
-                                                    // console.log("Drop rejected - same project or no dragged member");
-                                                }
-                                            }}
-                                            style={{ pointerEvents: 'auto' }}
-                                        >
-                                            {/* Project Header */}
-                                            <div className="mb-3 pointer-events-none">
-                                                <h3 className="font-semibold text-gray-900 mb-1">{project.title}</h3>
-                                                <div className="text-sm text-gray-500">
-                                                    {effectiveMembers.length + effectiveAdmins.length + remainingProposedMembers.length} members
-                                                    {/* {aiPreview && (
-                                                        <span className="ml-2 text-xs text-purple-600 font-medium">
-                                                            Score: {aiPreview.aiMatchingScore || 'N/A'}
-                                                        </span>
-                                                    )} */}
-                                                </div>
-                                            </div>
-                                            
-                                            <div className="space-y-2">
-                                                {/* Effective Admins */}
-                                                {effectiveAdmins.map((adminEmail) => {
-                                                    const isBeingDragged = draggedMember?.email === adminEmail && draggedMember?.fromProject === project.projId;
-                                                    // const isNewlyAdded = projectChanges.addedAdmins.includes(adminEmail);
-                                                    return (
-                                                        <div
-                                                            key={`admin-${adminEmail}`}
-                                                            className={`flex items-center gap-2 p-2 rounded-md transition-all duration-200 bg-red-100 border border-red-300 ${
-                                                                isBeingDragged ? 'opacity-30 scale-95 shadow-none' : 'opacity-100 scale-100 shadow-sm'
-                                                            } cursor-default`}
-                                                            draggable={false}
-                                                        >
-                                                            <span className="text-sm truncate">{adminEmail}</span>
-                                                        </div>
-                                                    );
-                                                })}
-                                                
-                                                {/* Effective Members */}
-                                                {effectiveMembers.map((memberEmail) => {
-                                                    const isBeingDragged = draggedMember?.email === memberEmail && draggedMember?.fromProject === project.projId;
-                                                    // const isNewlyAdded = projectChanges.addedMembers.includes(memberEmail);
-                                                    return (
-                                                        <div
-                                                            key={`member-${memberEmail}`}
-                                                            className={`flex items-center gap-2 p-2 rounded-md cursor-move transition-all duration-200 bg-green-100 border border-green-300 ${
-                                                                isBeingDragged ? 'opacity-30 scale-95 shadow-none' : 'opacity-100 scale-100 shadow-sm hover:shadow-md hover:border-green-400'
-                                                            }`}
-                                                            draggable={true}
-                                                            onDragStart={(e) => {
-                                                                // console.log("Dragging member:", memberEmail, "userRole:", userRole);
-                                                                setDraggedMember({
-                                                                    email: memberEmail,
-                                                                    name: memberEmail,
-                                                                    fromProject: project.projId
-                                                                });
-                                                                e.dataTransfer.effectAllowed = "move";
-                                                                e.dataTransfer.setData("text/plain", memberEmail);
-                                                            }}
-                                                            onDragEnd={() => {
-                                                                // console.log("Drag ended for member:", memberEmail);
-                                                                setDraggedMember(null);
-                                                            }}
-                                                        >
-                                                            <span className="text-sm truncate">{memberEmail}</span>
-                                                        </div>
-                                                    );
-                                                })}
-                                                
-                                                {/* Remaining AI Proposed Members */}
-                                                {remainingProposedMembers.map((memberEmail: string) => {
-                                                    const isBeingDragged = draggedMember?.email === memberEmail && draggedMember?.fromProject === "unassigned";
-                                                    return (
-                                                        <div
-                                                            key={`proposed-${memberEmail}`}
-                                                            className={`flex items-center gap-2 p-2 rounded-md cursor-move transition-all duration-200 bg-green-100 border border-green-300 ${
-                                                                isBeingDragged ? 'opacity-30 scale-95 shadow-none' : 'opacity-100 scale-100 shadow-sm hover:shadow-md hover:border-green-400'
-                                                            }`}
-                                                            draggable={true}
-                                                            onDragStart={(e) => {
-                                                                // console.log("Dragging AI suggested member:", memberEmail, "userRole:", userRole);
-                                                                setDraggedMember({
-                                                                    email: memberEmail,
-                                                                    name: memberEmail,
-                                                                    fromProject: "unassigned"
-                                                                });
-                                                                e.dataTransfer.effectAllowed = "move";
-                                                                e.dataTransfer.setData("text/plain", memberEmail);
-                                                            }}
-                                                            onDragEnd={() => {
-                                                                // console.log("Drag ended for AI suggested member:", memberEmail);
-                                                                setDraggedMember(null);
-                                                            }}
-                                                        >
-                                                            <span className="text-sm truncate">{memberEmail}</span>
-                                                        </div>
-                                                    );
-                                                })}
-                                                
-                                                {/* Empty state */}
-                                                {effectiveMembers.length === 0 && 
-                                                 effectiveAdmins.length === 0 && 
-                                                 remainingProposedMembers.length === 0 && (
-                                                    <div className="text-center text-gray-400 py-8 pointer-events-none">
-                                                        <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                                                        <div className="text-sm">No members</div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                            
-                                            {/* AI Insight */}
-                                            {/* {aiPreview && (
-                                                <div className="mt-3 p-2 bg-purple-50 rounded-md pointer-events-none">
-                                                    <div className="text-xs text-purple-700 font-medium mb-1">AI Insight:</div>
-                                                    <div className="text-xs text-purple-600">{aiPreview.matchingReasoning}</div>
-                                                </div>
-                                            )} */}
-                                        </motion.div>
-                                    );
-                                })}
-                            </div>
-                        </div>
+                        {/* DndKit-based Drag & Drop Component */}
+                        <SmartMatchingDragDrop
+                            projects={displayProjects}
+                            previewData={previewData}
+                            previewChanges={previewChanges}
+                            onMemberTransfer={handlePreviewMemberTransfer}
+                        />
                     </div>
                 )}
                 
@@ -922,8 +722,6 @@ const ProjTab = ({
                         onClick={() => {
                             setIsPreviewDialogOpen(false);
                             setPreviewData(null);
-                            setDraggedMember(null);
-                            setDragOverProject(null);
                             setPreviewChanges({});
                         }}
                         disabled={isPending || transferLoading}

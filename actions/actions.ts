@@ -4285,21 +4285,20 @@ export async function applyGroupAssignments(
             ]);
             const newParticipants = new Set([...members, ...admins]);
 
-            // Always update main project doc
-            await projectRef.update({ members, admins });
-
-            // Only update org subcollection mirror if it already exists
-            try {
-                const orgProjSnap = await orgProjRef.get();
-                if (orgProjSnap.exists) {
-                    await orgProjRef.update({ members, admins });
-                }
-            } catch (err) {
-                // Intentionally ignore missing org mirror to avoid creating extra docs
-                // console.warn("Org project mirror update skipped:", err);
+            const updateData: any = { members, admins };
+            
+            if (projectData.title) {
+                updateData.title = projectData.title;
             }
+            if (projectData.teamSize !== undefined) {
+                updateData.teamSize = projectData.teamSize;
+            }
+            
+            await Promise.all([
+                projectRef.update({ members, admins }),
+                orgProjRef.set(updateData, { merge: true })
+            ]);
 
-            // Add references for newly added users
             for (const email of newParticipants) {
                 if (!currentParticipants.has(email)) {
                     try {
@@ -4318,7 +4317,6 @@ export async function applyGroupAssignments(
                 }
             }
 
-            // Remove references for users no longer in the project
             for (const email of currentParticipants) {
                 if (!newParticipants.has(email)) {
                     try {

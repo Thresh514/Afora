@@ -259,7 +259,6 @@ const ProjOnboarding = ({ orgId, projId, onDismiss }: ProjOnboardingProps) => {
             <AlertDialog 
                 open={isOpen} 
                 onOpenChange={(open) => {
-                    // 在第一个问题时不允许关闭对话框
                     if (page === 1 && !open) {
                         return;
                     }

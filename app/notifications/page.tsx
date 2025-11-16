@@ -78,7 +78,7 @@ export default function NotificationsPage() {
         <div className="container mx-auto p-6 max-w-4xl">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold">Notifications</h1>
-                <p>This is a mock page for notifications.</p>
+                {/* <p>This is a mock page for notifications.</p> */}
                 <div className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm">
                     {unreadCount} unread
                 </div>

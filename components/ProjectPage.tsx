@@ -1016,9 +1016,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                                         >
                                                             <Avatar className="h-10 w-10">
                                                                 <AvatarFallback className="bg-gradient-to-br from-purple-500 to-blue-500 text-white font-medium">
-                                                                    {member
-                                                                        .charAt(0)
-                                                                        .toUpperCase()}
+                                                                    {member.charAt(0).toUpperCase()}
                                                                 </AvatarFallback>
                                                             </Avatar>
                                                             <div className="flex-1">
