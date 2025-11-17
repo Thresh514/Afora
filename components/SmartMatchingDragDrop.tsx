@@ -83,6 +83,8 @@ interface ProjectContainerProps {
     effectiveMembers: string[];
     remainingProposedMembers: string[];
     isDragOver: boolean;
+    aiMatchingScore?: number | null;      // 添加这一行
+    matchingReasoning?: string;            // 添加这一行
 }
 
 function ProjectContainer({
@@ -92,6 +94,8 @@ function ProjectContainer({
     effectiveMembers,
     remainingProposedMembers,
     isDragOver,
+    aiMatchingScore,      // 添加这一行
+    matchingReasoning,    // 添加这一行
 }: ProjectContainerProps) {
     const { setNodeRef, isOver } = useDroppable({
         id: `project-${projectId}`,
@@ -116,10 +120,27 @@ function ProjectContainer({
         >
             {/* Project Header */}
             <div className="mb-3 pointer-events-none">
-                <h3 className="font-semibold text-gray-900 mb-1">{projectTitle}</h3>
+                <div className="flex items-center justify-between mb-1">
+                    <h3 className="font-semibold text-gray-900">{projectTitle}</h3>
+                    {/* 显示匹配分数 */}
+                    {aiMatchingScore !== null && aiMatchingScore !== undefined && (
+                        <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-gradient-to-r from-purple-100 to-blue-100 border border-purple-300">
+                            <span className="text-xs font-semibold text-purple-700">
+                                {aiMatchingScore.toFixed(1)}
+                            </span>
+                            <span className="text-xs text-purple-600">/100</span>
+                        </div>
+                    )}
+                </div>
                 <div className="text-sm text-gray-500">
                     {totalCount} members
                 </div>
+                {/* 显示匹配原因 */}
+                {matchingReasoning && (
+                    <div className="mt-1 text-xs text-gray-600 italic">
+                        {matchingReasoning}
+                    </div>
+                )}
             </div>
 
             <div className="space-y-2">
@@ -177,6 +198,8 @@ interface SmartMatchingDragDropProps {
         preview: Array<{
             projectId: string;
             proposedNewMembers: string[];
+            aiMatchingScore: number | null;  // 添加这一行
+            matchingReasoning: string;      // 添加这一行
         }>;
     };
     previewChanges: {
@@ -351,6 +374,8 @@ export default function SmartMatchingDragDrop({
     const getProjectEffectiveData = (project: typeof projects[0]) => {
         const aiPreview = previewData.preview?.find((p) => p.projectId === project.projId);
         const proposedNewMembers = aiPreview?.proposedNewMembers || [];
+        const aiMatchingScore = aiPreview?.aiMatchingScore ?? null;
+        const matchingReasoning = aiPreview?.matchingReasoning || "";
         
         const projectChanges = previewChanges[project.projId] || {
             addedMembers: [],
@@ -382,7 +407,7 @@ export default function SmartMatchingDragDrop({
             )
             .filter((email: string) => !effectiveMembers.includes(email) && !effectiveAdmins.includes(email));
 
-        return { effectiveAdmins, effectiveMembers, remainingProposedMembers };
+        return { effectiveAdmins, effectiveMembers, remainingProposedMembers, aiMatchingScore, matchingReasoning };
     };
 
     // 获取当前拖拽的成员信息
@@ -409,8 +434,13 @@ export default function SmartMatchingDragDrop({
             >
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {projects.map((project) => {
-                        const { effectiveAdmins, effectiveMembers, remainingProposedMembers } =
-                            getProjectEffectiveData(project);
+                        const { 
+                            effectiveAdmins, 
+                            effectiveMembers, 
+                            remainingProposedMembers,
+                            aiMatchingScore,      // 添加这一行
+                            matchingReasoning     // 添加这一行
+                        } = getProjectEffectiveData(project);
 
                         return (
                             <ProjectContainer
@@ -421,6 +451,8 @@ export default function SmartMatchingDragDrop({
                                 effectiveMembers={effectiveMembers}
                                 remainingProposedMembers={remainingProposedMembers}
                                 isDragOver={dragOverProject === project.projId}
+                                aiMatchingScore={aiMatchingScore}      // 添加这一行
+                                matchingReasoning={matchingReasoning}  // 添加这一行
                             />
                         );
                     })}

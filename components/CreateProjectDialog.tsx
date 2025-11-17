@@ -19,6 +19,7 @@ import { useDocument } from "react-firebase-hooks/firestore";
 import { doc } from "firebase/firestore";
 import { toast } from "sonner";
 import LoadingOverlay from "./LoadingOverlay";
+import { db } from "@/firebase";
 
 interface CreateProjectDialogProps {
     orgId: string;

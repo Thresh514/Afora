@@ -366,11 +366,24 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
 
     // Get project members (including both members and admins)
     // 使用 Set 去重，避免同一用户重复显示
-    const projectMembers = Array.from(new Set([
+    const allMembers = Array.from(new Set([
         ...(proj?.members || []),
         ...(proj?.admins || []),
         ...(proj?.adminsAsUsers || [])
     ]));
+    
+    // 排序：管理员在前，普通成员在后
+    const projectMembers = allMembers.sort((a, b) => {
+        const aIsAdmin = proj?.admins?.includes(a) || proj?.adminsAsUsers?.includes(a) || false;
+        const bIsAdmin = proj?.admins?.includes(b) || proj?.adminsAsUsers?.includes(b) || false;
+        
+        // 如果都是管理员或都不是管理员，保持原有顺序
+        if (aIsAdmin === bIsAdmin) {
+            return 0;
+        }
+        // 管理员排在前面
+        return aIsAdmin ? -1 : 1;
+    });
 
 
 

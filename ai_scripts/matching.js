@@ -25,6 +25,12 @@ const responseFormat = {
                         },
                     },
                 },
+                compatibility_score: {
+                    type: "number",
+                    description: "Overall compatibility score for the team (0-100), calculated as weighted average: technical alignment (40%) + interest alignment (35%) + career goal alignment (25%)",
+                    minimum: 70,
+                    maximum: 100
+                },
             },
             required: ["group_size", "groups"],
             additionalProperties: false,
@@ -65,7 +71,7 @@ export const matching = async (teamSize, questions, input) => {
         Given the user onboarding survey responses in the following format and order: ${questions}, analyze each user's responses and group them into teams that will have the highest compatibility and effectiveness.;
 
     Output Requirement:
-    Return teams as a list of grouped user IDs (or names), ranked by compatibility score. Include a brief justification per team showing how they meet the three alignment criteria.`;
+    Return teams as a list of grouped user IDs (or names), ranked by compatibility score. Include a brief justification per team showing how they meet the three alignment criteria. Also provide an overall compatibility_score (0-100) calculated as: technical alignment (40%) + interest alignment (35%) + career goal alignment (25%).`;
 
 
     
@@ -115,10 +121,10 @@ export const matchingWithExistingTeam = async (teamSize, questions, newMembersIn
     - Consider the existing team's collective strengths and weaknesses
     - Respect the target team size: ${teamSize} NEW members to add
 
-    Given the existing team context above and the potential new members' survey responses in the following format: ${questions}, analyze each candidate and select the ${teamSize} best new members who will most effectively complement and enhance the existing team.
+    Given the existing team context above and the potential new members' survey responses in the following format: ${Array.isArray(questions) ? questions.join("\n") : questions}, analyze each candidate and select the ${teamSize} best new members who will most effectively complement and enhance the existing team.
 
     Output Requirement:
-    Return the selected new team members as a single group, ranked by how well they complement the existing team. Include a brief justification showing how they fill gaps and enhance the team's overall capability.`;
+    Return the selected new team members as a single group, ranked by how well they complement the existing team. Include a brief justification showing how they fill gaps and enhance the team's overall capability. Also provide an overall compatibility_score (0-100) representing how well the new members complement the existing team.`;
 
     teamSize = Number(teamSize);
     if (isNaN(teamSize) || teamSize <= 0) {

@@ -428,11 +428,20 @@ const ProjTab = ({
 
     return (
         <>
+            {/* Loading overlay for applying team groups */}
             <LoadingOverlay 
                 isVisible={isPending}
                 message="Processing Team Groups..."
                 description="Applying new team group configuration, please wait..."
             />
+            
+            {/* Loading overlay for Smart Matching preview */}
+            <LoadingOverlay 
+                isVisible={isPreviewLoading}
+                message="Generating Smart Matching Preview..."
+                description="Analyzing team compatibility and generating optimal member assignments..."
+            />
+            
             <div className="flex h-auto bg-gradient-to-br from-gray-50 to-purple-50 rounded-lg overflow-hidden">
             {/* Left Sidebar */}
             <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
@@ -535,17 +544,8 @@ const ProjTab = ({
                                     className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
                                     size="sm"
                                 >
-                                    {isPreviewLoading ? (
-                                        <>
-                                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                            Loading Preview...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Shuffle className="h-4 w-4 mr-2" />
-                                            Smart Matching
-                                        </>
-                                    )}
+                                    <Shuffle className="h-4 w-4 mr-2" />
+                                    Smart Matching
                                 </Button>
                                 
                                 {/* Smart Matching Error Display */}
@@ -687,7 +687,7 @@ const ProjTab = ({
                 {previewData && (
                     <div className="space-y-6">
                         {/* Statistics */}
-                        {/* <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
                             <div className="bg-blue-50 p-3 rounded-lg">
                                 <div className="text-lg font-bold text-blue-600">{previewData.totalUnassigned}</div>
                                 <div className="text-xs">Total Unassigned</div>
@@ -701,10 +701,17 @@ const ProjTab = ({
                                 <div className="text-xs">Projects Involved</div>
                             </div>
                             <div className="bg-orange-50 p-3 rounded-lg">
-                                <div className="text-lg font-bold text-orange-600">{previewData.remainingUnassigned || 0}</div>
-                                <div className="text-xs">Still Unassigned</div>
+                                <div className="text-lg font-bold text-orange-600">
+                                    {Math.round(
+                                        (previewData.preview?.reduce((sum, p) => {
+                                            const score = p.aiMatchingScore ?? 0;
+                                            return sum + score;
+                                        }, 0) / (previewData.preview?.length || 1)) || 0
+                                    )}
+                                </div>
+                                <div className="text-xs">Avg Match Score</div>
                             </div>
-                        </div> */}
+                        </div>
 
                         {/* DndKit-based Drag & Drop Component */}
                         <SmartMatchingDragDrop

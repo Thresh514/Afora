@@ -1,11 +1,12 @@
 "use server";
 import { adminDb } from "@/firebase-admin";
-import { GeneratedTasks, Stage } from "@/types/types";
+import { GeneratedTasks, Stage, appQuestions, projQuestions } from "@/types/types";
 import { auth } from "@clerk/nextjs/server";
 import { Timestamp } from "firebase-admin/firestore";
 import axios from "axios";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage } from "@/firebase";
+import { matching, matchingWithExistingTeam } from "@/ai_scripts/matching";
 
 // IMPLEMENT THIS WITH FIREBASE FIRESTORE NOW THAT WE AREN'T USING LIVE BLOCKS
 
@@ -556,7 +557,16 @@ export async function createProject(
             throw new Error("Organization not found");
         }
 
-        const finalAdmins = admins.includes(userId) ? admins : [...admins, userId];
+        // 从组织文档中获取完整的管理员列表
+        const orgData = orgDoc.data();
+        const orgAdmins = orgData?.admins || [];
+        
+        // 合并传入的 admins 和组织文档中的 admins，确保所有管理员都被包含
+        const allAdminsSet = new Set([...orgAdmins, ...admins]);
+        const mergedAdmins = Array.from(allAdminsSet);
+        
+        // 确保当前用户也在管理员列表中
+        const finalAdmins = mergedAdmins.includes(userId) ? mergedAdmins : [...mergedAdmins, userId];
         const finalTeamSize = finalAdmins.length + members.length;
 
         // 创建项目文档
@@ -2662,6 +2672,7 @@ export async function previewSmartAssignment(orgId: string, teamSize?: number) {
                 title: data.title || "",
                 teamSize: data.teamSize || teamSize,
                 admins: data.admins || [],
+                adminsAsUsers: data.adminsAsUsers || [], // 添加这一行
                 ...data,
             };
         });
@@ -2698,22 +2709,36 @@ export async function previewSmartAssignment(orgId: string, teamSize?: number) {
                     .get();
                 if (memberDoc.exists) {
                     const memberData = memberDoc.data();
+                    // Get project onboarding survey response
+                    let projOnboardingSurveyResponse: string[] = [];
+                    try {
+                        const orgDoc = await adminDb
+                            .collection("users")
+                            .doc(member)
+                            .collection("orgs")
+                            .doc(orgId)
+                            .get();
+                        if (orgDoc.exists) {
+                            projOnboardingSurveyResponse = orgDoc.data()?.projOnboardingSurveyResponse || [];
+                        }
+                    } catch (error) {
+                        console.error(`Error fetching project survey for member ${member}:`, error);
+                    }
+                    
                     memberSurveyData.push({
                         email: member,
-                        skills: memberData?.skills || [],
-                        workStyles: memberData?.workStyles || [],
-                        goals: memberData?.goals || [],
-                        availability: memberData?.availability || [],
+                        name: memberData?.fullName || member,
+                        onboardingSurveyResponses: memberData?.onboardingSurveyResponse || [],
+                        projOnboardingSurveyResponses: projOnboardingSurveyResponse,
                     });
                 }
             } catch (error) {
                 console.error(`Error fetching data for member ${member}:`, error);
                 memberSurveyData.push({
                     email: member,
-                    skills: [],
-                    workStyles: [],
-                    goals: [],
-                    availability: [],
+                    name: member,
+                    onboardingSurveyResponses: [],
+                    projOnboardingSurveyResponses: [],
                 });
             }
         }
@@ -2723,12 +2748,14 @@ export async function previewSmartAssignment(orgId: string, teamSize?: number) {
             .map(project => {
                 const currentMembers = (project.members as string[]) || [];
                 const currentAdmins = ((project as any).admins as string[]) || [];
+                const adminsAsUsers = ((project as any).adminsAsUsers as string[]) || [];
                 const allCurrentMembers = [...new Set([...currentMembers, ...currentAdmins])];
                 const projectTeamSize = project.teamSize || teamSize || 3;
                 const spotsAvailable = projectTeamSize - allCurrentMembers.length;
                 return {
                     ...project,
                     currentMembers: allCurrentMembers,
+                    adminsAsUsers: adminsAsUsers, // 添加这一行，保存 adminsAsUsers
                     projectTeamSize,
                     spotsAvailable
                 };
@@ -2763,64 +2790,193 @@ export async function previewSmartAssignment(orgId: string, teamSize?: number) {
         for (const project of optimalAllocation) {
             if (project.spotsAvailable > 0 && remainingMembers.length > 0) {
                 try {
-                    // Get existing project members' information
+                    // 判断是否应该考虑现有成员
+                    const hasMembers = (project.members as string[])?.length > 0;
+                    const hasAdminsAsUsers = ((project as any).adminsAsUsers as string[])?.length > 0;
+                    const shouldConsiderExistingTeam = hasMembers || hasAdminsAsUsers;
+                    
+                    // Get existing project members' information (只在需要时获取)
                     const existingMembersData = [];
-                    for (const memberEmail of project.currentMembers) {
-                        try {
-                            const userDoc = await adminDb
-                                .collection("users")
-                                .doc(memberEmail)
-                                .get();
-                            
-                            if (userDoc.exists) {
-                                const userData = userDoc.data();
-                                const onboardingSurveyResponses = userData?.onboardingSurveyResponse || [];
-                                existingMembersData.push({
-                                    email: memberEmail,
-                                    name: userData?.fullName || memberEmail,
-                                    onboardingSurveyResponses: onboardingSurveyResponses,
-                                });
+                    if (shouldConsiderExistingTeam) {
+                        // 合并 members 和 adminsAsUsers（不包括纯 admins）
+                        const membersToConsider = [
+                            ...((project.members as string[]) || []),
+                            ...(((project as any).adminsAsUsers as string[]) || [])
+                        ];
+                        
+                        for (const memberEmail of membersToConsider) {
+                            try {
+                                const userDoc = await adminDb
+                                    .collection("users")
+                                    .doc(memberEmail)
+                                    .get();
+                                
+                                if (userDoc.exists) {
+                                    const userData = userDoc.data();
+                                    const onboardingSurveyResponses = userData?.onboardingSurveyResponse || [];
+                                    
+                                    // Get project onboarding survey response
+                                    let projOnboardingSurveyResponse: string[] = [];
+                                    try {
+                                        const orgDoc = await adminDb
+                                            .collection("users")
+                                            .doc(memberEmail)
+                                            .collection("orgs")
+                                            .doc(orgId)
+                                            .get();
+                                        if (orgDoc.exists) {
+                                            projOnboardingSurveyResponse = orgDoc.data()?.projOnboardingSurveyResponse || [];
+                                        }
+                                    } catch (error) {
+                                        console.error(`Error fetching project survey for existing member ${memberEmail}:`, error);
+                                    }
+                                    
+                                    existingMembersData.push({
+                                        email: memberEmail,
+                                        name: userData?.fullName || memberEmail,
+                                        onboardingSurveyResponses: onboardingSurveyResponses,
+                                        projOnboardingSurveyResponses: projOnboardingSurveyResponse,
+                                    });
+                                }
+                            } catch (error) {
+                                console.error(`Failed to get data for existing member ${memberEmail}:`, error);
                             }
-                        } catch (error) {
-                            console.error(`Failed to get data for existing member ${memberEmail}:`, error);
                         }
                     }
 
-                    // Prepare AI matching input data
-                    const matchingInput: string[] = remainingMembers.map(member => {
-                        const responses = member.onboardingSurveyResponses || [];
-                        return `User: ${member.email}, Name: ${member.name}, Survey Responses: ${JSON.stringify(responses)}`;
+                    // Prepare AI matching input data for new members
+                    const newMembersInput: string[] = remainingMembers.map(member => {
+                        const onboardingResponses = member.onboardingSurveyResponses || [];
+                        const projResponses = member.projOnboardingSurveyResponses || [];
+                        
+                        let responseText = `User: ${member.email}, Name: ${member.name || member.email}\n`;
+                        
+                        // Add onboarding survey responses
+                        appQuestions.forEach((question, index) => {
+                            responseText += `Onboarding Question ${index + 1}: ${question}\n`;
+                            responseText += `Onboarding Question ${index + 1} Answer: ${onboardingResponses[index] || 'Not provided'}\n`;
+                        });
+                        
+                        // Add project onboarding survey responses
+                        projQuestions.forEach((question, index) => {
+                            responseText += `Project Onboarding Question ${index + 1} (${projQuestions[index].substring(0, 50)}...): ${question}\n`;
+                            responseText += `Project Onboarding Question ${index + 1} Answer: ${projResponses[index] || 'Not provided'}\n`;
+                        });
+                        
+                        return responseText;
                     });
                     
-                    // Prepare existing members information
-                    const existingMembersInfo = existingMembersData.map(member => {
-                        const responses = member.onboardingSurveyResponses || [];
-                        return `Existing Member: ${member.email}, Name: ${member.name}, Survey Responses: ${JSON.stringify(responses)}`;
-                    });
+                    // Prepare existing members information (只在需要时准备)
+                    const existingMembersInfo: string[] = shouldConsiderExistingTeam 
+                        ? existingMembersData.map(member => {
+                            const onboardingResponses = member.onboardingSurveyResponses || [];
+                            const projResponses = member.projOnboardingSurveyResponses || [];
+                            
+                            let responseText = `Existing Member: ${member.email}, Name: ${member.name || member.email}\n`;
+                            
+                            // Add onboarding survey responses
+                            appQuestions.forEach((question, index) => {
+                                responseText += `Onboarding Question ${index + 1}: ${question}\n`;
+                                responseText += `Onboarding Question ${index + 1} Answer: ${onboardingResponses[index] || 'Not provided'}\n`;
+                            });
+                            
+                            // Add project onboarding survey responses
+                            projQuestions.forEach((question, index) => {
+                                responseText += `Project Onboarding Question ${index + 1} (${projQuestions[index].substring(0, 50)}...): ${question}\n`;
+                                responseText += `Project Onboarding Question ${index + 1} Answer: ${projResponses[index] || 'Not provided'}\n`;
+                            });
+                            
+                            return responseText;
+                        })
+                        : []; // 如果没有现有成员，传空数组
 
                     // Calculate actual allocation size
                     const plannedAllocation = (project as any).plannedAllocation || project.spotsAvailable;
                     const actualAllocationSize = Math.min(plannedAllocation, remainingMembers.length);
 
-					// Random matching (temporary replacement for GPT)
-					const assignedEmails: string[] = randomMatching(remainingMembers, actualAllocationSize);
-					// Remove assigned members from remaining pool
-					remainingMembers = remainingMembers.filter(member => 
-						!assignedEmails.includes(member.email)
-					);
+                    // Combine appQuestions and projQuestions for AI matching
+                    const allQuestions = [...appQuestions, ...projQuestions];
 
-					preview.push({
-						projectId: project.id,
-						projectTitle: project.title,
-						currentMembers: project.currentMembers,
-						spotsAvailable: project.spotsAvailable,
-						proposedNewMembers: assignedEmails,
-						aiMatchingScore: null,
-						matchingReasoning: "Random assignment (temporary)"
-					});
+                    // Use AI matching instead of random matching
+                    let assignedEmails: string[] = [];
+                    let matchingReasoning = "AI matching completed";
+                    let aiMatchingScore: number | null = null;
+
+                    try {
+                        // 根据是否有现有成员选择不同的匹配函数
+                        const aiResult = shouldConsiderExistingTeam
+                            ? await matchingWithExistingTeam(
+                                actualAllocationSize,
+                                allQuestions,
+                                newMembersInput,
+                                existingMembersInfo
+                            )
+                            : await matching(
+                                actualAllocationSize,
+                                allQuestions,
+                                newMembersInput
+                            );
+                        
+                        // Parse AI result (JSON string)
+                        const parsedResult = JSON.parse(aiResult);
+                        
+                        if (parsedResult.groups && parsedResult.groups.length > 0) {
+                            // Extract emails from the first group (since we're selecting members for one project)
+                            const selectedGroup = parsedResult.groups[0];
+                            assignedEmails = selectedGroup.map((emailOrName: string) => {
+                                // Find the matching member by email or name
+                                const member = remainingMembers.find(m => 
+                                    m.email === emailOrName || 
+                                    m.name === emailOrName ||
+                                    emailOrName.includes(m.email)
+                                );
+                                return member?.email || emailOrName;
+                            }).filter((email: string) => email && remainingMembers.some(m => m.email === email));
+                            
+                            // Limit to actual allocation size
+                            assignedEmails = assignedEmails.slice(0, actualAllocationSize);
+                            
+                            // Extract compatibility score if available
+                            if (parsedResult.compatibility_score !== undefined) {
+                                aiMatchingScore = parsedResult.compatibility_score;
+                            } else if (parsedResult.groups && parsedResult.groups.length > 0 && parsedResult.groups[0].score !== undefined) {
+                                aiMatchingScore = parsedResult.groups[0].score;
+                            }
+                            
+                            matchingReasoning = shouldConsiderExistingTeam
+                                ? `AI selected ${assignedEmails.length} members based on complementarity with existing team (compatibility score: ${aiMatchingScore !== null ? aiMatchingScore.toFixed(1) : 'N/A'})`
+                                : `AI selected ${assignedEmails.length} members based on compatibility (score: ${aiMatchingScore !== null ? aiMatchingScore.toFixed(1) : 'N/A'})`;
+                        } else {
+                            // Fallback to random if AI returns no groups
+                            console.warn(`AI matching returned no groups for project ${project.id}, falling back to random`);
+                            assignedEmails = randomMatching(remainingMembers, actualAllocationSize);
+                            matchingReasoning = "Random assignment (AI matching returned no results)";
+                        }
+                    } catch (aiError) {
+                        console.error(`AI matching failed for project ${project.id}:`, aiError);
+                        // Fallback to random matching if AI fails
+                        assignedEmails = randomMatching(remainingMembers, actualAllocationSize);
+                        matchingReasoning = `Random assignment (AI matching failed: ${aiError instanceof Error ? aiError.message : String(aiError)})`;
+                    }
+                    
+                    // Remove assigned members from remaining pool
+                    remainingMembers = remainingMembers.filter(member => 
+                        !assignedEmails.includes(member.email)
+                    );
+
+                    preview.push({
+                        projectId: project.id,
+                        projectTitle: project.title,
+                        currentMembers: project.currentMembers,
+                        spotsAvailable: project.spotsAvailable,
+                        proposedNewMembers: assignedEmails,
+                        aiMatchingScore: aiMatchingScore,
+                        matchingReasoning: matchingReasoning
+                    });
 
                 } catch (error) {
-					console.error(`Random matching failed for project ${project.id}:`, error);
+                    console.error(`Matching failed for project ${project.id}:`, error);
+                    // Continue to next project even if one fails
                 }
             }
         }
