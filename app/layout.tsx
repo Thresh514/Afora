@@ -9,6 +9,7 @@ import MySidebar from "@/components/MySidebar";
 import StoreProvider from "./StoreProvider";
 import { Analytics } from "@vercel/analytics/next"
 import CronInitializer from "@/components/CronInitializer";
+import { PrivacyPolicyDialog } from "@/components/PrivacyPolicyDialog";
 
 export const metadata: Metadata = {
   title: "Afora",
@@ -63,6 +64,14 @@ export default function RootLayout({
                         </button>
                       </SignInButton>
                     </div>
+                    <p className="text-xs text-gray-500 mt-4 text-center">
+                      By signing up or signing in, you agree to our{" "}
+                      <PrivacyPolicyDialog>
+                        <button className="text-[#6F61EF] hover:underline cursor-pointer">
+                          Privacy Policy
+                        </button>
+                      </PrivacyPolicyDialog>
+                    </p>
                   </div>
                 </div>
               </SignedOut>

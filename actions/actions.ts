@@ -1927,19 +1927,46 @@ export async function getProjectStats(projId: string) {
 
 
 async function findOrgProject(orgId: string, projId: string) {
-    const orgProjectsQuery = adminDb.collection("organizations").doc(orgId).collection("projs").where("projId", "==", projId);
-    const orgProjectsSnapshot = await orgProjectsQuery.get();
-
-    if (orgProjectsSnapshot.empty) {
+    try {
+        // 直接使用文档 ID 获取文档（因为文档 ID 就是 projId）
+        const orgProjectRef = adminDb
+            .collection("organizations")
+            .doc(orgId)
+            .collection("projs")
+            .doc(projId);
+        
+        const orgProjectDoc = await orgProjectRef.get();
+        
+        if (!orgProjectDoc.exists) {
+            // 如果直接获取失败，尝试使用查询（向后兼容旧数据）
+            const orgProjectsQuery = adminDb
+                .collection("organizations")
+                .doc(orgId)
+                .collection("projs")
+                .where("projId", "==", projId);
+            const orgProjectsSnapshot = await orgProjectsQuery.get();
+            
+            if (orgProjectsSnapshot.empty) {
+                return null;
+            }
+            
+            const fallbackDoc = orgProjectsSnapshot.docs[0];
+            return {
+                doc: fallbackDoc,
+                ref: fallbackDoc.ref,
+                data: fallbackDoc.data()
+            };
+        }
+        
+        return {
+            doc: orgProjectDoc,
+            ref: orgProjectRef,
+            data: orgProjectDoc.data()
+        };
+    } catch (error) {
+        console.error(`Error finding org project ${projId} in org ${orgId}:`, error);
         return null;
     }
-
-    const orgProjectDoc = orgProjectsSnapshot.docs[0];
-    return {
-        doc: orgProjectDoc,
-        ref: orgProjectDoc.ref,
-        data: orgProjectDoc.data()
-    };
 }
 
 export async function addProjectMember(
