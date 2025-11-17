@@ -365,25 +365,17 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
     };
 
     // Get project members (including both members and admins)
-    const projectMembers = [
+    // 使用 Set 去重，避免同一用户重复显示
+    const projectMembers = Array.from(new Set([
         ...(proj?.members || []),
         ...(proj?.admins || []),
         ...(proj?.adminsAsUsers || [])
-    ];
+    ]));
 
 
 
     return (
         <div className="flex flex-col w-full h-full bg-gray-100">
-            {/* ProjOnboarding Survey Check */}
-            {/* <ProjOnboarding 
-                orgId={id} 
-                projId={projId}
-                onDismiss={() => {
-                    // Survey dismissed, continue with normal page
-                }}
-            /> */}
-            
             {/* Header Section - similar to organization page background image style */}
             <div className="relative">
                 <div
@@ -1008,7 +1000,10 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                         <div className="grid gap-3">
                                             {projectMembers.map(
                                                 (member: string, index: number) => {
-                                                    const isMemberAdmin = proj?.admins?.includes(member) || false;
+                                                    // 检查是否是管理员（包括 admins 和 adminsAsUsers）
+                                                    const isMemberAdmin = proj?.admins?.includes(member) || 
+                                                                         proj?.adminsAsUsers?.includes(member) || 
+                                                                         false;
                                                     return (
                                                         <div
                                                             key={index}
