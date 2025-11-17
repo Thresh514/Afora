@@ -29,7 +29,7 @@ export function PrivacyPolicyDialog({ children }: { children: React.ReactNode })
             <section>
               <h2 className="text-xl font-semibold mb-2 text-gray-800">1. Introduction</h2>
               <p className="text-gray-600 leading-relaxed">
-                Welcome to Afora ("we," "our," or "us"). We are committed to protecting your privacy and ensuring you have a positive experience on our platform. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our team management application.
+                Welcome to Afora (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;). We are committed to protecting your privacy and ensuring you have a positive experience on our platform. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our team management application.
               </p>
             </section>
 
@@ -104,7 +104,7 @@ export function PrivacyPolicyDialog({ children }: { children: React.ReactNode })
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold mb-2 text-gray-800">8. Children's Privacy</h2>
+              <h2 className="text-xl font-semibold mb-2 text-gray-800">8. Children&apos;s Privacy</h2>
               <p className="text-gray-600 leading-relaxed">
                 Our services are not intended for individuals under the age of 13. We do not knowingly collect personal information from children under 13.
               </p>
@@ -113,7 +113,7 @@ export function PrivacyPolicyDialog({ children }: { children: React.ReactNode })
             <section>
               <h2 className="text-xl font-semibold mb-2 text-gray-800">9. Changes to This Privacy Policy</h2>
               <p className="text-gray-600 leading-relaxed">
-                We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the "Last updated" date.
+                We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the &quot;Last updated&quot; date.
               </p>
             </section>
 
