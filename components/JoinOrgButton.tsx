@@ -45,7 +45,7 @@ function JoinOrgButton({
             if (success && orgCode && orgCode.trim()) {
                 // console.log("Successfully joined");
                 setIsOpen(false);
-                router.push(`/org/${orgCode}?onboarding=1`); // trigger onboarding after join
+                router.push(`/org/${orgCode}`);
                 toast.success("Successfully joined!");
                 setOrgCode("");
             } else {

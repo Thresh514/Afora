@@ -205,13 +205,16 @@ const ProjOnboarding = ({ orgId, projId, onDismiss }: ProjOnboardingProps) => {
     const hasCompletedSurvey = userData?.data()?.projOnboardingSurveyResponse;
 
     useEffect(() => {
-        // Always show the dialog when component mounts, regardless of completion status
-        setIsOpen(true);
-        setPage(0);
-        setResponses(Array(projQuestions.length).fill(""));
-        setSelectedSlots(new Set());
-
-    }, [projId]); // Re-trigger when projId changes
+        // Only show the dialog if user hasn't completed the survey
+        if (!hasCompletedSurvey && userData !== undefined) {
+            setIsOpen(true);
+            setPage(0);
+            setResponses(Array(projQuestions.length).fill(""));
+            setSelectedSlots(new Set());
+        } else {
+            setIsOpen(false);
+        }
+    }, [projId, hasCompletedSurvey, userData]);
 
     const handleSubmit = async () => {
         // Debug output: show format optimization effect
@@ -249,8 +252,13 @@ const ProjOnboarding = ({ orgId, projId, onDismiss }: ProjOnboardingProps) => {
         toast.info("Survey dismissed. You can complete it later.");
     };
 
-    // Don't render if user has completed the survey and we're not forcing a re-show
-    if (hasCompletedSurvey && !isOpen) {
+    // Don't render if user has completed the survey
+    if (hasCompletedSurvey) {
+        return null;
+    }
+
+    // Don't render if userData is still loading
+    if (userData === undefined) {
         return null;
     }
 
@@ -263,6 +271,9 @@ const ProjOnboarding = ({ orgId, projId, onDismiss }: ProjOnboardingProps) => {
                         return;
                     }
                     setIsOpen(open);
+                    if (!open) {
+                        handleDismiss();
+                    }
                 }}
             >
                 <AlertDialogContent className="w-full max-w-2xl">
