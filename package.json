@@ -97,7 +97,7 @@
     "@types/turndown": "^5.0.5",
     "@typescript-eslint/eslint-plugin": "^8.11.0",
     "eslint": "^8",
-    "eslint-config-next": "14.2.15",
+    "eslint-config-next": "^16.0.10",
     "eslint-config-prettier": "^10.1.8",
     "firebase-admin": "^13.4.0",
     "postcss": "^8",
