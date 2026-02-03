@@ -29,7 +29,7 @@ function OrgPage() {
     useEffect(() => {
         // Redirect to login if the user is not authenticated
         if (isLoaded && !isSignedIn) {
-            router.replace("/");
+            router.replace("/login");
         }
     }, [isLoaded, isSignedIn, router]);
 

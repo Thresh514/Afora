@@ -133,7 +133,7 @@ function TaskPage() {
 
     useEffect(() => {
         if (isLoaded && !isSignedIn) {
-            router.replace("/");
+            router.replace("/login");
         }
     }, [isLoaded, isSignedIn, projId, stageId, router]);
 

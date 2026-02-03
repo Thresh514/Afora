@@ -1,6 +1,6 @@
 "use client";
 
-import { Settings, Mail, Calendar } from "lucide-react";
+import { Settings, Mail, Calendar, Home } from "lucide-react";
 import { useCollection } from "react-firebase-hooks/firestore";
 import { useUser } from "@clerk/nextjs";
 import { collection, DocumentData, QuerySnapshot } from "firebase/firestore";
@@ -110,6 +110,21 @@ function MySidebar() {
             <Sidebar collapsible="icon">
                 <SidebarContent>
                     <div className="flex-1">
+                        <SidebarGroup>
+                            <SidebarGroupLabel>Home</SidebarGroupLabel>
+                            <SidebarGroupContent>
+                                <SidebarMenu>
+                                    <SidebarMenuItem>
+                                        <SidebarMenuButton asChild>
+                                            <Link href="/home" className="flex items-center gap-2">
+                                                <Home className="h-4 w-4" />
+                                                <span className="truncate">Home</span>
+                                            </Link>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                </SidebarMenu>
+                            </SidebarGroupContent>
+                        </SidebarGroup>
                         <SidebarGroup>
                             <SidebarGroupLabel>Groups</SidebarGroupLabel>
                             <SidebarGroupContent>

@@ -63,7 +63,7 @@ function StagePage() {
 
     useEffect(() => {
         if (isLoaded && !isSignedIn) {
-            router.replace("/");
+            router.replace("/login");
         }
     }, [isLoaded, isSignedIn, router]);
 

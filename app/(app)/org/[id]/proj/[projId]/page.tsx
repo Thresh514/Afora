@@ -14,7 +14,7 @@ export default function ProjPage() {
 
     useEffect(() => {
         if (isLoaded && !isSignedIn) {
-            router.replace("/");
+            router.replace("/login");
         }
     }, [isLoaded, isSignedIn, router]);
 

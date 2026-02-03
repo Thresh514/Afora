@@ -25,4 +25,4 @@ export default function FundUsPage() {
             </div>
         </div>
     );
-} 
+}
