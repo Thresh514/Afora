@@ -10,6 +10,10 @@ const config: Config = {
 	theme: {
 		extend: {
 			colors: {
+				afora: {
+					DEFAULT: 'var(--afora)',
+					hover: 'var(--afora-hover)',
+				},
 				background: 'hsl(var(--background))',
 				foreground: 'hsl(var(--foreground))',
 				card: {

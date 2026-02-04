@@ -4,6 +4,9 @@
 
 @layer base {
   :root {
+    /* Afora brand: blue-purple from logo icon (#4437C3) */
+    --afora: #4437C3;
+    --afora-hover: #5646e4;
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
@@ -107,7 +110,64 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    scroll-behavior: smooth;
+  }
   body {
     @apply bg-background text-foreground;
+  }
+  section[id] {
+    scroll-margin-top: 5.5rem;
+  }
+}
+
+@layer utilities {
+  @keyframes marquee {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+  .animate-marquee {
+    animation: marquee 30s linear infinite;
+  }
+
+  /* 顿挫感：每个词先停留再滚到下一个，两段无缝循环 */
+  @keyframes word-roll {
+    0% {
+      transform: translateY(0);
+    }
+    18% {
+      transform: translateY(0);
+    }
+    25% {
+      transform: translateY(-1.25em);
+    }
+    43% {
+      transform: translateY(-1.25em);
+    }
+    50% {
+      transform: translateY(-2.5em);
+    }
+    68% {
+      transform: translateY(-2.5em);
+    }
+    75% {
+      transform: translateY(-3.75em);
+    }
+    93% {
+      transform: translateY(-3.75em);
+    }
+    99.9% {
+      transform: translateY(-5em);
+    }
+    100% {
+      transform: translateY(0);
+    }
+  }
+  .animate-word-roll {
+    animation: word-roll 10s ease-in-out infinite;
   }
 }
