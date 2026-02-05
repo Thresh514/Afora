@@ -60,7 +60,7 @@
     "next-themes": "^0.3.0",
     "openai": "^4.104.0",
     "primereact": "^10.9.1",
-    "quill": "^2.0.3",
+    "quill": "^2.0.2",
     "react": "^18",
     "react-day-picker": "^8.10.1",
     "react-dom": "^18",
@@ -84,7 +84,7 @@
     "three": "^0.178.0",
     "turndown": "^7.2.0",
     "vaul": "^1.1.2",
-    "vercel": "^41.1.8",
+    "vercel": "^50.12.1",
     "zod": "^3.25.74"
   },
   "devDependencies": {

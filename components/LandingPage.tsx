@@ -31,26 +31,35 @@ export default function LandingPage() {
           <p className="mb-5 text-base font-semibold uppercase tracking-wider text-white/80 md:text-lg">
             Afora
           </p>
-          <h1 className="mb-8 flex flex-wrap items-end font-serif text-5xl font-bold leading-tight text-white md:text-6xl lg:text-7xl">
-            <span className="leading-tight">Where teams go to</span>{" "}
-            <span className="inline-block h-[1.25em] overflow-hidden leading-tight ml-4">
-              <span className="inline-block animate-word-roll">
-                {["scale.", "ship.", "grow.", "deliver.", "scale.", "ship.", "grow.", "deliver."].map(
-                  (word, i) => (
-                    <span
-                      key={`${i}-${word}`}
-                      className="block h-[1.25em] leading-tight"
-                    >
-                      {word}
-                    </span>
-                  )
-                )}
+          <h1 className="mb-8 font-serif text-4xl font-bold leading-tight text-white md:text-5xl lg:text-6xl">
+            <span className="block text-6xl font-bold leading-tight text-white md:text-7xl lg:text-8xl">Where</span>
+            <span
+              className="mt-2 block h-[1.25em] overflow-hidden text-xl leading-[1.25] text-white sm:text-2xl md:text-3xl lg:text-5xl"
+              style={{ contain: "layout paint" }}
+            >
+              <span className="block animate-sentence-roll">
+                {(() => {
+                  const lines = [
+                    " high-performing teams begin.",
+                    " teams align from day one.",
+                    " teams click, and results scale.",
+                    " motivation is built in.",
+                    " incentives drive behaviors. ",
+                    " teams are built for tomorrow.",
+                    " the right people connect.",
+                  ];
+                  return [...lines, lines[0]];
+                })().map((line, i) => (
+                  <span
+                    key={i}
+                    className="flex h-[1.25em] shrink-0 items-center whitespace-nowrap leading-[1.25] text-xl sm:text-2xl md:text-3xl lg:text-5xl ml-2"
+                  >
+                    {line}
+                  </span>
+                ))}
               </span>
             </span>
           </h1>
-          <p className="mb-12 max-w-2xl text-xl text-white/90 md:text-2xl">
-            Unite projects, tasks, and people on one simple platform. Ship faster, collaborate better, and hit your goals—all in one place.
-          </p>
           <div className="flex flex-wrap gap-4">
             <button
               onClick={() => router.push("/login")}

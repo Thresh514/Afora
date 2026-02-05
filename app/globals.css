@@ -170,4 +170,29 @@
   .animate-word-roll {
     animation: word-roll 10s ease-in-out infinite;
   }
+
+  /* Hero slogan: 7 句无缝循环，100% 停在 -8.75em，循环时瞬间跳回 0%，两处都显示同一句故无感知 */
+  @keyframes sentence-roll {
+    0% { transform: translateY(0); }
+    10% { transform: translateY(0); }
+    12.5% { transform: translateY(-1.25em); }
+    22.5% { transform: translateY(-1.25em); }
+    25% { transform: translateY(-2.5em); }
+    35% { transform: translateY(-2.5em); }
+    37.5% { transform: translateY(-3.75em); }
+    47.5% { transform: translateY(-3.75em); }
+    50% { transform: translateY(-5em); }
+    60% { transform: translateY(-5em); }
+    62.5% { transform: translateY(-6.25em); }
+    72.5% { transform: translateY(-6.25em); }
+    75% { transform: translateY(-7.5em); }
+    85% { transform: translateY(-7.5em); }
+    87.5% { transform: translateY(-8.75em); }
+    100% { transform: translateY(-8.75em); }
+  }
+  .animate-sentence-roll {
+    animation: sentence-roll 21s ease-in-out infinite;
+    backface-visibility: hidden;
+    will-change: transform;
+  }
 }

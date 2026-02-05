@@ -5,35 +5,22 @@ import Image from "next/image";
 import { Linkedin, Twitter, Instagram } from "lucide-react";
 
 const platformLinks = [
-  { label: "Platform Overview", href: "/#platform" },
-  { label: "Landing Page Templates", href: "/#solutions" },
-  { label: "Plans", href: "/price" },
-  { label: "All Features", href: "/#solutions" },
-];
-
-const resourceLinks = [
-  { label: "Blog", href: "#" },
-  { label: "Landing Pages Guide", href: "#" },
-  { label: "Optimization Guide", href: "#" },
-];
-
-const communityLinks = [
-  { label: "Help Center", href: "#" },
+  { label: "Platform Overview", href: "/" },
   { label: "Customer Stories", href: "#" },
-  { label: "System Status", href: "#" },
+  { label: "Plans", href: "/price" },
+  { label: "All Features", href: "/#features" },
 ];
+
 
 const companyLinks = [
   { label: "About", href: "#" },
-  { label: "Press", href: "#" },
   { label: "Careers", href: "#" },
+  { label: "Help Center", href: "#" },
   { label: "Contact Us", href: "#" },
 ];
 
 const socialIcons = [
   { Icon: Linkedin, href: "#", label: "LinkedIn" },
-  { Icon: Twitter, href: "#", label: "Twitter" },
-  { Icon: Instagram, href: "#", label: "Instagram" },
 ];
 
 export default function PublicFooter() {
@@ -41,19 +28,18 @@ export default function PublicFooter() {
     <footer className="border-t border-gray-200 bg-white">
       <div className="mx-auto max-w-6xl px-4 py-12 md:py-16">
         {/* Top: Logo + address | Nav columns */}
-        <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-5 lg:gap-8">
-          <div className="lg:col-span-1">
+        <div className="flex gap-24">
+          <div>
             <Link href="/" className="inline-block">
               <Image src="/logoFull.svg" alt="Afora" width={120} height={40} />
             </Link>
             <p className="mt-4 text-sm text-gray-500">
-              212 3rd Ave N, Ste 475
-              <br />
-              Minneapolis MN, 55401-1478
+            Great Neck Estates, Great Neck,<br />
+            NY 11021, USA
             </p>
           </div>
-          <div className="grid grid-cols-2 gap-8 sm:grid-cols-4 lg:col-span-4">
-            <div>
+          <div className="flex flex-1 justify-between">
+            <div className="w-1/3 min-w-0">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-900">
                 Platform
               </h3>
@@ -70,41 +56,7 @@ export default function PublicFooter() {
                 ))}
               </ul>
             </div>
-            <div>
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-900">
-                Resources
-              </h3>
-              <ul className="mt-4 space-y-3">
-                {resourceLinks.map((item) => (
-                  <li key={item.label}>
-                    <Link
-                      href={item.href}
-                      className="text-sm text-gray-600 hover:text-afora"
-                    >
-                      {item.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-900">
-                Community & Support
-              </h3>
-              <ul className="mt-4 space-y-3">
-                {communityLinks.map((item) => (
-                  <li key={item.label}>
-                    <Link
-                      href={item.href}
-                      className="text-sm text-gray-600 hover:text-afora"
-                    >
-                      {item.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div>
+            <div className="w-1/3 min-w-0">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-900">
                 Company
               </h3>
@@ -136,7 +88,7 @@ export default function PublicFooter() {
               Legal
             </Link>
           </div>
-          <div className="flex items-center gap-2">
+          {/* <div className="flex items-center gap-2">
             {socialIcons.map(({ Icon, href, label }) => (
               <a
                 key={label}
@@ -147,7 +99,7 @@ export default function PublicFooter() {
                 <Icon className="h-4 w-4" />
               </a>
             ))}
-          </div>
+          </div> */}
         </div>
       </div>
     </footer>
