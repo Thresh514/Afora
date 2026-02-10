@@ -1,7 +1,8 @@
 "use server";
 import { adminDb } from "@/firebase-admin";
-import { GeneratedTasks, Stage, appQuestions, projQuestions } from "@/types/types";
+import { GeneratedTasks, Stage, appQuestions, projQuestions, OnboardingPayload } from "@/types/types";
 import { auth } from "@clerk/nextjs/server";
+import crypto from "crypto";
 import { Timestamp } from "firebase-admin/firestore";
 import axios from "axios";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -224,91 +225,120 @@ export async function inviteUserToOrg(
     }
 }
 
-export async function setUserOnboardingSurvey(selectedTags: string[][]) {
-    const { userId, sessionClaims } = await auth();
-
-    if (!userId) {
-        throw new Error("Unauthorized - no user ID");
-    }
-
-    // 尝试多种方式获取用户邮箱
-    let userEmail: string | undefined;
-
-    // 检查 sessionClaims 中的各种可能的邮箱字段
+async function getCurrentUserEmail(): Promise<string | undefined> {
+    const { sessionClaims } = await auth();
     if (sessionClaims?.email && typeof sessionClaims.email === "string") {
-        userEmail = sessionClaims.email;
-    } else if (
+        return sessionClaims.email;
+    }
+    if (
         sessionClaims?.primaryEmailAddress &&
         typeof sessionClaims.primaryEmailAddress === "string"
     ) {
-        userEmail = sessionClaims.primaryEmailAddress;
-    } else if (
+        return sessionClaims.primaryEmailAddress;
+    }
+    if (
         sessionClaims?.emailAddresses &&
         Array.isArray(sessionClaims.emailAddresses) &&
         sessionClaims.emailAddresses.length > 0
     ) {
-        userEmail = sessionClaims.emailAddresses[0] as string;
+        return sessionClaims.emailAddresses[0] as string;
+    }
+    try {
+        const { currentUser } = await import("@clerk/nextjs/server");
+        const user = await currentUser();
+        return (
+            user?.emailAddresses?.[0]?.emailAddress ||
+            user?.primaryEmailAddress?.emailAddress
+        );
+    } catch {
+        return undefined;
+    }
+}
+
+export async function setUserOnboardingSurvey(payload: OnboardingPayload): Promise<{
+    success: boolean;
+    message?: string;
+    securityCode?: string;
+}> {
+    const { userId } = await auth();
+    if (!userId) {
+        return { success: false, message: "Unauthorized - no user ID" };
     }
 
-    // 如果仍然没有邮箱，尝试从 Clerk API 获取
-    if (!userEmail) {
-        try {
-            const { currentUser } = await import("@clerk/nextjs/server");
-            const user = await currentUser();
-            // console.log(
-            //     "Debug setUserOnboardingSurvey - currentUser:",
-            //     JSON.stringify(
-            //         {
-            //             id: user?.id,
-            //             emailAddresses: user?.emailAddresses?.map(
-            //                 (ea) => ea.emailAddress,
-            //             ),
-            //             primaryEmailAddress:
-            //                 user?.primaryEmailAddress?.emailAddress,
-            //         },
-            //         null,
-            //         2,
-            //     ),
-            // );
-
-            userEmail =
-                user?.emailAddresses?.[0]?.emailAddress ||
-                user?.primaryEmailAddress?.emailAddress;
-        } catch (clerkError) {
-            console.error("Failed to get user from Clerk:", clerkError);
-        }
-    }
-
+    const userEmail = await getCurrentUserEmail();
     if (
         !userEmail ||
         typeof userEmail !== "string" ||
         userEmail.trim().length === 0
     ) {
-        console.error("setUserOnboardingSurvey failed: no valid email found");
-        throw new Error(
-            `Unauthorized - no valid email found. Got: ${userEmail}`,
-        );
+        return {
+            success: false,
+            message: "Unauthorized - no valid email found.",
+        };
     }
-    try {
-        const formatted = selectedTags.map((tags) => tags.join(","));
 
-        // Check if any of the formatted strings are empty
-        if (formatted.some((tag) => tag === "")) {
-            throw new Error(
-                "Please select at least one tag for each question!",
-            );
+    try {
+        if (!payload.phone?.trim()) {
+            return { success: false, message: "Phone number is required." };
         }
+        if (!payload.email?.trim()) {
+            return { success: false, message: "Email is required." };
+        }
+        if (!payload.softSkills?.length) {
+            return {
+                success: false,
+                message: "Please select at least one soft skill.",
+            };
+        }
+        if (!payload.targetIndustry?.length) {
+            return {
+                success: false,
+                message: "Please select at least one target industry.",
+            };
+        }
+
+        const securityCodePlain = crypto
+            .randomBytes(5)
+            .toString("hex")
+            .toUpperCase();
+        const securityCodeHash = crypto
+            .createHash("sha256")
+            .update(securityCodePlain)
+            .digest("hex");
+
+        const onboardingSurveyResponse = [
+            payload.softSkills.join(","),
+            payload.targetIndustry.join(","),
+            payload.aspirations?.trim() || "",
+        ];
 
         await adminDb.collection("users").doc(userEmail).set(
             {
-                onboardingSurveyResponse: formatted,
+                phone: payload.phone.trim(),
+                phoneVerified: false,
+                backupPhones: payload.backupPhones?.filter(Boolean) || [],
+                email: payload.email.trim(),
+                securityCodeBackup: securityCodeHash,
+                softSkills: payload.softSkills,
+                targetIndustry: payload.targetIndustry,
+                aspirations: payload.aspirations?.trim() || null,
+                notificationPreference: payload.notificationPreference,
+                notificationPermissionGranted: payload.notificationPermissionGranted,
+                onboardingSurveyResponse,
             },
             { merge: true },
         );
-        return { success: true };
+
+        return {
+            success: true,
+            securityCode: securityCodePlain,
+        };
     } catch (error) {
         console.error(error);
-        return { success: false, message: (error as Error).message };
+        return {
+            success: false,
+            message: (error as Error).message,
+        };
     }
 }
 

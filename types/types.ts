@@ -61,6 +61,20 @@ export interface UserOrgData extends DocumentData {
     userId: string;
 }
 
+// App onboarding: extended user fields stored in Firestore users/{email}
+export type NotificationPreference = "email" | "phone" | "both";
+
+export type OnboardingPayload = {
+    phone: string;
+    backupPhones?: string[];
+    email: string;
+    softSkills: string[];
+    targetIndustry: string[];
+    aspirations?: string;
+    notificationPreference: NotificationPreference;
+    notificationPermissionGranted: boolean;
+};
+
 export const appHeader = [
     "Core Skills and Expertise",
     "Current Interests",

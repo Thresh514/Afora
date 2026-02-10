@@ -13,7 +13,16 @@ afora-firestore/
 │ ├── email: string
 │ ├── username: string
 │ ├── userImage: string
-│ ├── onboardingSurveyResponse: string[]
+│ ├── onboardingSurveyResponse: string[]  # backward-compat: [softSkills, targetIndustry, aspirations]
+│ ├── phone?: string
+│ ├── phoneVerified?: boolean
+│ ├── backupPhones?: string[]
+│ ├── securityCodeBackup?: string  # SHA-256 hash of recovery code; plaintext shown once at onboarding
+│ ├── softSkills?: string[]
+│ ├── targetIndustry?: string[]
+│ ├── aspirations?: string | null
+│ ├── notificationPreference?: "email" | "phone" | "both"
+│ ├── notificationPermissionGranted?: boolean
 │ ├── orgs/ # 子集合：用户所属组织
 │ │ └── {orgId}/
 │ │ ├── userId: string
@@ -115,7 +124,7 @@ afora-firestore/
 
 #### 用户管理
 - `createNewUser(userEmail, username, userImage)`
-- `setUserOnboardingSurvey(selectedTags)`
+- `setUserOnboardingSurvey(payload: OnboardingPayload)` — persists contact info, soft skills, industry, aspirations, notification preference; generates and stores hashed recovery code; returns `{ success, securityCode? }`.
 
 #### 组织管理
 - `createNewOrganization(orgName, orgDescription)`
