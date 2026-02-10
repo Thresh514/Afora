@@ -1,12 +1,30 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import PublicFooter from "@/components/PublicFooter";
 import FadeInSection, { FadeInStagger } from "@/components/FadeInSection";
 
+const HERO_BG_IMAGES = ["/1.png", "/6.png", "/7.png"] as const;
+
+const PARTNER_LOGOS = [
+  { src: "/babson.svg", alt: "Babson" },
+  { src: "/kumokumo.png", alt: "Kumokumo" },
+  { src: "/mit.png", alt: "MIT" },
+  { src: "/neu.svg", alt: "NEU" },
+  { src: "/tufts.jpg", alt: "Tufts" },
+  { src: "/wellesley.svg.png", alt: "Wellesley" },
+] as const;
+
 export default function LandingPage() {
   const router = useRouter();
+  const [heroBg, setHeroBg] = useState<(typeof HERO_BG_IMAGES)[number]>(HERO_BG_IMAGES[0]);
+
+  useEffect(() => {
+    setHeroBg(HERO_BG_IMAGES[Math.floor(Math.random() * HERO_BG_IMAGES.length)]);
+  }, []);
 
   return (
     <main className="min-h-full">
@@ -18,7 +36,7 @@ export default function LandingPage() {
         <div
           className="absolute inset-0 min-h-screen bg-cover bg-center bg-no-repeat"
           style={{
-            backgroundImage: `url("https://picsum.photos/1920/1080")`,
+            backgroundImage: `url("${heroBg}")`,
           }}
         />
         <div
@@ -71,7 +89,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Trust bar */}
+      {/* Trust bar - partner brands */}
       <FadeInSection>
       <section className="overflow-hidden border-y border-gray-200 bg-afora/5 py-12 md:py-14">
         <p className="mb-8 text-center text-base font-medium text-gray-500 md:text-lg">
@@ -79,24 +97,15 @@ export default function LandingPage() {
         </p>
         <div className="flex w-full">
           <div className="flex animate-marquee gap-16 whitespace-nowrap">
-            {[...Array(8)].map((_, i) => (
-              <div
-                key={`a-${i}`}
-                className="inline-flex h-16 w-36 flex-shrink-0 items-center justify-center rounded-xl bg-gray-300/80 md:h-20 md:w-44"
-                aria-hidden
-              >
-                <span className="text-sm font-medium text-gray-500 md:text-base">Logo</span>
-              </div>
-            ))}
-            {[...Array(8)].map((_, i) => (
-              <div
-                key={`b-${i}`}
-                className="inline-flex h-16 w-36 flex-shrink-0 items-center justify-center rounded-xl bg-gray-300/80 md:h-20 md:w-44"
-                aria-hidden
-              >
-                <span className="text-sm font-medium text-gray-500 md:text-base">Logo</span>
-              </div>
-            ))}
+            {[...PARTNER_LOGOS, ...PARTNER_LOGOS].map((brand, i) => (
+                <div
+                  key={i}
+                  className="inline-flex h-16 w-36 flex-shrink-0 items-center justify-center rounded-xl bg-white/90 p-3 md:h-20 md:w-44"
+                  aria-hidden
+                >
+                  <Image src={brand.src} alt={brand.alt} width={120} height={48} className="object-contain h-full w-full" />
+                </div>
+              ))}
           </div>
         </div>
       </section>
