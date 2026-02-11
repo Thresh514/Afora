@@ -13,6 +13,7 @@ import {
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
+import { Switch } from "./ui/switch";
 import { Textarea } from "./ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { createNewUser, setUserOnboardingSurvey } from "@/actions/actions";
@@ -27,11 +28,10 @@ import { Copy, Plus, X } from "lucide-react";
 
 const STEPS = [
     "Welcome",
-    "Contact Info",
+    "Notifications",
     "Soft Skills",
     "Target Industry",
     "Aspirations",
-    "Notifications",
 ];
 const TOTAL_STEPS = STEPS.length;
 
@@ -48,7 +48,7 @@ const AppOnboarding = () => {
     const [notificationPreference, setNotificationPreference] =
         useState<NotificationPreference>("email");
     const [notificationPermissionGranted, setNotificationPermissionGranted] =
-        useState(false);
+        useState(true);
 
     const [searchSoft, setSearchSoft] = useState("");
     const [searchIndustry, setSearchIndustry] = useState("");
@@ -156,9 +156,7 @@ const AppOnboarding = () => {
         setIsOpen(false);
     };
 
-    const canNextContact =
-        phone.trim().length > 0 &&
-        /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+    const canNextContact = phone.trim().length > 0;
     const canNextSoft = softSkills.length > 0;
     const canNextIndustry = targetIndustry.length > 0;
 
@@ -230,6 +228,12 @@ const AppOnboarding = () => {
                                         Please take a minute to complete this
                                         form. It helps us with matching and
                                         teammate recommendations.
+                                        <br />
+                                        <br />
+                                        <p className="italic">
+                                            *This information will be kept private and will not be
+                                            shared.
+                                        </p>
                                     </AlertDialogDescription>
                                 </AlertDialogHeader>
                             </>
@@ -239,15 +243,15 @@ const AppOnboarding = () => {
                             <>
                                 <AlertDialogHeader>
                                     <AlertDialogTitle>
-                                        Contact info
+                                        Preferred notification methods
                                     </AlertDialogTitle>
                                     <AlertDialogDescription>
-                                        Phone (with optional verification and
-                                        backups), email, and we will show you a
-                                        security code to save.
+                                        Choose how you want to receive
+                                        notifications. You can allow browser
+                                        notifications below.
                                     </AlertDialogDescription>
                                 </AlertDialogHeader>
-                                <div className="space-y-4">
+                                <div className="space-y-3">
                                     <div>
                                         <Label htmlFor="phone">
                                             Phone number
@@ -260,6 +264,7 @@ const AppOnboarding = () => {
                                             onChange={(e) =>
                                                 setPhone(e.target.value)
                                             }
+                                            className="mt-2"
                                         />
                                     </div>
                                     <div>
@@ -303,25 +308,63 @@ const AppOnboarding = () => {
                                             </div>
                                         ))}
                                     </div>
-                                    <div>
-                                        <Label htmlFor="email">Email</Label>
-                                        <Input
-                                            id="email"
-                                            type="email"
-                                            placeholder="you@example.com"
-                                            value={email}
-                                            onChange={(e) =>
-                                                setEmail(e.target.value)
-                                            }
-                                        />
-                                        {userEmail &&
-                                            email.trim() ===
-                                                userEmail.trim() && (
-                                                <p className="mt-1 text-xs text-muted-foreground">
-                                                    Matches your login email
-                                                    (verified).
-                                                </p>
-                                            )}
+                                    <div className="border-t pt-4">
+                                        <div className="flex flex-wrap items-center gap-3">
+                                            {(
+                                                [
+                                                    "email",
+                                                    "phone",
+                                                    "both",
+                                                ] as NotificationPreference[]
+                                            ).map((opt) => (
+                                                <Button
+                                                    key={opt}
+                                                    type="button"
+                                                    variant={
+                                                        notificationPreference ===
+                                                        opt
+                                                            ? "default"
+                                                            : "outline"
+                                                    }
+                                                    onClick={() =>
+                                                        setNotificationPreference(
+                                                            opt,
+                                                        )
+                                                    }
+                                                >
+                                                    {opt === "email"
+                                                        ? "Email only"
+                                                        : opt === "phone"
+                                                          ? "Phone only"
+                                                          : "Both"}
+                                                </Button>
+                                            ))}
+                                            <div className="flex items-center gap-2 ml-auto">
+                                                <Label
+                                                    htmlFor="allow-notifications"
+                                                    className="text-sm font-medium cursor-pointer"
+                                                >
+                                                    Allow notifications
+                                                </Label>
+                                                <Switch
+                                                    id="allow-notifications"
+                                                    checked={
+                                                        notificationPermissionGranted
+                                                    }
+                                                    onCheckedChange={(
+                                                        checked,
+                                                    ) => {
+                                                        if (checked) {
+                                                            requestNotificationPermission();
+                                                        } else {
+                                                            setNotificationPermissionGranted(
+                                                                false,
+                                                            );
+                                                        }
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </>
@@ -375,14 +418,9 @@ const AppOnboarding = () => {
                                         What industry do you want to get into?
                                     </AlertDialogTitle>
                                     <AlertDialogDescription>
-                                        Select at least one. This information is
-                                        private and will not be shared.
+                                        Select at least one. We will use this to match you with teammates.
                                     </AlertDialogDescription>
                                 </AlertDialogHeader>
-                                <p className="rounded-md border border-amber-200 bg-amber-50 p-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
-                                    This information is private and will not be
-                                    shared.
-                                </p>
                                 <Input
                                     placeholder="Search industries..."
                                     value={searchIndustry}
@@ -417,12 +455,11 @@ const AppOnboarding = () => {
                             <>
                                 <AlertDialogHeader>
                                     <AlertDialogTitle>
-                                        Aspirations or dreams (optional)
+                                        Aspirations or dreams
                                     </AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        We will try to match you with users who
-                                        have similar aspirations.
-                                    </AlertDialogDescription>
+                                    <p className="italic text-sm">
+                                        *We will match you with users with similar aspirations.
+                                    </p>
                                 </AlertDialogHeader>
                                 <Textarea
                                     placeholder="e.g. Lead a product team, switch to data science..."
@@ -433,68 +470,6 @@ const AppOnboarding = () => {
                                     rows={4}
                                     className="resize-none"
                                 />
-                            </>
-                        )}
-
-                        {page === 5 && (
-                            <>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>
-                                        Preferred notification methods
-                                    </AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        Choose how you want to receive
-                                        notifications. You can allow browser
-                                        notifications below.
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <div className="space-y-3">
-                                    <div className="flex flex-wrap gap-2">
-                                        {(
-                                            [
-                                                "email",
-                                                "phone",
-                                                "both",
-                                            ] as NotificationPreference[]
-                                        ).map((opt) => (
-                                            <Button
-                                                key={opt}
-                                                type="button"
-                                                variant={
-                                                    notificationPreference ===
-                                                    opt
-                                                        ? "default"
-                                                        : "outline"
-                                                }
-                                                onClick={() =>
-                                                    setNotificationPreference(
-                                                        opt,
-                                                    )
-                                                }
-                                            >
-                                                {opt === "email"
-                                                    ? "Email only"
-                                                    : opt === "phone"
-                                                      ? "Phone only"
-                                                      : "Both"}
-                                            </Button>
-                                        ))}
-                                    </div>
-                                    <Button
-                                        type="button"
-                                        variant="secondary"
-                                        onClick={
-                                            requestNotificationPermission
-                                        }
-                                    >
-                                        Allow notifications
-                                    </Button>
-                                    {notificationPermissionGranted && (
-                                        <p className="text-sm text-green-600 dark:text-green-400">
-                                            Notifications allowed.
-                                        </p>
-                                    )}
-                                </div>
                             </>
                         )}
 
