@@ -239,7 +239,7 @@ export default function LandingPage() {
           </p>
           <FadeInStagger className="grid gap-12 sm:grid-cols-3" delayMs={120}>
             <div>
-              <p className="text-5xl font-bold text-afora md:text-6xl">10k+</p>
+              <p className="text-5xl font-bold text-afora md:text-6xl">10+</p>
               <p className="mt-2 text-lg text-gray-600">teams onboarded</p>
             </div>
             <div>
@@ -325,7 +325,7 @@ export default function LandingPage() {
                 </p>
                 <p className="mb-5 flex items-baseline gap-0.5">
                   <span className="text-2xl font-bold text-gray-900">$9</span>
-                  <span className="text-sm text-gray-500">/user/month</span>
+                  <span className="text-sm text-gray-500">/user</span>
                 </p>
                 <button
                   onClick={() => router.push("/login")}
