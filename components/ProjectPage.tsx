@@ -385,7 +385,11 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
         return aIsAdmin ? -1 : 1;
     });
 
-
+    // 参与团队分析的人 = members + adminsAsUsers（不含未参与的管理员）
+    const analysisParticipants = Array.from(new Set([
+        ...(proj?.members || []),
+        ...(proj?.adminsAsUsers || []),
+    ]));
 
     return (
         <div className="flex flex-col w-full h-full bg-gray-100">
@@ -1118,7 +1122,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                             ) : (
                                 <TeamScoreCard
                                     orgId={id}
-                                    members={projectMembers}
+                                    members={analysisParticipants}
                                     projectFilter={projId}
                                     initialAnalysis={analysisData?.analysis || null}
                                     lastAnalysisTime={analysisData?.timestamp || null}
