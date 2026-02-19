@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import PublicFooter from "@/components/PublicFooter";
 import FadeInSection, { FadeInStagger } from "@/components/FadeInSection";
+import { Target, Clock, NotepadText, CircleCheck } from "lucide-react";
 
 const HERO_BG_IMAGES = ["/1.png", "/6.png", "/7.png"] as const;
 
@@ -120,50 +121,18 @@ export default function LandingPage() {
               AI-powered team features
             </h2>
             <p className="text-xl text-gray-600 md:text-2xl">
-              From roadmap generation to team matching and compatibility analysis—AI that helps you ship.
+              From roadmap generation to team matching, compatibility analysis, and bounty board—AI and tools that help you ship.
             </p>
           </div>
 
           <FadeInStagger delayMs={140}>
           <div className="grid gap-12 md:grid-cols-2 md:items-center pb-16 md:pb-24">
             <div>
-              <h3 className="mb-5 text-2xl font-semibold text-gray-900 md:text-3xl">
-                AI roadmap generation for faster kickoffs
+              <h3 className="mb-4 text-xl font-semibold text-gray-900 md:text-2xl">
+                Incentives Aligned from Day One
               </h3>
-              <p className="mb-8 text-lg text-gray-600 md:text-xl">
-                Turn your team charter and project goals into a full roadmap in one click. Get stages and tasks tailored to your team size, with clear ownership and descriptions—no more blank boards.
-              </p>
-              <button
-                onClick={() => router.push("/login")}
-                className="inline-flex items-center gap-2 rounded-xl bg-[#22c55e] px-6 py-3.5 text-base font-semibold text-white transition hover:bg-[#16a34a]"
-              >
-                Generate roadmap
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
-              </button>
-            </div>
-            <div className="relative flex justify-center">
-              <div className="h-80 w-full max-w-lg rounded-2xl border border-gray-200 bg-white p-8 shadow-xl md:h-96">
-                <p className="mb-3 text-sm font-medium uppercase tracking-wider text-gray-500">Project roadmap</p>
-                <div className="mb-4 h-2.5 w-28 rounded-full bg-afora/20" />
-                <div className="space-y-3 text-base text-gray-700">
-                  <p className="font-semibold">Stage: Research &amp; Design</p>
-                  <p className="text-gray-500">Task: Define user flows · Assignee: —</p>
-                  <p className="text-gray-500">Task: Create wireframes · Assignee: —</p>
-                </div>
-                <p className="mt-4 text-sm text-afora font-medium">AI generated · Accept to apply</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid gap-12 md:grid-cols-2 md:items-center pb-16 md:pb-24">
-            <div className="md:order-2">
-              <h3 className="mb-5 text-2xl font-semibold text-gray-900 md:text-3xl">
-                Smart team matching for better chemistry
-              </h3>
-              <p className="mb-8 text-lg text-gray-600 md:text-xl">
-                Group members into teams based on skills, interests, and goals from onboarding surveys. Get a compatibility score and suggested assignments—then drag to adjust and apply in one click.
+              <p className="mb-6 text-base text-gray-600 md:text-lg">
+                Afora uses advanced AI matching to assemble teams based on skills, goals, and working dynamics. Alignment starts early, reducing friction and increasing the likelihood of sustained performance
               </p>
               <button
                 onClick={() => router.push("/login")}
@@ -175,50 +144,163 @@ export default function LandingPage() {
                 </svg>
               </button>
             </div>
-            <div className="relative flex justify-center md:order-1">
-              <div className="h-80 w-full max-w-lg rounded-2xl border border-gray-200 bg-gray-900/95 p-8 shadow-xl md:h-96">
-                <p className="mb-4 text-sm font-medium uppercase tracking-wider text-green-400">Smart matching preview</p>
-                <div className="mb-4 flex items-center gap-2">
-                  <span className="rounded bg-green-500/20 px-3 py-1 text-sm font-medium text-green-400">Compatibility 87</span>
+            <div className="relative flex justify-center">
+              <div className="h-96 w-full rounded-2xl border border-gray-200 bg-white p-6 shadow-xl md:h-[28rem] overflow-hidden">
+                <p className="mb-3 text-sm font-semibold text-gray-800">Smart Matching Preview</p>
+                <div className="grid grid-cols-2 gap-2 mb-4">
+                  <div className="bg-blue-50 p-2 rounded-lg text-center">
+                    <div className="text-sm font-bold text-blue-600">6</div>
+                    <div className="text-xs text-gray-500">Unassigned</div>
+                  </div>
+                  <div className="bg-purple-50 p-2 rounded-lg text-center">
+                    <div className="text-sm font-bold text-purple-600">87</div>
+                    <div className="text-xs text-gray-500">Avg Score</div>
+                  </div>
                 </div>
-                <div className="space-y-3 text-base text-gray-300">
-                  <p>Team A: alice@, bob@, carol@</p>
-                  <p>Team B: dave@, eve@, frank@</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-3 bg-gray-50 min-h-[100px]">
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="text-sm font-semibold text-gray-900 truncate">Project Alpha</h3>
+                      <span className="shrink-0 px-1.5 py-0.5 rounded text-xs font-semibold bg-gradient-to-r from-purple-100 to-blue-100 border border-purple-200 text-purple-700">87/100</span>
+                    </div>
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-1.5 p-1.5 rounded-md bg-red-100 border border-red-200">
+                        <span className="text-xs truncate">admin@</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 p-1.5 rounded-md bg-green-100 border border-green-200">
+                        <span className="text-xs truncate">alice@</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 p-1.5 rounded-md bg-green-100 border border-green-200">
+                        <span className="text-xs truncate">bob@</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-3 bg-gray-50 min-h-[100px]">
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="text-sm font-semibold text-gray-900 truncate">Project Beta</h3>
+                      <span className="shrink-0 px-1.5 py-0.5 rounded text-xs font-semibold bg-gradient-to-r from-purple-100 to-blue-100 border border-purple-200 text-purple-700">82/100</span>
+                    </div>
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-1.5 p-1.5 rounded-md bg-red-100 border border-red-200">
+                        <span className="text-xs truncate">dave@</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 p-1.5 rounded-md bg-green-100 border border-green-200">
+                        <span className="text-xs truncate">eve@</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <p className="mt-4 text-sm text-gray-400">Drag to adjust · Apply when ready</p>
+                <p className="mt-3 text-xs text-gray-500">Drag to adjust · Confirm assignment</p>
               </div>
             </div>
           </div>
 
-          <div className="grid gap-12 md:grid-cols-2 md:items-center">
-            <div>
-              <h3 className="mb-5 text-2xl font-semibold text-gray-900 md:text-3xl">
-                Team compatibility analysis for stronger dynamics
+          <div className="grid gap-12 md:grid-cols-2 md:items-center pb-16 md:pb-24">
+            <div className="md:order-2">
+              <h3 className="mb-4 text-xl font-semibold text-gray-900 md:text-2xl">
+                Collective Accountability 
               </h3>
-              <p className="mb-8 text-lg text-gray-600 md:text-xl">
-                Get a weighted score across technical alignment, schedule, interests, and work style—plus AI recommendations to improve collaboration. Know how well your team fits before you start.
+              <p className="mb-6 text-base text-gray-600 md:text-lg">
+                Teams move forward together. When one member falls behind, the group pauses. This structure encourages early intervention, proactive support, and shared ownership. Real collaboration, not isolated task completion
               </p>
               <button
                 onClick={() => router.push("/login")}
                 className="inline-flex items-center gap-2 rounded-xl bg-[#22c55e] px-6 py-3.5 text-base font-semibold text-white transition hover:bg-[#16a34a]"
               >
-                Analyze my team
+                Generate roadmap
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
                 </svg>
               </button>
             </div>
-            <div className="relative flex justify-center">
-              <div className="h-80 w-full max-w-lg rounded-2xl border border-gray-200 bg-gray-900/95 p-8 shadow-xl md:h-96">
-                <p className="mb-3 text-sm font-medium uppercase tracking-wider text-green-400">Team analysis</p>
-                <div className="mb-4 h-3 w-full rounded-full bg-gray-700">
-                  <div className="h-full w-[88%] rounded-full bg-green-500" />
+            <div className="relative flex justify-center md:order-1">
+              <div className="h-96 w-full rounded-2xl border border-gray-200 bg-white p-6 shadow-xl md:h-[28rem] overflow-hidden">
+                <div className="flex items-center gap-2 mb-4">
+                  <Target className="h-4 w-4 text-blue-600" />
+                  <p className="text-sm font-semibold text-gray-800">Team Roadmap</p>
                 </div>
-                <p className="mb-4 text-4xl font-bold text-white">88</p>
-                <div className="space-y-2 text-sm text-gray-400">
-                  <p>Technical · Schedule · Interest · Communication · Work style</p>
+                <div className="bg-white rounded-lg shadow-sm border p-4 space-y-3">
+                  <h3 className="text-sm font-semibold text-gray-800 mb-3">Team Stages</h3>
+                  <div className="space-y-2">
+                    <div className="block p-3 bg-gray-50 rounded-lg border-2 border-gray-200">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-semibold text-gray-800">1. Research &amp; Design</span>
+                        <span className="flex items-center text-xs text-gray-500">
+                          <Clock className="h-4 w-4 mr-1.5 text-gray-500" />
+                          0 / 3 tasks
+                        </span>
+                      </div>
+                    </div>
+                    <div className="block p-3 bg-green-50 rounded-lg border-2 border-green-100">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-semibold text-gray-800">2. Development</span>
+                        <span className="flex items-center text-xs text-gray-500">
+                          <NotepadText className="h-4 w-4 mr-1.5 text-yellow-500" />
+                          2 / 4 tasks
+                        </span>
+                      </div>
+                    </div>
+                    <div className="block p-3 bg-green-50 rounded-lg border-2 border-green-100">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-semibold text-gray-800">3. Testing &amp; Launch</span>
+                        <span className="flex items-center text-xs text-gray-500">
+                          <CircleCheck className="h-4 w-4 mr-1.5 text-green-500" />
+                          2 / 2 tasks
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <p className="mt-4 text-sm text-gray-300">Key recommendations · Refresh to re-analyze</p>
+                <p className="mt-3 text-xs text-afora font-medium">AI generated · Accept to apply</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-12 md:grid-cols-2 md:items-center">
+            <div className="md:order-1">
+              <h3 className="mb-4 text-xl font-semibold text-gray-900 md:text-2xl">
+                Built-In Reward &amp; Recognition
+              </h3>
+              <p className="mb-6 text-base text-gray-600 md:text-lg">
+                A transparent, point-based incentive system rewarding contribution proportionally. It sustains momentum, reinforces fair accountability, and reduces administrative overhead in performance evaluation
+              </p>
+              <button
+                onClick={() => router.push("/login")}
+                className="inline-flex items-center gap-2 rounded-xl bg-[#22c55e] px-6 py-3.5 text-base font-semibold text-white transition hover:bg-[#16a34a]"
+              >
+                View Bounty Board
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </button>
+            </div>
+            <div className="relative flex justify-center md:order-2">
+              <div className="h-96 w-full rounded-2xl border border-gray-200 bg-white p-8 shadow-xl md:h-[28rem]">
+                <p className="mb-3 text-sm font-medium uppercase tracking-wider text-orange-500">Bounty Board</p>
+                <div className="space-y-3">
+                  <div className="rounded-xl border border-gray-200 bg-white overflow-hidden shadow-sm hover:border-orange-300 transition-all">
+                    <div className="bg-gradient-to-r from-orange-500 to-red-500 px-3 py-2 flex justify-between items-center">
+                      <span className="text-white text-sm font-medium">OVERDUE</span>
+                      <span className="bg-white/20 px-2 py-0.5 rounded-full text-white text-sm font-bold">10 pts</span>
+                    </div>
+                    <div className="p-3">
+                      <p className="font-semibold text-gray-900 text-sm">Define user flows</p>
+                      <p className="text-gray-500 text-xs mt-1 line-clamp-2">Create user flow diagrams for core features</p>
+                      <p className="mt-2 text-xs text-orange-600 font-medium">Claim Task · Earn points</p>
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-gray-200 bg-white overflow-hidden shadow-sm hover:border-orange-300 transition-all">
+                    <div className="bg-gradient-to-r from-orange-500 to-red-500 px-3 py-2 flex justify-between items-center">
+                      <span className="text-white text-sm font-medium">OVERDUE</span>
+                      <span className="bg-white/20 px-2 py-0.5 rounded-full text-white text-sm font-bold">10 pts</span>
+                    </div>
+                    <div className="p-3">
+                      <p className="font-semibold text-gray-900 text-sm">Create wireframes</p>
+                      <p className="text-gray-500 text-xs mt-1 line-clamp-2">Design wireframes for main screens</p>
+                      <p className="mt-2 text-xs text-orange-600 font-medium">Claim Task · Earn points</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
