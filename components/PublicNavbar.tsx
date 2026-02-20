@@ -39,8 +39,10 @@ export default function PublicNavbar() {
   return (
     <header className="fixed left-0 right-0 top-0 z-50 px-4 pt-4">
       <div
-        className={`mx-auto flex items-center justify-between rounded-2xl border border-white/20 px-6 py-3 shadow-lg transition-all duration-300 backdrop-blur-xl ${
-          isScrolled ? "max-w-3xl bg-white/25" : "max-w-6xl bg-white/20"
+        className={`mx-auto flex items-center justify-between rounded-2xl border px-6 py-3 shadow-lg transition-all duration-300 backdrop-blur-xl ${
+          isScrolled
+            ? "max-w-3xl border-white/20 bg-white/25 dark:border-white/10 dark:bg-gray-900/80"
+            : "max-w-6xl border-white/20 bg-white/20 dark:border-white/10 dark:bg-gray-900/60"
         }`}
       >
         <Link href="/" className="flex items-center gap-2">
@@ -52,7 +54,7 @@ export default function PublicNavbar() {
               key={item.href}
               href={item.href}
               onClick={(e) => handleNavClick(e, item)}
-              className="rounded-lg px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-white/20 hover:text-gray-900"
+              className="rounded-lg px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-white/20 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/10 dark:hover:text-white"
             >
               {item.label}
             </Link>
@@ -61,7 +63,7 @@ export default function PublicNavbar() {
         <div className="flex items-center gap-3">
           <Link
             href="/login"
-            className="text-sm font-medium text-gray-700 hover:text-gray-900"
+            className="text-sm font-medium text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
           >
             Log in
           </Link>

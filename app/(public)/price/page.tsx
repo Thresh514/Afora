@@ -58,13 +58,13 @@ export default function PricePage() {
   const router = useRouter();
 
   return (
-    <main className="min-h-screen bg-gray-50/50 pt-28 pb-20 md:pt-32 md:pb-28">
+    <main className="min-h-screen bg-gray-50/50 pt-28 pb-20 md:pt-32 md:pb-28 dark:bg-gray-900">
       <div className="mx-auto max-w-6xl px-4">
         <div className="mb-16 text-center">
-          <h1 className="mb-4 font-serif text-4xl font-bold text-gray-900 md:text-5xl">
+          <h1 className="mb-4 font-serif text-4xl font-bold text-gray-900 md:text-5xl dark:text-gray-100">
             Simple, transparent pricing
           </h1>
-          <p className="text-xl text-gray-600 md:text-2xl">
+          <p className="text-xl text-gray-600 md:text-2xl dark:text-gray-300">
             B2B plans that scale with your team. Start free, upgrade when you’re ready.
           </p>
         </div>
@@ -73,10 +73,10 @@ export default function PricePage() {
           {plans.map((plan) => (
             <div
               key={plan.name}
-              className={`relative flex flex-col rounded-2xl border bg-white p-8 shadow-sm transition hover:shadow-lg ${
+              className={`relative flex flex-col rounded-2xl border bg-white p-8 shadow-sm transition hover:shadow-lg dark:bg-gray-800 ${
                 plan.primary
-                  ? "border-afora ring-2 ring-afora/20"
-                  : "border-gray-200"
+                  ? "border-afora ring-2 ring-afora/20 dark:border-afora"
+                  : "border-gray-200 dark:border-gray-700"
               }`}
             >
               {plan.primary && (
@@ -84,23 +84,23 @@ export default function PricePage() {
                   Popular
                 </span>
               )}
-              <h2 className="mb-2 text-xl font-semibold text-gray-900">{plan.name}</h2>
-              <p className="mb-6 text-sm text-gray-600">{plan.description}</p>
+              <h2 className="mb-2 text-xl font-semibold text-gray-900 dark:text-gray-100">{plan.name}</h2>
+              <p className="mb-6 text-sm text-gray-600 dark:text-gray-300">{plan.description}</p>
               <div className="mb-6 flex items-baseline gap-1">
                 {plan.price === "Custom" ? (
-                  <span className="text-2xl font-bold text-gray-900">Custom</span>
+                  <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">Custom</span>
                 ) : plan.price ? (
                   <>
-                    <span className="text-3xl font-bold text-gray-900">{plan.price}</span>
+                    <span className="text-3xl font-bold text-gray-900 dark:text-gray-100">{plan.price}</span>
                     {plan.unit && (
-                      <span className="text-gray-500">{plan.unit}</span>
+                      <span className="text-gray-500 dark:text-gray-400">{plan.unit}</span>
                     )}
                   </>
                 ) : (
-                  <span className="text-3xl font-bold text-gray-900">$0</span>
+                  <span className="text-3xl font-bold text-gray-900 dark:text-gray-100">$0</span>
                 )}
               </div>
-              <ul className="mb-8 flex-1 space-y-3 text-sm text-gray-600">
+              <ul className="mb-8 flex-1 space-y-3 text-sm text-gray-600 dark:text-gray-300">
                 {plan.features.map((f) => (
                   <li key={f} className="flex items-start gap-2">
                     <span className="mt-0.5 text-afora">✓</span>
@@ -111,10 +111,10 @@ export default function PricePage() {
               {plan.ctaHref === "/login" ? (
                 <button
                   onClick={() => router.push("/login")}
-                  className={`w-full rounded-xl py-3.5 text-sm font-semibold transition ${
+                    className={`w-full rounded-xl py-3.5 text-sm font-semibold transition ${
                     plan.primary
                       ? "bg-afora text-white hover:bg-afora-hover"
-                      : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                      : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
                   }`}
                 >
                   {plan.cta}
@@ -122,7 +122,7 @@ export default function PricePage() {
               ) : (
                 <Link
                   href={plan.ctaHref}
-                  className="block w-full rounded-xl border border-gray-300 bg-white py-3.5 text-center text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+                  className="block w-full rounded-xl border border-gray-300 bg-white py-3.5 text-center text-sm font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
                 >
                   {plan.cta}
                 </Link>
@@ -131,7 +131,7 @@ export default function PricePage() {
           ))}
         </div>
 
-        <p className="mt-12 text-center text-sm text-gray-500">
+        <p className="mt-12 text-center text-sm text-gray-500 dark:text-gray-400">
           All plans include full access to AI features. Need a custom quote?{" "}
           <Link href="#" className="font-medium text-afora hover:underline">
             Contact us

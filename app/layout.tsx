@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
+import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
 import { Analytics } from "@vercel/analytics/next";
 import CronInitializer from "@/components/CronInitializer";
@@ -20,15 +21,17 @@ export default function RootLayout({
       publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY!}
       afterSignOutUrl="/login"
     >
-      <html lang="en">
+      <html lang="en" suppressHydrationWarning>
         <head>
           <link rel="icon" href="/icon.svg" type="image/svg" sizes="any"/>
         </head>
         <body>
-          {children}
-          <CronInitializer />
-          <Toaster position="top-center" />
-          <Analytics />
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+            {children}
+            <CronInitializer />
+            <Toaster position="top-center" />
+            <Analytics />
+          </ThemeProvider>
         </body>
       </html>
     </ClerkProvider>

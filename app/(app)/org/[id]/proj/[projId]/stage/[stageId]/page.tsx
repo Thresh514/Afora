@@ -340,8 +340,8 @@ function StagePage() {
                         }
                     }}
                 >
-                    <DialogContent className="max-w-7xl h-3/4">
-                        <DialogHeader>
+                    <DialogContent className="max-w-7xl max-h-[85vh] flex flex-col overflow-hidden">
+                        <DialogHeader className="flex-shrink-0">
                             <DialogTitle className="flex items-center gap-2 text-2xl font-bold">
                                 Bounty Board
                                 <span className="text-base font-normal text-gray-500">
@@ -353,7 +353,7 @@ function StagePage() {
                             </DialogDescription>
                         </DialogHeader>
 
-                        <div className="py-4">
+                        <div className="py-4 flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
                             {overdueTasks.length > 0 ? (
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                     {overdueTasks.map((task) => (

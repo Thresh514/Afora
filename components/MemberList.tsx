@@ -229,7 +229,7 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                 toast.error("Failed to move member. Please try again.");
             }
         },
-        [projectTeams],
+        [],
     );
 
     const updateTeamSize = useCallback(
@@ -247,7 +247,7 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                 toast.error("Failed to update team size");
             }
         },
-        [projectTeams],
+        [],
     );
 
     const renderMemberCard = useCallback(
