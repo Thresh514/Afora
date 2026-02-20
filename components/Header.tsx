@@ -4,6 +4,7 @@ import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import Breadcrumbs from "./Breadcrumbs";
 import Link from "next/link";
 import FundUs from "./FundUs";
+import NotificationDropdown from "./NotificationDropdown";
 import { SidebarTrigger } from "./ui/sidebar";
 import Image from "next/image";
 
@@ -18,14 +19,26 @@ function Header() {
                 </SignedIn>
                 <div className="flex items-center justify-between flex-1">
                     <h1 className="text-2xl font-bold text-white">
-                        <Link href="/">
-                            <Image
-                                src="/logoFull.svg"
-                                alt="Logo"
-                                width={150}
-                                height={50}
-                            />
-                        </Link>
+                        <SignedIn>
+                            <Link href="/home">
+                                <Image
+                                    src="/logoFull.svg"
+                                    alt="Logo"
+                                    width={150}
+                                    height={50}
+                                />
+                            </Link>
+                        </SignedIn>
+                        <SignedOut>
+                            <Link href="/">
+                                <Image
+                                    src="/logoFull.svg"
+                                    alt="Logo"
+                                    width={150}
+                                    height={50}
+                                />
+                            </Link>
+                        </SignedOut>
                     </h1>
 
                     {/* Breadcrumbs */}
@@ -39,6 +52,7 @@ function Header() {
                             <SignInButton />
                         </SignedOut>
                         <SignedIn>
+                            <NotificationDropdown />
                             <UserButton />
                         </SignedIn>
                     </div>

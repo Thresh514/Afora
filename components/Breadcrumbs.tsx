@@ -98,7 +98,6 @@ function Breadcrumbs() {
         taskDoc && taskDoc.exists() ? (taskDoc.data() as Task).title : null;
     const leaderboardTitle = isLeaderboardRoute ? "Leaderboard" : null;
 
-    // 定义breadcrumb项目类型
     type BreadcrumbItemType = {
         title: string;
         href: string;
@@ -106,11 +105,9 @@ function Breadcrumbs() {
         isEllipsis?: boolean;
     };
 
-    // 计算需要显示的breadcrumb项目数量
     const breadcrumbItems: BreadcrumbItemType[] = [];
 
-    // Home
-    breadcrumbItems.push({ title: "Home", href: "/" });
+    breadcrumbItems.push({ title: "Home", href: "/home" });
 
     // Organization
     if (isOrgRoute && orgTitle) {

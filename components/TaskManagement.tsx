@@ -1,24 +1,6 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-
-// Add CSS for flashing red border animation
-if (typeof document !== 'undefined') {
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes flash-red {
-            0%, 100% {
-                border-color: #ef4444;
-                box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
-            }
-            50% {
-                border-color: #dc2626;
-                box-shadow: 0 0 20px rgba(220, 38, 38, 0.6);
-            }
-        }
-    `;
-    document.head.appendChild(style);
-}
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CircleCheckBig, Clock7, Trash, User, MoreVertical } from "lucide-react";
 import Link from "next/link";
@@ -67,6 +49,15 @@ const TaskManagement = ({
 }: TaskManagementProps) => {
     // const tasksCompleted = tasks.filter((task) => task.isCompleted).length;
     
+    // Function to check if a task is within one day of hard deadline (uses hard_deadline to match displayed "Due")
+    const isNearDeadline = (task: Task) => {
+        const now = new Date();
+        const deadline = new Date(task.hard_deadline);
+        const timeDiff = deadline.getTime() - now.getTime();
+        const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+        return daysDiff <= 1 && daysDiff >= 0 && !task.isCompleted;
+    };
+
     // Function to check if a task is within one day of soft deadline
     const isNearSoftDeadline = (task: Task) => {
         const now = new Date();
@@ -145,9 +136,10 @@ const TaskManagement = ({
                         {sortedTasks.length > 0 ? (
                             sortedTasks.map((task, index) => {
                                 const isAssignedToCurrentUser = task.assignee === currentUserEmail || isCurrentUserAdmin;
+                                const isMyTask = task.assignee === currentUserEmail; // Visual indicator: only tasks assigned to me
                                 const isUnassigned = !task.assignee;
-                                const isNearDeadline = isNearSoftDeadline(task);
-                                // const secondButtonNeeded = isUnassigned || isAssignedToCurrentUser && !task.isCompleted;
+                                const isDeadlineSoon = isNearDeadline(task);
+                                const isSoftDeadlineSoon = isNearSoftDeadline(task);
                                 
                                 return (
                                     <Link
@@ -156,16 +148,15 @@ const TaskManagement = ({
                                     >
                                         <Card
                                             key={task.id}
-                                            className={`transition-all duration-200 hover:shadow-lg group relative ${
-                                                isNearDeadline
-                                                    ? 'animate-pulse border-2 border-red-500 shadow-red-200 shadow-lg' 
-                                                    : ''
+                                            className={`transition-all duration-200 hover:shadow-lg group relative border-2 ${
+                                                isDeadlineSoon
+                                                    ? 'border-red-500 animate-flash-red' 
+                                                    : isSoftDeadlineSoon
+                                                      ? 'border-orange-200'
+                                                      : isMyTask
+                                                          ? `border-l-4 border-l-blue-500 ${!task.isCompleted ? 'bg-blue-50' : ''}`
+                                                          : ''
                                             }`}
-                                            style={{
-                                                animation: isNearDeadline 
-                                                    ? 'flash-red 2s infinite' 
-                                                    : 'none'
-                                            }}
                                         >
                                             <CardHeader className="pb-3">
                                                 <div className="flex items-start justify-between">

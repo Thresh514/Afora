@@ -195,4 +195,19 @@
     backface-visibility: hidden;
     will-change: transform;
   }
+
+  /* Task card: red flashing outline when 1 day from deadline */
+  @keyframes flash-red {
+    0%, 100% {
+      border-color: #ef4444;
+      box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+    }
+    50% {
+      border-color: #dc2626;
+      box-shadow: 0 0 20px rgba(220, 38, 38, 0.7);
+    }
+  }
+  .animate-flash-red {
+    animation: flash-red 1.5s ease-in-out infinite;
+  }
 }
