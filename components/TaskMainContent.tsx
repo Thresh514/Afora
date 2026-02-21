@@ -20,6 +20,7 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { assignTask, completeTaskWithProgress } from "@/actions/actions";
 import { useRouter } from "next/navigation";
+import { useAnimations } from "@/contexts/AnimationContext";
 
 interface TaskMainContentProps {
     projId: string;
@@ -38,6 +39,7 @@ function TaskMainContent({
 }: TaskMainContentProps) {
     const { user } = useUser();
     const router = useRouter();
+    const { triggerRocket, triggerConfetti } = useAnimations();
     const [isPending, startTransition] = useTransition();
 
     const [completionPercentage, setCompletionPercentage] = useState([0]);
@@ -81,20 +83,27 @@ function TaskMainContent({
         setHasUnsavedChanges(value[0] !== completionPercentage[0]);
     };
 
-    const handleUpdateProgress = () => {
+    const handleUpdateProgress = async () => {
         if (!taskLocked) {
-            completeTaskWithProgress(projId, stageId, taskId, tempCompletionPercentage[0])
-            setCompletionPercentage(tempCompletionPercentage);
-            if (tempCompletionPercentage[0] === 100 && !isCompleted) {
-                setIsCompleted(true);
-                toast.success("🎉 Task marked as complete!");
-            } else if (tempCompletionPercentage[0] < 100 && isCompleted) {
-                setIsCompleted(false);
-                toast.success("Progress updated!");
-            } else if (tempCompletionPercentage[0] === 100) {
-                toast.success("Task confirmed as complete!");
-            } else {
-                toast.success("Progress updated!");
+            try {
+                const result = await completeTaskWithProgress(projId, stageId, taskId, tempCompletionPercentage[0]);
+                setCompletionPercentage(tempCompletionPercentage);
+                if (tempCompletionPercentage[0] === 100 && !isCompleted && result?.success) {
+                    setIsCompleted(true);
+                    triggerRocket();
+                    toast.success("🎉 Task marked as complete!");
+                } else if (tempCompletionPercentage[0] === 100 && !isCompleted && !result?.success) {
+                    toast.error("Failed to update progress");
+                } else if (tempCompletionPercentage[0] === 100 && isCompleted) {
+                    toast.success("Task confirmed as complete!");
+                } else if (tempCompletionPercentage[0] < 100 && isCompleted) {
+                    setIsCompleted(false);
+                    toast.success("Progress updated!");
+                } else {
+                    toast.success("Progress updated!");
+                }
+            } catch {
+                toast.error("Failed to update progress");
             }
             setHasUnsavedChanges(false);
             setIsModifying(false);
@@ -318,6 +327,7 @@ function TaskMainContent({
                                           user.primaryEmailAddress?.emailAddress || ""
                                         );
                                         if (result.success) {
+                                          triggerConfetti();
                                           toast.success("Task accepted!");
                                           if (router.refresh) router.refresh();
                                         } else {

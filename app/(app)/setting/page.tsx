@@ -4,6 +4,7 @@
 import { useUser } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { updateUserMatchingPreference, getUserMatchingPreference } from "@/actions/actions";
+import { useAnimations } from "@/contexts/AnimationContext";
 import { db } from "@/firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { useState, useEffect } from "react";
@@ -15,7 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Settings, User, Shield } from "lucide-react";
+import { Settings, User, Shield, Sparkles } from "lucide-react";
 import { useForm, SubmitHandler } from "react-hook-form";
 import {
     Select,
@@ -32,6 +33,7 @@ type ProfileInputs = {
 
 function SettingPage() {
     const { user } = useUser();
+    const { animationsEnabled, setAnimationsEnabled, loading: animationLoading } = useAnimations();
     const [allowMatching, setAllowMatching] = useState<boolean>(true);
     const [matchingLoading, setMatchingLoading] = useState<boolean>(true);
     const [allowTaskAssignment, setAllowTaskAssignment] = useState<boolean>(true);
@@ -318,6 +320,36 @@ function SettingPage() {
                                             </div>
                                         </div>
                                     </div>
+                                </div>
+
+                                <Separator />
+
+                                {/* Animation Preference */}
+                                <div className="flex items-center justify-between p-6 bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg border border-amber-100">
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <Label htmlFor="animation-switch" className="text-lg font-semibold cursor-pointer text-gray-900">
+                                                <Sparkles className="h-5 w-5 inline mr-2 text-amber-600" />
+                                                Enable celebration animations
+                                            </Label>
+                                            <Badge variant={animationsEnabled ? "default" : "secondary"} className="text-xs">
+                                                {animationsEnabled ? "On" : "Off"}
+                                            </Badge>
+                                        </div>
+                                        <p className="text-sm text-gray-600 leading-relaxed">
+                                            {animationsEnabled
+                                                ? "Rocket and confetti animations will play when completing tasks, claiming tasks, or finishing surveys"
+                                                : "Celebration animations are disabled"
+                                            }
+                                        </p>
+                                    </div>
+                                    <Switch
+                                        id="animation-switch"
+                                        checked={animationsEnabled}
+                                        onCheckedChange={setAnimationsEnabled}
+                                        disabled={animationLoading}
+                                        className="ml-6 data-[state=checked]:bg-amber-600"
+                                    />
                                 </div>
 
                                 <Separator />

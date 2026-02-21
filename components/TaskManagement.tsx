@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CircleCheckBig, Clock7, Trash, User, MoreVertical } from "lucide-react";
@@ -47,6 +48,7 @@ const TaskManagement = ({
     currentUserEmail,
     isAdmin: isCurrentUserAdmin,
 }: TaskManagementProps) => {
+    const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
     // const tasksCompleted = tasks.filter((task) => task.isCompleted).length;
     
     // Function to check if a task is within one day of hard deadline (uses hard_deadline to match displayed "Due")
@@ -178,9 +180,13 @@ const TaskManagement = ({
                                                         </div>
                                                     </div>
                                                     
-                                                    {/* Task Actions */}
+                                                    {/* Task Actions - 阻止点击冒泡到外层 Link，避免误导航 */}
                                                     {(currentUserEmail || isCurrentUserAdmin) && (
-                                                        <>
+                                                        <div
+                                                            className="flex-shrink-0"
+                                                            onClick={(e) => e.stopPropagation()}
+                                                            onPointerDown={(e) => e.stopPropagation()}
+                                                        >
                                                             <DropdownMenu.Root>
                                                                 <DropdownMenu.Trigger asChild>
                                                                     <Button
@@ -228,7 +234,8 @@ const TaskManagement = ({
                                                                                 )} */}
                                                                                 <DropdownMenu.Item
                                                                                     className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-red-50 text-red-600 data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
-                                                                                    onClick={() => {
+                                                                                    onSelect={() => {
+                                                                                        setTaskToDelete(task.id);
                                                                                         setIsOpen(true);
                                                                                     }}
                                                                                 >
@@ -240,33 +247,7 @@ const TaskManagement = ({
                                                                     </DropdownMenu.Content>
                                                                 </DropdownMenu.Portal>
                                                             </DropdownMenu.Root>
-
-                                                            {/* Delete Task Dialog */}
-                                                            <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
-                                                                <AlertDialogContent>
-                                                                    <AlertDialogHeader>
-                                                                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                                                        <AlertDialogDescription>
-                                                                            This action cannot be undone. This will permanently delete the task.
-                                                                        </AlertDialogDescription>
-                                                                    </AlertDialogHeader>
-                                                                    <AlertDialogFooter>
-                                                                        <Button variant="outline" onClick={() => setIsOpen(false)}>
-                                                                            Cancel
-                                                                        </Button>
-                                                                        <Button
-                                                                            variant="destructive"
-                                                                            onClick={() => {
-                                                                                handleDeleteTask(task.id);
-                                                                            }}
-                                                                            disabled={isPending}
-                                                                        >
-                                                                            {isPending ? "Deleting..." : "Delete"}
-                                                                        </Button>
-                                                                    </AlertDialogFooter>
-                                                                </AlertDialogContent>
-                                                            </AlertDialog>
-                                                        </>
+                                                        </div>
                                                     )}
                                                 </div>
                                             </CardHeader>
@@ -335,6 +316,42 @@ const TaskManagement = ({
                         )}
                     </div>
                 </div>
+
+                {/* Delete Task Dialog - 单一对话框，避免与 Link 冲突 */}
+                <AlertDialog
+                    open={isOpen}
+                    onOpenChange={(open) => {
+                        setIsOpen(open);
+                        if (!open) setTaskToDelete(null);
+                    }}
+                >
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                This action cannot be undone. This will permanently delete the task.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <Button variant="outline" onClick={() => setIsOpen(false)}>
+                                Cancel
+                            </Button>
+                            <Button
+                                variant="destructive"
+                                onClick={() => {
+                                    if (taskToDelete) {
+                                        handleDeleteTask(taskToDelete);
+                                        setTaskToDelete(null);
+                                    }
+                                    setIsOpen(false);
+                                }}
+                                disabled={isPending}
+                            >
+                                {isPending ? "Deleting..." : "Delete"}
+                            </Button>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
 
                 {/* Actions - Create New Task */}
                 {(isEditing || sortedTasks.length === 0) && (

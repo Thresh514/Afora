@@ -25,6 +25,7 @@ import { useUser } from "@clerk/nextjs";
 import { appTags } from "@/types/types";
 import type { OnboardingPayload, NotificationPreference } from "@/types/types";
 import { Copy, Plus, X } from "lucide-react";
+import { useAnimations } from "@/contexts/AnimationContext";
 
 const STEPS = [
     "Welcome",
@@ -36,6 +37,7 @@ const STEPS = [
 const TOTAL_STEPS = STEPS.length;
 
 const AppOnboarding = () => {
+    const { triggerConfetti } = useAnimations();
     const [isOpen, setIsOpen] = useState(false);
     const [page, setPage] = useState(0);
 
@@ -134,9 +136,11 @@ const AppOnboarding = () => {
         const result = await setUserOnboardingSurvey(payload);
         setSubmitting(false);
         if (result.success && result.securityCode) {
+            triggerConfetti();
             setSecurityCode(result.securityCode);
             toast.success("Profile saved. Copy your recovery code below.");
         } else if (result.success) {
+            triggerConfetti();
             toast.success("Profile saved.");
             setIsOpen(false);
         } else {

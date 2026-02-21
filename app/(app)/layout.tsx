@@ -3,11 +3,13 @@ import AppOnboarding from "@/components/AppOnboarding";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import MySidebar from "@/components/MySidebar";
 import StoreProvider from "../StoreProvider";
+import { AnimationProvider } from "@/contexts/AnimationContext";
 
 export default function AppLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
+    <AnimationProvider>
     <SidebarProvider
       className="flex flex-col h-screen"
       style={
@@ -31,5 +33,6 @@ export default function AppLayout({
         </div>
       </div>
     </SidebarProvider>
+    </AnimationProvider>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 
+import { useAnimations } from "@/contexts/AnimationContext";
 import {AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle} from "@/components/ui/alert-dialog";
 import { Button } from "./ui/button";
 import { projHeader, projQuestions } from "@/types/types";
@@ -188,6 +189,7 @@ interface ProjOnboardingProps {
 }
 
 const ProjOnboarding = ({ orgId, projId, onDismiss }: ProjOnboardingProps) => {
+    const { triggerConfetti } = useAnimations();
     const [responses, setResponses] = useState<string[]>([]);
     const [selectedSlots, setSelectedSlots] = useState<Set<string>>(new Set());
     const [isOpen, setIsOpen] = useState(false);
@@ -232,6 +234,7 @@ const ProjOnboarding = ({ orgId, projId, onDismiss }: ProjOnboardingProps) => {
             responses,
         );
         if (success) {
+            triggerConfetti();
             toast.success("Survey response received successfully!");
             setIsOpen(false);
             onDismiss?.();

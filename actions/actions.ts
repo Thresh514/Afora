@@ -4131,6 +4131,50 @@ export async function getUserMatchingPreference() {
     }
 }
 
+export async function getAnimationPreference() {
+    const { userId } = await auth();
+    if (!userId) {
+        throw new Error("Unauthorized");
+    }
+
+    try {
+        const userDoc = await adminDb.collection("users").doc(userId).get();
+        if (!userDoc.exists) {
+            return { success: true, animationsEnabled: true };
+        }
+
+        const userData = userDoc.data();
+        return {
+            success: true,
+            animationsEnabled: userData?.animationsEnabled !== false,
+        };
+    } catch (error) {
+        console.error("Error getting animation preference:", error);
+        return { success: false, message: (error as Error).message };
+    }
+}
+
+export async function updateAnimationPreference(animationsEnabled: boolean) {
+    const { userId } = await auth();
+    if (!userId) {
+        throw new Error("Unauthorized");
+    }
+
+    try {
+        await adminDb.collection("users").doc(userId).set(
+            {
+                animationsEnabled,
+                animationPreferenceUpdatedAt: new Date().toISOString(),
+            },
+            { merge: true },
+        );
+        return { success: true };
+    } catch (error) {
+        console.error("Error updating animation preference:", error);
+        return { success: false, message: (error as Error).message };
+    }
+}
+
 export async function autoDropOverdueTasks() {
     const { userId } = await auth();
     if (!userId) {

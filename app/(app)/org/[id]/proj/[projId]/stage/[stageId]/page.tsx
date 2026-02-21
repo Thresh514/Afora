@@ -42,6 +42,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus } from "lucide-react";
+import { useAnimations } from "@/contexts/AnimationContext";
 
 
 function StagePage() {
@@ -53,6 +54,7 @@ function StagePage() {
     const { isSignedIn, isLoaded } = useAuth();
     const { user } = useUser();
     const router = useRouter();
+    const { triggerRocket, triggerConfetti } = useAnimations();
     const [swapTaskDialogOpen, setSwapTaskDialogOpen] = useState(false);
     const [currentTaskId, setCurrentTaskId] = useState<string>("");
     const [swapAssigneeEmail, setSwapAssigneeEmail] = useState("");
@@ -177,8 +179,11 @@ function StagePage() {
         }
     };
 
-    const handleCompleteTask = (taskId: string) => {
-        completeTaskWithProgress(projId, stageId, taskId, 100)
+    const handleCompleteTask = async (taskId: string) => {
+        const result = await completeTaskWithProgress(projId, stageId, taskId, 100);
+        if (result?.success) {
+            triggerRocket();
+        }
         toast.success("🎉 Task marked as complete!");
     }
 
@@ -214,6 +219,7 @@ function StagePage() {
             );
             
             if (result.success) {
+                triggerConfetti();
                 toast.success("Task accepted successfully!");
             } else {
                 toast.error(result.message || "Failed to accept task");

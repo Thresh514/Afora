@@ -43,6 +43,7 @@
     "@vercel/analytics": "^1.5.0",
     "add": "^2.0.6",
     "axios": "^1.8.4",
+    "canvas-confetti": "^1.9.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
@@ -89,6 +90,7 @@
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.16",
+    "@types/canvas-confetti": "^1.9.0",
     "@types/firebase": "^2.4.32",
     "@types/node": "^20.19.9",
     "@types/react": "^18",
