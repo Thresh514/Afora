@@ -1,6 +1,6 @@
 "use client";
 
-import { Settings, Mail, Calendar, Home } from "lucide-react";
+import { Settings, Mail, Calendar, Home, ListTodo } from "lucide-react";
 import { useCollection } from "react-firebase-hooks/firestore";
 import { useUser } from "@clerk/nextjs";
 import { collection, DocumentData, QuerySnapshot } from "firebase/firestore";
@@ -116,9 +116,17 @@ function MySidebar() {
                                 <SidebarMenu>
                                     <SidebarMenuItem>
                                         <SidebarMenuButton asChild>
-                                            <Link href="/home" className="flex items-center gap-2">
-                                                <Home className="h-4 w-4" />
+                                            <Link href="/home" className="flex items-center gap-3">
+                                                <Home className="h-5 w-5" />
                                                 <span className="truncate">Home</span>
+                                            </Link>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                    <SidebarMenuItem>
+                                        <SidebarMenuButton asChild>
+                                            <Link href="/my-tasks" className="flex items-center gap-3">
+                                                <ListTodo className="h-5 w-5" />
+                                                <span className="truncate">My Tasks</span>
                                             </Link>
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>
@@ -132,7 +140,7 @@ function MySidebar() {
                                     {/* Loading state */}
                                     {loading && (
                                         <SidebarMenuItem>
-                                            <div className="px-2 py-1 text-sm text-gray-500">
+                                            <div className="px-3 py-2 text-base text-gray-500">
                                                 Loading groups...
                                             </div>
                                         </SidebarMenuItem>
@@ -141,7 +149,7 @@ function MySidebar() {
                                     {/* Error state */}
                                     {error && (
                                         <SidebarMenuItem>
-                                            <div className="px-2 py-1 text-sm text-red-500">
+                                            <div className="px-3 py-2 text-base text-red-500">
                                                 Error loading groups
                                             </div>
                                         </SidebarMenuItem>
@@ -166,7 +174,7 @@ function MySidebar() {
                                                     </SidebarMenuButton>
                                                     <SidebarMenuButton asChild className="hidden group-data-[collapsible=icon]:flex">
                                                         <Link href={`/org/${id}`}>
-                                                            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-purple-100 text-purple-700 font-semibold">
+                                                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-100 text-purple-700 font-semibold text-sm">
                                                                 {title.charAt(0).toUpperCase()}
                                                             </div>
                                                         </Link>
@@ -182,7 +190,7 @@ function MySidebar() {
                                         orgMap.size === 0 &&
                                         orgIds.length === 0 && (
                                             <SidebarMenuItem>
-                                                <div className="px-2 py-1 text-sm text-gray-500">
+                                                <div className="px-3 py-2 text-base text-gray-500">
                                                     No groups found
                                                 </div>
                                             </SidebarMenuItem>
@@ -197,14 +205,14 @@ function MySidebar() {
                                 <SidebarMenu>
                                     <SidebarMenuItem>
                                         <SidebarMenuButton asChild>
-                                            <Link href="/notifications" className="flex items-center gap-2">
-                                                <Mail className="h-4 w-4" />
+                                            <Link href="/notifications" className="flex items-center gap-3">
+                                                <Mail className="h-5 w-5" />
                                                 <span className="truncate">Notifications</span>
                                             </Link>
                                         </SidebarMenuButton>
                                         <SidebarMenuButton asChild>
-                                            <Link href="#calendar" className="flex items-center gap-2">
-                                                <Calendar className="h-4 w-4" />
+                                            <Link href="#calendar" className="flex items-center gap-3">
+                                                <Calendar className="h-5 w-5" />
                                                 <span className="truncate">Calendar</span>
                                             </Link>
                                         </SidebarMenuButton>
@@ -218,8 +226,8 @@ function MySidebar() {
                         <SidebarMenu>
                             <SidebarMenuItem>
                                 <SidebarMenuButton asChild>
-                                    <Link href="/setting" className="flex items-center gap-2">
-                                        <Settings className="h-4 w-4" />
+                                    <Link href="/setting" className="flex items-center gap-3">
+                                        <Settings className="h-5 w-5" />
                                         <span className="truncate">Settings</span>
                                     </Link>
                                 </SidebarMenuButton>

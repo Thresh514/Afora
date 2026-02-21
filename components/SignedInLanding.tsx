@@ -1,11 +1,12 @@
 "use client";
 
-import { Plus } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { collection } from "firebase/firestore";
 import { db } from "@/firebase";
 import { useCollection } from "react-firebase-hooks/firestore";
 import { useUser } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 import HomePageCard from "./HomePageCard";
 import LoadingSpinner from "./LoadingSpinner";
 import { UserOrgData } from "@/types/types";
@@ -18,9 +19,11 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "./ui/button";
+import { Input } from "./ui/input";
 import Image from "next/image";
 
 function SignedInLanding() {
+    const router = useRouter();
     const [orgs, setOrgs] = useState<UserOrgData[]>([]);
     const { user } = useUser();
     const email = user?.primaryEmailAddress?.emailAddress || "";
@@ -29,6 +32,7 @@ function SignedInLanding() {
     const [isNewOrgOpen, setIsNewOrgOpen] = useState(false);
     const [isJoinOrgOpen, setIsJoinOrgOpen] = useState(false);
     const [dropdownOpen, setDropdownOpen] = useState(false);
+    const [searchKeyword, setSearchKeyword] = useState("");
 
     useEffect(() => {
         if (!orgsData) return;
@@ -87,28 +91,63 @@ function SignedInLanding() {
     }
 
     return (
-        <div className="min-h-screen max-w-7xl mx-auto">
-            {/* Welcome Section */}
-            <div className="relative pt-24 pb-12 px-4">
-                <div className="max-w-7xl mx-auto">
-                    <div className="flex flex-col items-start">
-                        <h2 className="text-xl text-gray-600 mb-2">
-                            {getGreeting()},
-                        </h2>
-                        <h1 className="text-4xl font-bold text-gray-900 mb-1">
-                            {user.firstName || user.username}
-                        </h1>
-                        <p className="text-gray-600">
-                            {orgs.length > 0 
-                                ? `You've joined ${orgs.length} group${orgs.length > 1 ? 's' : ''}` 
-                                : "Start by creating or joining a group"}
-                        </p>
+        <div className="min-h-screen w-full max-w-[90rem] mx-auto px-3">
+            {/* Nido Scout-style Banner */}
+            <div className="relative pt-8 pb-12">
+                <div className="w-full">
+                    <div className="bg-purple-50 rounded-xl p-6 md:p-8 border border-purple-100 shadow-sm">
+                        <div className="flex flex-col gap-6">
+                            <div>
+                                <h2 className="text-xl text-gray-600 mb-1">
+                                    {getGreeting()}, {user.firstName || user.username}
+                                </h2>
+                                <p className="text-gray-600 text-sm">
+                                    {orgs.length > 0
+                                        ? `You've joined ${orgs.length} group${orgs.length > 1 ? "s" : ""}`
+                                        : "Start by creating or joining a group"}
+                                </p>
+                            </div>
+                            <div>
+                                <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                                    Search your tasks
+                                </h3>
+                                <div className="flex flex-col sm:flex-row gap-3">
+                                    <div className="relative flex-1">
+                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                        <Input
+                                            type="text"
+                                            placeholder="Search tasks by keyword..."
+                                            value={searchKeyword}
+                                            onChange={(e) => setSearchKeyword(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === "Enter") {
+                                                    router.push(
+                                                        `/my-tasks?q=${encodeURIComponent(searchKeyword.trim())}`
+                                                    );
+                                                }
+                                            }}
+                                            className="pl-10 bg-white border-gray-200"
+                                        />
+                                    </div>
+                                    <Button
+                                        onClick={() =>
+                                            router.push(
+                                                `/my-tasks?q=${encodeURIComponent(searchKeyword.trim())}`
+                                            )
+                                        }
+                                        className="bg-gray-900 hover:bg-gray-800 text-white shrink-0"
+                                    >
+                                        Search
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
             {/* Main Content */}
-            <div className="max-w-7xl mx-auto px-4 pb-12">
+            <div className="w-full pb-12">
                 <div className="flex justify-between items-center mb-8">
                     <h2 className="text-2xl font-semibold text-gray-900">My Groups</h2>
                     

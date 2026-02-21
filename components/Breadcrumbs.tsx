@@ -107,7 +107,20 @@ function Breadcrumbs() {
 
     const breadcrumbItems: BreadcrumbItemType[] = [];
 
-    breadcrumbItems.push({ title: "Home", href: "/home" });
+    breadcrumbItems.push({
+        title: "Home",
+        href: "/home",
+        isActive: path === "/home",
+    });
+
+    // My Tasks
+    if (path === "/my-tasks") {
+        breadcrumbItems.push({
+            title: "My Tasks",
+            href: "",
+            isActive: true,
+        });
+    }
 
     // Organization
     if (isOrgRoute && orgTitle) {

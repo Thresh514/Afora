@@ -12,7 +12,8 @@ export default function AppLayout({
       className="flex flex-col h-screen"
       style={
         {
-          "--sidebar-width": "10rem",
+          "--sidebar-width": "14rem",
+          "--sidebar-width-icon": "5rem",
           "--sidebar-width-mobile": "0rem",
         } as React.CSSProperties
       }

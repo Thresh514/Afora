@@ -467,6 +467,14 @@ export type Task = {
     auto_dropped_at?: string; // When the task was automatically dropped by Cloud Function
 };
 
+export type UserTaskWithContext = Task & {
+    projId: string;
+    stageId: string;
+    orgId: string;
+    projectTitle?: string;
+    stageTitle?: string;
+};
+
 export type GeneratedTasks = {
     stages: {
         stage_name: string; // The name of the stage

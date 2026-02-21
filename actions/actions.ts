@@ -1,6 +1,6 @@
 "use server";
 import { adminDb } from "@/firebase-admin";
-import { GeneratedTasks, Stage, appQuestions, projQuestions, OnboardingPayload } from "@/types/types";
+import { GeneratedTasks, Stage, appQuestions, projQuestions, OnboardingPayload, Task, UserTaskWithContext } from "@/types/types";
 import { auth } from "@clerk/nextjs/server";
 import crypto from "crypto";
 import { Timestamp } from "firebase-admin/firestore";
@@ -4553,5 +4553,126 @@ export async function applyGroupAssignments(
     } catch (error) {
         console.error("Error applying group assignments:", error);
         return { success: false, message: (error as Error).message };
+    }
+}
+
+function serializeTaskForClient(task: UserTaskWithContext & Record<string, unknown>): UserTaskWithContext {
+    const serialized = { ...task };
+    const timestampFields = ["assigned_at", "assignedAt", "completed_at", "completedAt", "auto_dropped_at"];
+    for (const field of timestampFields) {
+        const val = serialized[field];
+        if (val && typeof val === "object" && ("seconds" in val || "_seconds" in val)) {
+            const t = val as { seconds?: number; _seconds?: number };
+            const sec = t.seconds ?? t._seconds ?? 0;
+            (serialized as Record<string, unknown>)[field] = new Date(sec * 1000).toISOString();
+        }
+    }
+    return serialized as UserTaskWithContext;
+}
+
+export async function getUserIncompleteTasks(searchQuery?: string): Promise<{
+    success: boolean;
+    tasks?: UserTaskWithContext[];
+    message?: string;
+}> {
+    const { userId } = await auth();
+    if (!userId) {
+        return { success: false, message: "Unauthorized" };
+    }
+
+    const userEmail = await getCurrentUserEmail();
+    if (!userEmail) {
+        return { success: false, message: "User email not found" };
+    }
+
+    try {
+        const userOrgsSnapshot = await adminDb
+            .collection("users")
+            .doc(userEmail)
+            .collection("orgs")
+            .get();
+
+        const orgIds = userOrgsSnapshot.docs
+            .map((doc) => doc.data().orgId)
+            .filter(Boolean) as string[];
+
+        const allTasks: UserTaskWithContext[] = [];
+
+        for (const orgId of orgIds) {
+            const projectsSnapshot = await adminDb
+                .collection("projects")
+                .where("orgId", "==", orgId)
+                .get();
+
+            for (const projectDoc of projectsSnapshot.docs) {
+                const projId = projectDoc.id;
+                const projectData = projectDoc.data();
+                const projectTitle = projectData?.title as string | undefined;
+
+                const stagesSnapshot = await adminDb
+                    .collection("projects")
+                    .doc(projId)
+                    .collection("stages")
+                    .get();
+
+                for (const stageDoc of stagesSnapshot.docs) {
+                    const stageId = stageDoc.id;
+                    const stageData = stageDoc.data();
+                    const stageTitle = stageData?.title as string | undefined;
+
+                    const tasksSnapshot = await adminDb
+                        .collection("projects")
+                        .doc(projId)
+                        .collection("stages")
+                        .doc(stageId)
+                        .collection("tasks")
+                        .get();
+
+                    for (const taskDoc of tasksSnapshot.docs) {
+                        const taskData = taskDoc.data() as Task & { isCompleted?: boolean; status?: string };
+                        const assignee = taskData.assignee || "";
+                        const isCompleted = taskData.isCompleted === true || taskData.status === "completed";
+
+                        if (assignee === userEmail && !isCompleted) {
+                            const task: UserTaskWithContext = {
+                                ...taskData,
+                                id: taskDoc.id,
+                                projId,
+                                stageId,
+                                orgId,
+                                projectTitle,
+                                stageTitle,
+                            };
+                            allTasks.push(serializeTaskForClient(task));
+                        }
+                    }
+                }
+            }
+        }
+
+        let filteredTasks = allTasks;
+
+        if (searchQuery && searchQuery.trim()) {
+            const query = searchQuery.trim().toLowerCase();
+            filteredTasks = allTasks.filter(
+                (t) =>
+                    (t.title || "").toLowerCase().includes(query) ||
+                    (t.description || "").toLowerCase().includes(query)
+            );
+        }
+
+        filteredTasks.sort((a, b) => {
+            const dateA = new Date(a.hard_deadline || 0).getTime();
+            const dateB = new Date(b.hard_deadline || 0).getTime();
+            return dateA - dateB;
+        });
+
+        return { success: true, tasks: filteredTasks };
+    } catch (error) {
+        console.error("Error getting user incomplete tasks:", error);
+        return {
+            success: false,
+            message: error instanceof Error ? error.message : "Failed to fetch tasks",
+        };
     }
 }
