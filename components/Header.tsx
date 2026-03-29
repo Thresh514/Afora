@@ -49,7 +49,10 @@ function Header() {
                     <div className="flex gap-6 items-center text-white">
                         <FundUs />
                         <SignedOut>
-                            <SignInButton />
+                            <SignInButton
+                                forceRedirectUrl="/home"
+                                signUpForceRedirectUrl="/home"
+                            />
                         </SignedOut>
                         <SignedIn>
                             <NotificationDropdown />

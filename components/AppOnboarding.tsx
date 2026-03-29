@@ -234,10 +234,10 @@ const AppOnboarding = () => {
                                         teammate recommendations.
                                         <br />
                                         <br />
-                                        <p className="italic">
+                                        <span className="block italic">
                                             *This information will be kept private and will not be
                                             shared.
-                                        </p>
+                                        </span>
                                     </AlertDialogDescription>
                                 </AlertDialogHeader>
                             </>

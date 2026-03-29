@@ -41,8 +41,8 @@ export default function PublicNavbar() {
       <div
         className={`mx-auto flex items-center justify-between rounded-2xl border px-6 py-3 shadow-lg transition-all duration-300 backdrop-blur-xl ${
           isScrolled
-            ? "max-w-3xl border-white/20 bg-white/25 dark:border-white/10 dark:bg-gray-900/80"
-            : "max-w-6xl border-white/20 bg-white/20 dark:border-white/10 dark:bg-gray-900/60"
+            ? "max-w-3xl border-white/20 bg-white/25"
+            : "max-w-6xl border-white/20 bg-white/20"
         }`}
       >
         <Link href="/" className="flex items-center gap-2">
@@ -54,7 +54,7 @@ export default function PublicNavbar() {
               key={item.href}
               href={item.href}
               onClick={(e) => handleNavClick(e, item)}
-              className="rounded-lg px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-white/20 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/10 dark:hover:text-white"
+              className="rounded-lg px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-white/20 hover:text-gray-900"
             >
               {item.label}
             </Link>
@@ -63,7 +63,7 @@ export default function PublicNavbar() {
         <div className="flex items-center gap-3">
           <Link
             href="/login"
-            className="text-sm font-medium text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+            className="text-sm font-medium text-gray-700 hover:text-gray-900"
           >
             Log in
           </Link>
