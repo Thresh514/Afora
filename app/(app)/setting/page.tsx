@@ -7,7 +7,7 @@ import { updateUserMatchingPreference, getUserMatchingPreference } from "@/actio
 import { useAnimations } from "@/contexts/AnimationContext";
 import { db } from "@/firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -31,6 +31,9 @@ type ProfileInputs = {
     gender: string;
 };
 
+/** Clerk-hosted profile image; keep uploads under this size client-side. */
+const AVATAR_MAX_BYTES = 10 * 1024 * 1024;
+
 function SettingPage() {
     const { user } = useUser();
     const { animationsEnabled, setAnimationsEnabled, loading: animationLoading } = useAnimations();
@@ -40,7 +43,9 @@ function SettingPage() {
     const [allowGroupEvaluation, setAllowGroupEvaluation] = useState<boolean>(true);
     const [isAdmin, setIsAdmin] = useState<boolean>(false);
     const [adminCheckLoading, setAdminCheckLoading] = useState<boolean>(true);
-    
+    const [avatarUploading, setAvatarUploading] = useState(false);
+    const avatarFileInputRef = useRef<HTMLInputElement>(null);
+
     // 性别和人口统计选项
     const genders = ["Male", "Female", "Other"];
     const demographics = [
@@ -187,7 +192,55 @@ function SettingPage() {
         toast.success(checked ? "Admin group evaluation enabled" : "Admin group evaluation disabled");
     };
 
+    // Profile photo: Clerk user.setProfileImage — ensure "Profile" / image uploads are allowed in Clerk Dashboard.
+    const handleAvatarFileChange = useCallback(
+        async (e: React.ChangeEvent<HTMLInputElement>) => {
+            const file = e.target.files?.[0];
+            e.target.value = "";
+            if (!file || !user) return;
+            if (!file.type.startsWith("image/")) {
+                toast.error("Please choose an image file.");
+                return;
+            }
+            if (file.size > AVATAR_MAX_BYTES) {
+                toast.error("Image must be 10MB or smaller.");
+                return;
+            }
+            setAvatarUploading(true);
+            try {
+                await user.setProfileImage({ file });
+                await user.reload();
+                toast.success("Profile photo updated");
+            } catch (error) {
+                console.error("setProfileImage failed:", error);
+                toast.error(
+                    "Could not update photo. Check Clerk Dashboard: profile image uploads must be enabled for your application.",
+                );
+            } finally {
+                setAvatarUploading(false);
+            }
+        },
+        [user],
+    );
 
+    const handleRemoveAvatar = useCallback(async () => {
+        if (!user) return;
+        setAvatarUploading(true);
+        try {
+            await user.setProfileImage({ file: null });
+            await user.reload();
+            toast.success("Profile photo removed");
+        } catch (error) {
+            console.error("remove profile image failed:", error);
+            toast.error("Could not remove photo. Please try again.");
+        } finally {
+            setAvatarUploading(false);
+        }
+    }, [user]);
+
+    const openAvatarPicker = useCallback(() => {
+        avatarFileInputRef.current?.click();
+    }, []);
 
     if (!user || adminCheckLoading) {
         return (
@@ -211,6 +264,14 @@ function SettingPage() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+            <input
+                ref={avatarFileInputRef}
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                aria-hidden
+                onChange={handleAvatarFileChange}
+            />
             <div className="container mx-auto px-4 py-8 max-w-6xl">
                 {/* Page Title */}
                 <div className="mb-8">
@@ -224,16 +285,40 @@ function SettingPage() {
                 {/* User Info Card */}
                 <Card className="mb-8 border-0 shadow-lg bg-white/80 backdrop-blur-sm">
                     <CardContent className="pt-6">
-                        <div className="flex items-center space-x-6">
-                            <Avatar className="h-20 w-20 ring-4 ring-blue-100">
-                                <AvatarImage 
-                                    src={user.imageUrl || ""} 
-                                    alt={user.fullName || "User Avatar"} 
-                                />
-                                <AvatarFallback className="text-2xl font-semibold bg-blue-100 text-blue-700">
-                                    {user.fullName?.charAt(0) || user.primaryEmailAddress?.emailAddress?.charAt(0) || "U"}
-                                </AvatarFallback>
-                            </Avatar>
+                        <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:space-x-6">
+                            <div className="flex flex-col items-center gap-3 sm:items-start">
+                                <Avatar className="h-20 w-20 ring-4 ring-blue-100">
+                                    <AvatarImage 
+                                        src={user.imageUrl || ""} 
+                                        alt={user.fullName || "User Avatar"} 
+                                    />
+                                    <AvatarFallback className="text-2xl font-semibold bg-blue-100 text-blue-700">
+                                        {user.fullName?.charAt(0) || user.primaryEmailAddress?.emailAddress?.charAt(0) || "U"}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div className="flex flex-wrap justify-center gap-2 sm:justify-start">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        disabled={avatarUploading}
+                                        onClick={openAvatarPicker}
+                                    >
+                                        {avatarUploading ? "Uploading…" : "Change photo"}
+                                    </Button>
+                                    {user.imageUrl ? (
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            disabled={avatarUploading}
+                                            onClick={handleRemoveAvatar}
+                                        >
+                                            Remove
+                                        </Button>
+                                    ) : null}
+                                </div>
+                            </div>
                             <div className="flex-1">
                                 <div className="flex items-center gap-3 mb-2">
                                     <h2 className="text-2xl font-bold text-gray-900">
@@ -307,7 +392,7 @@ function SettingPage() {
                                         </div>
                                         <div>
                                             <Label className="text-sm font-medium text-gray-700">Avatar</Label>
-                                            <div className="mt-2">
+                                            <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center">
                                                 <Avatar className="h-16 w-16 ring-4 ring-blue-100">
                                                     <AvatarImage 
                                                         src={user.imageUrl || ""} 
@@ -317,6 +402,28 @@ function SettingPage() {
                                                         {user.fullName?.charAt(0) || user.primaryEmailAddress?.emailAddress?.charAt(0) || "U"}
                                                     </AvatarFallback>
                                                 </Avatar>
+                                                <div className="flex flex-wrap gap-2">
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
+                                                        size="sm"
+                                                        disabled={avatarUploading}
+                                                        onClick={openAvatarPicker}
+                                                    >
+                                                        {avatarUploading ? "Uploading…" : "Change photo"}
+                                                    </Button>
+                                                    {user.imageUrl ? (
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            disabled={avatarUploading}
+                                                            onClick={handleRemoveAvatar}
+                                                        >
+                                                            Remove
+                                                        </Button>
+                                                    ) : null}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>

@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useClerkAvatarMap } from "@/hooks/useClerkAvatarMap";
 import { Task, TaskPoolStats } from "@/types/types";
 import { Trophy, Calendar, CheckCircle, AlertTriangle, UserPlus, UserMinus, Timer } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
@@ -32,6 +33,20 @@ const TaskPool: React.FC<TaskPoolProps> = ({
     const { user } = useUser();
     const [stats, setStats] = useState<TaskPoolStats | null>(null);
     const [loading, setLoading] = useState(false);
+
+    const assigneeEmails = useMemo(
+        () =>
+            [
+                ...new Set(
+                    tasks
+                        .map((t) => t.assignee)
+                        .filter((e): e is string => Boolean(e)),
+                ),
+            ],
+        [tasks],
+    );
+    const { getUrl: assigneeClerkAvatarUrl } =
+        useClerkAvatarMap(assigneeEmails);
 
     // Calculate task pool statistics
     useEffect(() => {
@@ -297,6 +312,15 @@ const TaskPool: React.FC<TaskPoolProps> = ({
                                     {task.assignee && (
                                         <div className="flex items-center gap-2 mt-2">
                                             <Avatar className="h-6 w-6 flex-shrink-0">
+                                                <AvatarImage
+                                                    src={
+                                                        assigneeClerkAvatarUrl(
+                                                            task.assignee,
+                                                        ) || undefined
+                                                    }
+                                                    alt=""
+                                                    className="object-cover"
+                                                />
                                                 <AvatarFallback className="text-xs">
                                                     {task.assignee
                                                         .charAt(0)

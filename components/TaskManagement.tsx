@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CircleCheckBig, Clock7, Trash, User, MoreVertical } from "lucide-react";
@@ -15,6 +15,8 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useClerkAvatarMap } from "@/hooks/useClerkAvatarMap";
 
 interface TaskManagementProps {
     tasks: Task[];
@@ -49,6 +51,19 @@ const TaskManagement = ({
     isAdmin: isCurrentUserAdmin,
 }: TaskManagementProps) => {
     const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
+    const assigneeEmails = useMemo(
+        () =>
+            [
+                ...new Set(
+                    tasks
+                        .map((t) => t.assignee)
+                        .filter((e): e is string => Boolean(e)),
+                ),
+            ],
+        [tasks],
+    );
+    const { getUrl: assigneeClerkAvatarUrl } =
+        useClerkAvatarMap(assigneeEmails);
     // const tasksCompleted = tasks.filter((task) => task.isCompleted).length;
     
     // Function to check if a task is within one day of hard deadline (uses hard_deadline to match displayed "Due")
@@ -257,11 +272,22 @@ const TaskManagement = ({
                                                 <div className="flex items-center justify-between">
                                                     <div className="flex items-center gap-2">
                                                         {task.assignee && (
-                                                            <div className="w-6 h-6 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white text-xs font-medium">
-                                                                {task.assignee
-                                                                    .charAt(0)
-                                                                    .toUpperCase()}
-                                                            </div>
+                                                            <Avatar className="h-6 w-6">
+                                                                <AvatarImage
+                                                                    src={
+                                                                        assigneeClerkAvatarUrl(
+                                                                            task.assignee,
+                                                                        ) || undefined
+                                                                    }
+                                                                    alt=""
+                                                                    className="object-cover"
+                                                                />
+                                                                <AvatarFallback className="bg-gradient-to-br from-purple-500 to-blue-500 text-[10px] text-white font-medium">
+                                                                    {task.assignee
+                                                                        .charAt(0)
+                                                                        .toUpperCase()}
+                                                                </AvatarFallback>
+                                                            </Avatar>
                                                         )}
                                                         <span className="text-xs text-gray-500 font-semibold">
                                                             {task.assignee ||

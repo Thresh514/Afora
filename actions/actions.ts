@@ -1,7 +1,7 @@
 "use server";
 import { adminDb } from "@/firebase-admin";
 import { GeneratedTasks, Stage, appQuestions, projQuestions, OnboardingPayload, Task, UserTaskWithContext } from "@/types/types";
-import { auth } from "@clerk/nextjs/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import crypto from "crypto";
 import { Timestamp } from "firebase-admin/firestore";
 import axios from "axios";
@@ -42,6 +42,57 @@ export async function createNewUser(
 
     } catch (e) {
         return { success: false, message: (e as Error).message };
+    }
+}
+
+const CLERK_AVATAR_EMAIL_CHUNK = 20;
+
+/** Resolve profile image URLs from Clerk by email (for org/task UIs). Requires signed-in user. */
+export async function getClerkAvatarUrlsByEmails(
+    emails: string[],
+): Promise<{ success: boolean; urls: Record<string, string> }> {
+    const { userId } = await auth();
+    if (!userId) {
+        return { success: false, urls: {} };
+    }
+
+    const normalized = [
+        ...new Set(
+            emails
+                .map((e) => e.trim().toLowerCase())
+                .filter((e) => e.length > 0),
+        ),
+    ].slice(0, 100);
+
+    if (normalized.length === 0) {
+        return { success: true, urls: {} };
+    }
+
+    try {
+        const client = await clerkClient();
+        const urls: Record<string, string> = {};
+
+        for (let i = 0; i < normalized.length; i += CLERK_AVATAR_EMAIL_CHUNK) {
+            const chunk = normalized.slice(i, i + CLERK_AVATAR_EMAIL_CHUNK);
+            const { data } = await client.users.getUserList({
+                emailAddress: chunk,
+                limit: 100,
+            });
+
+            for (const u of data) {
+                const imageUrl = u.imageUrl;
+                if (!imageUrl) continue;
+                for (const ea of u.emailAddresses ?? []) {
+                    const addr = ea.emailAddress?.trim().toLowerCase();
+                    if (addr) urls[addr] = imageUrl;
+                }
+            }
+        }
+
+        return { success: true, urls };
+    } catch (e) {
+        console.error("getClerkAvatarUrlsByEmails:", e);
+        return { success: false, urls: {} };
     }
 }
 

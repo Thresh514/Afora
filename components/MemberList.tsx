@@ -14,6 +14,7 @@ import { Users, FolderOpen, ArrowRight, Crown, Search, X } from "lucide-react";
 import { toast } from "sonner";
 import { removeProjectMember, updateProjectTeamSize, addProjectMember } from "@/actions/actions";
 import Image from "next/image";
+import { useClerkAvatarMap, normalizeMemberEmail } from "@/hooks/useClerkAvatarMap";
 
 interface MemberListProps {
     admins: string[];
@@ -50,6 +51,12 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
     );
     const [selectedProject, setSelectedProject] = useState<string | null>("all");
     const [searchTerm, setSearchTerm] = useState<string>("");
+
+    const memberEmailsForAvatars = useMemo(
+        () => [...admins, ...members].filter(Boolean) as string[],
+        [admins, members],
+    );
+    const { map: clerkAvatarByEmail } = useClerkAvatarMap(memberEmailsForAvatars);
 
     const [results, setResults] = useState<QuerySnapshot<DocumentData> | null>(null);
     const [loading, setLoading] = useState(false);
@@ -258,16 +265,19 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
             projectId?: string,
         ) => {
             const pfpData = isAdmin ? adminsPfp : membersPfp;
+            const clerkUrl =
+                clerkAvatarByEmail[normalizeMemberEmail(memberEmail)] || "";
+            const imageSrc =
+                clerkUrl ||
+                pfpData[memberEmail] ||
+                "https://static.vecteezy.com/system/resources/previews/024/983/914/non_2x/simple-user-default-icon-free-png.png";
 
             return (
                 <div className="group flex items-center justify-between p-4 bg-white border border-gray-200 rounded-xl hover:shadow-md hover:border-blue-200 transition-all duration-200">
                     <div className="flex items-center gap-3">
                         <div className="relative">
                             <Image
-                                src={
-                                    pfpData[memberEmail] ||
-                                    "https://static.vecteezy.com/system/resources/previews/024/983/914/non_2x/simple-user-default-icon-free-png.png"
-                                }
+                                src={imageSrc}
                                 alt="Avatar"
                                 width={48}
                                 height={48}
@@ -340,7 +350,7 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                 </div>
             );
         },
-        [adminsPfp, membersPfp, userRole, projectTeams, handleMemberMove],
+        [adminsPfp, membersPfp, userRole, projectTeams, handleMemberMove, clerkAvatarByEmail],
     );
 
     const selectedProjectData = projectTeams.find(

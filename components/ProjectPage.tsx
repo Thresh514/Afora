@@ -26,7 +26,8 @@ import { ReorderIcon } from "@/components/ReorderIcon";
 import { useDispatch } from "react-redux";
 import { updateStatus } from "@/lib/store/features/stageStatus/stageStatusSlice";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useClerkAvatarMap } from "@/hooks/useClerkAvatarMap";
 import { Badge } from "@/components/ui/badge";
 import { ErrorInfo, showErrorToast } from "./ErrorDisplay";
 import {
@@ -219,6 +220,31 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
         setStageStatus(newStageStatus);
     }, [stages, dispatch]);
 
+    const projectMembers = useMemo(() => {
+        if (!proj) return [];
+        const allMembers = Array.from(
+            new Set([
+                ...(proj.members || []),
+                ...(proj.admins || []),
+                ...(proj.adminsAsUsers || []),
+            ]),
+        );
+        return allMembers.sort((a, b) => {
+            const aIsAdmin =
+                proj.admins?.includes(a) ||
+                proj.adminsAsUsers?.includes(a) ||
+                false;
+            const bIsAdmin =
+                proj.admins?.includes(b) ||
+                proj.adminsAsUsers?.includes(b) ||
+                false;
+            if (aIsAdmin === bIsAdmin) return 0;
+            return aIsAdmin ? -1 : 1;
+        });
+    }, [proj]);
+
+    const { getUrl: memberClerkAvatarUrl } = useClerkAvatarMap(projectMembers);
+
     // Early return for loading and error states
     if (stagesLoading || projLoading) {
         return <Skeleton className="w-full h-96" />;
@@ -363,27 +389,6 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
             toast.error("Failed to update Roadmap & Stages");
         }
     };
-
-    // Get project members (including both members and admins)
-    // 使用 Set 去重，避免同一用户重复显示
-    const allMembers = Array.from(new Set([
-        ...(proj?.members || []),
-        ...(proj?.admins || []),
-        ...(proj?.adminsAsUsers || [])
-    ]));
-    
-    // 排序：管理员在前，普通成员在后
-    const projectMembers = allMembers.sort((a, b) => {
-        const aIsAdmin = proj?.admins?.includes(a) || proj?.adminsAsUsers?.includes(a) || false;
-        const bIsAdmin = proj?.admins?.includes(b) || proj?.adminsAsUsers?.includes(b) || false;
-        
-        // 如果都是管理员或都不是管理员，保持原有顺序
-        if (aIsAdmin === bIsAdmin) {
-            return 0;
-        }
-        // 管理员排在前面
-        return aIsAdmin ? -1 : 1;
-    });
 
     // 参与团队分析的人 = members + adminsAsUsers（不含未参与的管理员）
     const analysisParticipants = Array.from(new Set([
@@ -1027,6 +1032,14 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                                             className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                                                         >
                                                             <Avatar className="h-10 w-10">
+                                                                <AvatarImage
+                                                                    src={
+                                                                        memberClerkAvatarUrl(member) ||
+                                                                        undefined
+                                                                    }
+                                                                    alt=""
+                                                                    className="object-cover"
+                                                                />
                                                                 <AvatarFallback className="bg-gradient-to-br from-purple-500 to-blue-500 text-white font-medium">
                                                                     {member.charAt(0).toUpperCase()}
                                                                 </AvatarFallback>
