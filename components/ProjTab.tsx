@@ -441,11 +441,11 @@ const ProjTab = ({
                 description="Analyzing team compatibility and generating optimal member assignments..."
             />
             
-            <div className="flex h-auto bg-gradient-to-br from-gray-50 to-purple-50 rounded-lg overflow-hidden">
+            <div className="flex h-auto overflow-hidden rounded-lg bg-gradient-to-br from-background to-muted/40">
             {/* Left Sidebar */}
-            <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
+            <div className="w-80 bg-card border-r border-border flex flex-col">
                 {/* Header */}
-                <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-purple-600 to-blue-600 text-white">
+                <div className="p-6 border-b border-border bg-gradient-to-r from-purple-600 to-blue-600 text-white">
                     <div className="flex items-center gap-3 mb-6">
                         <div className="p-2 bg-white bg-opacity-20 rounded-lg">
                             <Briefcase className="h-6 w-6" />
@@ -478,14 +478,14 @@ const ProjTab = ({
                 {/* Content Area */}
                 <div className="flex-1 overflow-y-auto p-4">
                         <div className="space-y-4">
-                            <div className="text-sm font-medium text-gray-500">
+                            <div className="text-sm font-medium text-muted-foreground">
                                 Team Overview
                             </div>
                             <Card className="border-0 shadow-sm">
                                 <CardContent className="p-4">
                                     <div className="space-y-3">
                                         <div className="flex justify-between items-center">
-                                            <span className="text-sm text-gray-600">
+                                            <span className="text-sm text-muted-foreground">
                                                 Total Teams
                                             </span>
                                             <Badge variant="secondary">
@@ -493,7 +493,7 @@ const ProjTab = ({
                                             </Badge>
                                         </div>
                                         <div className="flex justify-between items-center">
-                                            <span className="text-sm text-gray-600">
+                                            <span className="text-sm text-muted-foreground">
                                                 Active Teams
                                             </span>
                                             <Badge variant="default">
@@ -501,7 +501,7 @@ const ProjTab = ({
                                             </Badge>
                                         </div>
                                         <div className="flex justify-between items-center">
-                                            <span className="text-sm text-gray-600">
+                                            <span className="text-sm text-muted-foreground">
                                                 Role
                                             </span>
                                             <span className="text-sm font-medium">
@@ -510,7 +510,7 @@ const ProjTab = ({
                                         </div>
                                         <Separator />
                                         <div className="flex justify-between items-center">
-                                            <span className="text-sm text-gray-600">
+                                            <span className="text-sm text-muted-foreground">
                                                 Total Members
                                             </span>
                                             <Badge variant="outline">
@@ -524,7 +524,7 @@ const ProjTab = ({
                 </div>
 
                 {/* Actions */}
-                <div className="p-4 border-t border-gray-200 bg-gray-50">
+                <div className="p-4 border-t border-border bg-muted/50">
                     <div className="space-y-2">
                         
                         {/* Add New Team - Direct invitation without AI matching */}
@@ -564,27 +564,27 @@ const ProjTab = ({
             </div>
 
             {/* Right Content Area */}
-            <div className="flex-1 flex flex-col bg-white">
+            <div className="flex flex-1 flex-col bg-card">
                 {/* Team Generation Results */}
                 {/* {output && parsedOutput && parsedOutput.groups && (
-                    <div className="p-6 border-b border-gray-200 bg-blue-50">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    <div className="p-6 border-b border-border bg-blue-50">
+                        <h3 className="text-lg font-semibold text-foreground mb-4">
                             Generated Team Groups
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
                             {parsedOutput.groups.map((group, index) => (
                                 <div
                                     key={index}
-                                    className="bg-white p-4 rounded-lg shadow-sm border"
+                                    className="bg-card p-4 rounded-lg shadow-sm border"
                                 >
-                                    <h4 className="font-medium text-gray-900 mb-2">
+                                    <h4 className="font-medium text-foreground mb-2">
                                         Group {index + 1}
                                     </h4>
                                     <ul className="space-y-1">
                                         {group.map((member, memberIndex) => (
                                             <li
                                                 key={memberIndex}
-                                                className="text-sm text-gray-600 flex items-center gap-2"
+                                                className="text-sm text-muted-foreground flex items-center gap-2"
                                             >
                                                 <Users className="h-3 w-3" />
                                                 {member}
@@ -616,11 +616,11 @@ const ProjTab = ({
                 )} */}
 
                 {/* Content Header */}
-                <div className="p-6 border-b border-gray-200 bg-white">
-                    <h3 className="text-lg font-semibold text-gray-900">
+                <div className="bg-card p-6 border-b border-border">
+                    <h3 className="text-lg font-semibold text-foreground">
                         Team Overview
                     </h3>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-muted-foreground">
                         Manage and monitor all your teams
                     </p>
                 </div>
@@ -653,14 +653,14 @@ const ProjTab = ({
                                 </div>
                             ) : (
                                 <div className="text-center py-12">
-                                    <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl p-6 max-w-md mx-auto">
-                                        <Folder className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                                    <div className="mx-auto max-w-md rounded-xl bg-gradient-to-br from-muted/60 to-card p-6">
+                                        <Folder className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                                        <h3 className="text-lg font-medium text-foreground mb-2">
                                             {userRole === "admin"
                                                 ? "Welcome to Team Management!"
                                                 : "No teams assigned"}
                                         </h3>
-                                        <p className="text-gray-500 mb-4">
+                                        <p className="text-muted-foreground mb-4">
                                             {userRole === "admin"
                                                 ? "Start creating your first team, experience the new task pool management system"
                                                 : "Wait for admins to create teams and assign you"}

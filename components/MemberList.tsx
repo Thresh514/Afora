@@ -273,7 +273,7 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                 "https://static.vecteezy.com/system/resources/previews/024/983/914/non_2x/simple-user-default-icon-free-png.png";
 
             return (
-                <div className="group flex items-center justify-between p-4 bg-white border border-gray-200 rounded-xl hover:shadow-md hover:border-blue-200 transition-all duration-200">
+                <div className="group flex items-center justify-between rounded-xl border border-border bg-card p-4 transition-all duration-200 hover:border-primary/35 hover:shadow-md">
                     <div className="flex items-center gap-3">
                         <div className="relative">
                             <Image
@@ -281,7 +281,7 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                                 alt="Avatar"
                                 width={48}
                                 height={48}
-                                className="w-12 h-12 rounded-full border-2 border-gray-100 object-cover"
+                                className="w-12 h-12 rounded-full border-2 border-border/70 object-cover"
                             />
                             {isAdmin && (
                                 <div className="absolute -top-1 -right-1 w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center">
@@ -290,7 +290,7 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                             )}
                         </div>
                         <div className="flex flex-col">
-                            <span className="font-medium text-gray-900">
+                            <span className="font-medium text-foreground">
                                 {memberEmail}
                             </span>
                             {isAdmin && (
@@ -310,7 +310,7 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                                 <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="h-8 px-2 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                    className="h-8 px-2 text-red-500 hover:bg-destructive/12 hover:text-red-600"
                                     onClick={() =>
                                         handleMemberMove(memberEmail, projectId, null)
                                     }
@@ -363,11 +363,11 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
     );
 
     return (
-        <div className="flex h-auto bg-gradient-to-br from-gray-50 to-blue-50 rounded-lg overflow-hidden">
+        <div className="flex h-auto overflow-hidden rounded-lg bg-gradient-to-br from-background to-muted/40">
             {/* Left Sidebar */}
-            <div className="w-80 bg-white border-r border-gray-200 flex flex-col shadow-lg">
+            <div className="w-80 bg-card border-r border-border flex flex-col shadow-lg">
                 {/* Header */}
-                <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+                <div className="p-6 border-b border-border bg-gradient-to-r from-blue-600 to-purple-600 text-white">
                     <div className="flex items-center gap-3 mb-6">
                         <div className="p-2 bg-white bg-opacity-20 rounded-lg">
                             <Users className="h-6 w-6" />
@@ -429,14 +429,14 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                 <div className="flex-1 overflow-y-auto p-4">
                     <div className="space-y-4">
                         {/* Overview Card */}
-                        <div className="text-sm font-medium text-gray-500">
+                        <div className="text-sm font-medium text-muted-foreground">
                             Group Overview
                         </div>
                         <Card className="border-0 shadow-sm">
                             <CardContent className="p-4">
                                 <div className="space-y-3">
                                     <div className="flex justify-between items-center">
-                                        <span className="text-sm text-gray-600">
+                                        <span className="text-sm text-muted-foreground">
                                             Admins
                                         </span>
                                         <Badge variant="secondary">
@@ -444,7 +444,7 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                                         </Badge>
                                     </div>
                                     <div className="flex justify-between items-center">
-                                        <span className="text-sm text-gray-600">
+                                        <span className="text-sm text-muted-foreground">
                                             Members
                                         </span>
                                         <Badge variant="secondary">
@@ -452,7 +452,7 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                                         </Badge>
                                     </div>
                                     <div className="flex justify-between items-center">
-                                        <span className="text-sm text-gray-600">
+                                        <span className="text-sm text-muted-foreground">
                                             Active Teams
                                         </span>
                                         <Badge variant="secondary">
@@ -461,7 +461,7 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                                     </div>
                                     <Separator />
                                     <div className="flex justify-between items-center">
-                                        <span className="text-sm text-gray-600">
+                                        <span className="text-sm text-muted-foreground">
                                             Available Members
                                         </span>
                                         <Badge variant="default">
@@ -474,7 +474,7 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                         
                         {/* Team List */}
                         <div className="space-y-3">
-                            <div className="text-sm font-medium text-gray-500">
+                            <div className="text-sm font-medium text-muted-foreground">
                                 {userRole === "admin"
                                     ? "Team List"
                                     : "My Teams"}
@@ -485,8 +485,8 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                                 <div
                                     className={`p-4 rounded-xl cursor-pointer transition-all duration-200 ${
                                         selectedProject === "all"
-                                            ? "bg-green-50 border-2 border-green-200 shadow-md"
-                                            : "bg-green-25 border border-green-200 hover:bg-green-50"
+                                            ? "border-2 border-primary/35 bg-primary/12 shadow-md ring-1 ring-primary/25"
+                                            : "border border-border bg-card/60 hover:bg-accent/70"
                                     }`}
                                     onClick={() => setSelectedProject("all")}
                                 >
@@ -520,13 +520,13 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                             )}
                             {userAssignedProjects.length === 0 ? (
                                 <div className="text-center py-8">
-                                    <FolderOpen className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                                    <h3 className="text-sm font-medium text-gray-900 mb-2">
+                                    <FolderOpen className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                                    <h3 className="text-sm font-medium text-foreground mb-2">
                                         {userRole === "admin"
                                             ? "No teams"
                                             : "You have not been assigned to any teams"}
                                     </h3>
-                                    <p className="text-xs text-gray-500 mb-4">
+                                    <p className="text-xs text-muted-foreground mb-4">
                                         {userRole === "admin"
                                             ? "There are no teams in this organization."
                                             : "Please contact the administrator to be assigned to a team."}
@@ -540,8 +540,8 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                                             className={`p-4 rounded-xl cursor-pointer transition-all duration-200 ${
                                                 selectedProject ===
                                                 team.projectId
-                                                    ? "bg-blue-50 border-2 border-blue-200 shadow-md"
-                                                    : "bg-gray-50 border border-gray-200 hover:bg-gray-100 hover:shadow-sm"
+                                                    ? "border-2 border-primary/35 bg-primary/12 shadow-md ring-1 ring-primary/25"
+                                                    : "bg-muted/50 border border-border hover:bg-muted hover:shadow-sm"
                                             }`}
                                             onClick={() =>
                                                 setSelectedProject(
@@ -555,7 +555,7 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                                                         selectedProject ===
                                                         team.projectId
                                                             ? "text-blue-600"
-                                                            : "text-gray-400"
+                                                            : "text-muted-foreground"
                                                     }`}
                                                 />
                                                 <div className="flex-1 min-w-0">
@@ -564,12 +564,12 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                                                             selectedProject ===
                                                             team.projectId
                                                                 ? "text-blue-900"
-                                                                : "text-gray-900"
+                                                                : "text-foreground"
                                                         }`}
                                                     >
                                                         {team.projectTitle}
                                                     </div>
-                                                    <div className="text-sm text-gray-500">
+                                                    <div className="text-sm text-muted-foreground">
                                                         {(team.members?.length || 0) + (team.admins?.length || 0)} members
                                                     </div>
                                                 </div>
@@ -596,31 +596,31 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
             </div>
 
             {/* Right Content Area */}
-            <div className="flex-1 flex flex-col bg-white">
+            <div className="flex flex-1 flex-col bg-card">
                 {/* Content Header */}
-                <div className="p-6 border-b border-gray-200 bg-white">
+                <div className="bg-card p-6 border-b border-border">
                     {selectedProject === "all" ? (
                         <div>
-                            <h3 className="text-lg font-semibold text-gray-900">
+                            <h3 className="text-lg font-semibold text-foreground">
                                 All Team Members
                             </h3>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-muted-foreground">
                                 View detailed information about all group members
                             </p>
                         </div>
                     ) : selectedProject ? (
                         <div className="flex items-center justify-between">
                             <div>
-                                <h3 className="text-lg font-semibold text-gray-900">
+                                <h3 className="text-lg font-semibold text-foreground">
                                     {selectedProjectData?.projectTitle}
                                 </h3>
-                                <p className="text-sm text-gray-500">
+                                <p className="text-sm text-muted-foreground">
                                     {(selectedProjectData?.members.length || 0) + (selectedProjectData?.admins?.length || 0)} team members
                                 </p>
                             </div>
                             {userRole === "admin" && selectedProjectData && (
                                 <div className="flex items-center gap-2">
-                                    <span className="text-sm text-gray-500">
+                                    <span className="text-sm text-muted-foreground">
                                         Team Size:
                                     </span>
                                     <Select
@@ -654,12 +654,12 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                         </div>
                     ) : (
                         <div>
-                            <h3 className="text-lg font-semibold text-gray-900">
+                            <h3 className="text-lg font-semibold text-foreground">
                                 {userRole === "admin"
                                     ? "Select Team"
                                     : "My Team Members"}
                             </h3>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-muted-foreground">
                                 {userRole === "admin"
                                     ? "Select a team from the left to view team members"
                                     : "Select a team from the left to view your team members"}
@@ -675,20 +675,20 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                             {/* Search Bar */}
                             <div className="relative">
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <Search className="h-5 w-5 text-gray-400" />
+                                    <Search className="h-5 w-5 text-muted-foreground" />
                                 </div>
                                 <input
                                     type="text"
                                     placeholder="Search members by email..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                    className="block w-full rounded-md border border-border bg-background py-2 pl-10 pr-10 leading-5 placeholder:text-muted-foreground focus:border-ring/45 focus:outline-none focus:placeholder:text-muted-foreground focus:ring-1 focus:ring-ring/45 sm:text-sm"
                                 />
                                 {searchTerm && (
                                     <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
                                         <button
                                             onClick={() => setSearchTerm("")}
-                                            className="text-gray-400 hover:text-gray-600 focus:outline-none"
+                                            className="text-muted-foreground hover:text-foreground focus:outline-none"
                                         >
                                             <X className="h-4 w-4" />
                                         </button>
@@ -699,7 +699,7 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                             {/* Admins Section */}
                             <div>
                                 <div>
-                                    <h4 className="text-sm font-medium text-gray-700 mb-4 flex items-center gap-2">
+                                    <h4 className="text-sm font-medium text-foreground mb-4 flex items-center gap-2">
                                         <Crown className="h-4 w-4 text-yellow-500" />
                                         Admins ({filteredAdmins.length}{searchTerm ? ` of ${admins.length}` : ""})
                                         {userRole === "admin" && <InviteUserToOrganization defaultAccessRole="admin" />}
@@ -713,7 +713,7 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                                             </div>
                                         ))
                                     ) : searchTerm ? (
-                                        <div className="text-center py-4 text-gray-500 text-sm">
+                                        <div className="text-center py-4 text-muted-foreground text-sm">
                                             No admins found matching &quot;{searchTerm}&quot;
                                         </div>
                                     ) : null}
@@ -724,7 +724,7 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
 
                             {/* Members Section */}
                             <div>
-                                <h4 className="text-sm font-medium text-gray-700 mb-4 flex items-center gap-2">
+                                <h4 className="text-sm font-medium text-foreground mb-4 flex items-center gap-2">
                                     <Users className="h-4 w-4 text-blue-500" />
                                     Members ({filteredMembers.length}{searchTerm ? ` of ${members.length}` : ""})
                                     {userRole === "admin" && <InviteUserToOrganization defaultAccessRole="member" />}
@@ -737,7 +737,7 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                                             </div>
                                         ))
                                     ) : searchTerm ? (
-                                        <div className="text-center py-4 text-gray-500 text-sm">
+                                        <div className="text-center py-4 text-muted-foreground text-sm">
                                             No members found matching &quot;{searchTerm}&quot;
                                         </div>
                                     ) : null}
@@ -749,7 +749,7 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                             {/* Project Team Members */}
                             {selectedProjectData && (
                                 <div>
-                                    <h4 className="text-sm font-medium text-gray-700 mb-4">
+                                    <h4 className="text-sm font-medium text-foreground mb-4">
                                         Current Team Members
                                     </h4>
                                     <div className="grid gap-3">
@@ -775,15 +775,15 @@ const MemberList = ({admins, members, userRole, projectsData, currentUserEmail}:
                         </div>
                     ) : (
                         <div className="text-center py-12">
-                            <FolderOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                            <FolderOpen className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
                             {userAssignedProjects.length === 0 && (
                                 <div>
-                                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                                    <h3 className="text-lg font-medium text-foreground mb-2">
                                         {userRole === "admin"
                                             ? "No team data"
                                             : "You have not been assigned to any teams"}
                                     </h3>
-                                    <p className="text-gray-500 mb-4">
+                                    <p className="text-muted-foreground mb-4">
                                         {userRole === "admin"
                                             ? "There are no teams in this group. Please check the following:"
                                             : "Please contact the administrator to be assigned to a team."}

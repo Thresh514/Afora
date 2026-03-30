@@ -33,12 +33,12 @@ const CommentView = ({ comment }: { comment: Comment }) => {
                     className="w-8 h-8 sm:w-10 sm:h-10 rounded-full"
                 />
             ) : (
-                <CircleUser className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400" />
+                <CircleUser className="w-8 h-8 sm:w-10 sm:h-10 text-muted-foreground" />
             )}
             <div className="flex flex-col">
                 <div className="flex items-center space-x-2 w-full">
                     <span className="">{comment.uid}</span>
-                    <span className="text-gray-500 text-sm">
+                    <span className="text-muted-foreground text-sm">
                         {new Timestamp(
                             comment.time.seconds,
                             comment.time.nanoseconds,

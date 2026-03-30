@@ -48,7 +48,7 @@ function HomePageCard({ org }: HomePageCardProps) {
             <div className="flex flex-col h-96 shadow-lg rounded-2xl overflow-hidden bg-white dark:bg-gray-800 w-96 animate-pulse">
                 <div className="h-32 bg-gray-200 dark:bg-gray-700" />
                 <div className="flex-1 flex items-center justify-center p-6">
-                    <p className="text-gray-500">Loading group data...</p>
+                    <p className="text-muted-foreground">Loading group data...</p>
                 </div>
             </div>
         );
@@ -95,27 +95,27 @@ function HomePageCard({ org }: HomePageCardProps) {
                         <div className="flex-1 bg-white dark:bg-gray-800 p-6">
                             <div className="space-y-6">
                                 {/* Description */}
-                                <div className="border-t border-gray-100 dark:border-gray-700 pt-4">
-                                    <h2 className="text-md text-gray-900 dark:text-gray-100 mb-2">
+                                <div className="border-t border-border/70 dark:border-gray-700 pt-4">
+                                    <h2 className="text-md text-foreground dark:text-gray-100 mb-2">
                                         Description:
                                     </h2>
-                                    <p title={data?.description} className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed line-clamp-3">
+                                    <p title={data?.description} className="text-sm text-muted-foreground dark:text-gray-300 leading-relaxed line-clamp-3">
                                         {data?.description}
                                     </p>
                                 </div>
 
                                 {/* Access Code */}
-                                <div className="border-t border-gray-100 dark:border-gray-700 pt-4 space-y-3">
-                                    <div className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                <div className="border-t border-border/70 dark:border-gray-700 pt-4 space-y-3">
+                                    <div className="text-xs uppercase tracking-wider text-muted-foreground dark:text-muted-foreground">
                                         Access Code
                                     </div>
-                                    <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-900/50 p-2 rounded-lg">
-                                        <code className="text-sm font-mono font-medium text-gray-900 dark:text-gray-100 select-all flex-1">
+                                    <div className="flex items-center gap-2 bg-muted/50 dark:bg-gray-900/50 p-2 rounded-lg">
+                                        <code className="text-sm font-mono font-medium text-foreground dark:text-gray-100 select-all flex-1">
                                             {showAccessCode ? org.orgId : "••••••••"}
                                         </code>
                                         <button
                                             type="button"
-                                            className="focus:outline-none hover:bg-gray-100 dark:hover:bg-gray-800 p-1.5 rounded-md transition-colors"
+                                            className="focus:outline-none hover:bg-muted dark:hover:bg-gray-800 p-1.5 rounded-md transition-colors"
                                             onClick={(e) => {
                                                 e.preventDefault();
                                                 setShowAccessCode((v) => !v);
@@ -123,21 +123,21 @@ function HomePageCard({ org }: HomePageCardProps) {
                                             title={showAccessCode ? "Hide" : "Show"}
                                         >
                                             {showAccessCode ? (
-                                                <EyeOff className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                                                <EyeOff className="w-4 h-4 text-muted-foreground dark:text-muted-foreground" />
                                             ) : (
-                                                <Eye className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                                                <Eye className="w-4 h-4 text-muted-foreground dark:text-muted-foreground" />
                                             )}
                                         </button>
                                         <button
                                             type="button"
-                                            className="focus:outline-none hover:bg-gray-100 dark:hover:bg-gray-800 p-1.5 rounded-md transition-colors"
+                                            className="focus:outline-none hover:bg-muted dark:hover:bg-gray-800 p-1.5 rounded-md transition-colors"
                                             onClick={(e) => {
                                                 e.preventDefault();
                                                 navigator.clipboard.writeText(org.orgId);
                                                 toast.success("Access code copied to clipboard!");
                                             }}
                                         >
-                                            <Copy className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                                            <Copy className="w-4 h-4 text-muted-foreground dark:text-muted-foreground" />
                                         </button>
                                     </div>
                                 </div>
@@ -161,7 +161,7 @@ function HomePageCard({ org }: HomePageCardProps) {
                             <Button 
                                 variant="ghost" 
                                 size="icon"
-                                className="h-10 w-10 rounded-full bg-gray-200 hover:bg-gray-300 shadow-lg hover:shadow-xl transition-all text-gray-600"
+                                className="h-10 w-10 rounded-full border border-border bg-card/90 text-muted-foreground shadow-sm transition-all hover:bg-accent hover:text-foreground hover:shadow-md"
                                 onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();

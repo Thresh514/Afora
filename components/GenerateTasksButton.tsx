@@ -318,7 +318,7 @@ const GenerateTasksButton = ({
 
                                                                 
                                                                     <p className="text-sm mb-2">
-                                                                        <span className="text-gray-600">
+                                                                        <span className="text-muted-foreground">
                                                                             Assignee: {task.assigned_member}
                                                                         </span>
                                                                     </p>

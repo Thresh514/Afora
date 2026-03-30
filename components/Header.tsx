@@ -7,6 +7,7 @@ import FundUs from "./FundUs";
 import NotificationDropdown from "./NotificationDropdown";
 import { SidebarTrigger } from "./ui/sidebar";
 import Image from "next/image";
+import ThemeToggle from "./ThemeToggle";
 
 function Header() {
     return (
@@ -46,7 +47,8 @@ function Header() {
                         <Breadcrumbs />
                     </SignedIn>
 
-                    <div className="flex gap-6 items-center text-white">
+                    <div className="flex gap-4 items-center text-white">
+                        <ThemeToggle />
                         <FundUs />
                         <SignedOut>
                             <SignInButton

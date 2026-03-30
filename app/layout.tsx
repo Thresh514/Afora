@@ -26,7 +26,12 @@ export default function RootLayout({
           <link rel="icon" href="/icon.svg" type="image/svg" sizes="any"/>
         </head>
         <body>
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="light"
+            enableSystem={false}
+            themes={["light", "dark"]}
+          >
             {children}
             <CronInitializer />
             <Toaster position="top-center" />

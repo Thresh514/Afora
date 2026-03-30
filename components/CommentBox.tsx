@@ -15,7 +15,7 @@ import dynamic from 'next/dynamic';
 
 const TiptapEditor = dynamic(() => Promise.resolve(EditorContent), {
     ssr: false,
-    loading: () => <div className="min-h-[40px] p-2 bg-gray-50 animate-pulse rounded-lg" />
+    loading: () => <div className="min-h-[40px] p-2 bg-muted/50 animate-pulse rounded-lg" />
 });
 
 interface CommentBoxProps {
@@ -124,15 +124,15 @@ const CommentBox: React.FC<CommentBoxProps> = ({
     if (!isClient) {
         return (
             <div className="w-full max-w-full">
-                <div className="flex items-start w-full space-x-2 p-2 sm:p-3 bg-white rounded-lg shadow">
+                <div className="flex items-start w-full space-x-2 p-2 sm:p-3 bg-card rounded-lg shadow">
                     <div className="hidden sm:block flex-shrink-0">
-                        <CircleUser className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400" />
+                        <CircleUser className="w-8 h-8 sm:w-10 sm:h-10 text-muted-foreground" />
                     </div>
                     <div className="flex-1 min-w-0">
-                        <div className="min-h-[40px] p-2 bg-gray-50 animate-pulse rounded-lg" />
+                        <div className="min-h-[40px] p-2 bg-muted/50 animate-pulse rounded-lg" />
                     </div>
                     <div className="flex-shrink-0">
-                        <div className="h-8 w-8 sm:h-10 sm:w-10 bg-gray-100 rounded-lg" />
+                        <div className="h-8 w-8 sm:h-10 sm:w-10 bg-muted rounded-lg" />
                     </div>
                 </div>
             </div>
@@ -145,7 +145,7 @@ const CommentBox: React.FC<CommentBoxProps> = ({
             ref={editorRef}
         >
             <div
-                className={`flex items-start w-full space-x-2 p-2 sm:p-3 bg-white rounded-lg shadow transition-all duration-200 ${className}`}
+                className={`flex w-full items-start space-x-2 rounded-lg bg-card p-2 shadow-sm transition-all duration-200 sm:p-3 ${className}`}
             >
                 <div className="hidden sm:block flex-shrink-0">
                     {user && user.imageUrl ? (
@@ -157,20 +157,22 @@ const CommentBox: React.FC<CommentBoxProps> = ({
                             className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover"
                         />
                     ) : (
-                        <CircleUser className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400" />
+                        <CircleUser className="w-8 h-8 sm:w-10 sm:h-10 text-muted-foreground" />
                     )}
                 </div>
                 <div className="flex-1 min-w-0 relative z-50">
                     <div
-                        className={`${
-                            isFocused ? "border-blue-500" : "border-gray-200"
-                        } border rounded-lg overflow-hidden transition-all duration-200`}
+                        className={`overflow-hidden rounded-lg border transition-all duration-200 ${
+                            isFocused
+                                ? "border-ring/50 ring-2 ring-ring/30"
+                                : "border-border"
+                        }`}
                     >
                         <TiptapEditor
                             editor={editor}
                         />
                         {!editor?.getText().trim() && !isFocused && (
-                            <div className="absolute top-2 left-2 text-gray-400 pointer-events-none">
+                            <div className="absolute top-2 left-2 text-muted-foreground pointer-events-none">
                                 Leave a comment here...
                             </div>
                         )}

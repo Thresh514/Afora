@@ -5,12 +5,12 @@ export default function FundUsPage() {
     return (
         <div className="container mx-auto px-4 py-8">
             <h1 className="text-3xl font-bold mb-6">Support Afora</h1>
-            <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="rounded-lg border border-border bg-card p-6 shadow-sm">
                 <div className="flex items-center gap-2 mb-4">
-                    <Mail className="text-[#6F61EF]" />
-                    <span className="text-lg font-bold">Contact Email: Afora.connect@gmail.com</span>
+                    <Mail className="text-primary" />
+                    <span className="text-lg font-bold text-card-foreground">Contact Email: Afora.connect@gmail.com</span>
                 </div>
-                <div className="text-gray-600 space-y-4">
+                <div className="space-y-4 text-muted-foreground">
                     <p>Thank you for supporting the Afora project! Your donation will help us:</p>
                     <ul className="list-disc pl-6 space-y-2">
                         <li>Maintain and improve platform features</li>

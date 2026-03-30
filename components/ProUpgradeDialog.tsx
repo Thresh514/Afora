@@ -79,8 +79,8 @@ const ProUpgradeDialog = ({ open, onOpenChange, onUpgrade, onCancel }: ProUpgrad
                                             <Check className="h-4 w-4 text-green-600" />
                                         </div>
                                         <div>
-                                            <p className="font-medium text-gray-900">AI-driven team charter generation</p>
-                                            <p className="text-sm text-gray-600">AI-driven personalized team planning suggestions</p>
+                                            <p className="font-medium text-foreground">AI-driven team charter generation</p>
+                                            <p className="text-sm text-muted-foreground">AI-driven personalized team planning suggestions</p>
                                         </div>
                                     </div>
                                     <div className="flex items-start gap-3">
@@ -88,8 +88,8 @@ const ProUpgradeDialog = ({ open, onOpenChange, onUpgrade, onCancel }: ProUpgrad
                                             <Check className="h-4 w-4 text-green-600" />
                                         </div>
                                         <div>
-                                            <p className="font-medium text-gray-900">Advanced project analysis</p>
-                                            <p className="text-sm text-gray-600">Deep team compatibility and performance insights</p>
+                                            <p className="font-medium text-foreground">Advanced project analysis</p>
+                                            <p className="text-sm text-muted-foreground">Deep team compatibility and performance insights</p>
                                         </div>
                                     </div>
                                     <div className="flex items-start gap-3">
@@ -97,8 +97,8 @@ const ProUpgradeDialog = ({ open, onOpenChange, onUpgrade, onCancel }: ProUpgrad
                                             <Check className="h-4 w-4 text-green-600" />
                                         </div>
                                         <div>
-                                            <p className="font-medium text-gray-900">Unlimited task generation</p>
-                                            <p className="text-sm text-gray-600">AI automatically creates and optimizes project tasks</p>
+                                            <p className="font-medium text-foreground">Unlimited task generation</p>
+                                            <p className="text-sm text-muted-foreground">AI automatically creates and optimizes project tasks</p>
                                         </div>
                                     </div>
                                     <div className="flex items-start gap-3">
@@ -106,8 +106,8 @@ const ProUpgradeDialog = ({ open, onOpenChange, onUpgrade, onCancel }: ProUpgrad
                                             <Check className="h-4 w-4 text-green-600" />
                                         </div>
                                         <div>
-                                            <p className="font-medium text-gray-900">Priority customer support</p>
-                                            <p className="text-sm text-gray-600">24/7 dedicated customer support and technical support</p>
+                                            <p className="font-medium text-foreground">Priority customer support</p>
+                                            <p className="text-sm text-muted-foreground">24/7 dedicated customer support and technical support</p>
                                         </div>
                                     </div>
                                 </div>
@@ -128,7 +128,7 @@ const ProUpgradeDialog = ({ open, onOpenChange, onUpgrade, onCancel }: ProUpgrad
                                                 <Target className="h-5 w-5 text-purple-600" />
                                                 <span className="font-medium">Save 80% planning time</span>
                                             </div>
-                                            <p className="text-sm text-gray-600">
+                                            <p className="text-sm text-muted-foreground">
                                                 AI smart assistant helps you quickly create a complete project plan
                                             </p>
                                         </CardContent>
@@ -140,7 +140,7 @@ const ProUpgradeDialog = ({ open, onOpenChange, onUpgrade, onCancel }: ProUpgrad
                                                 <Users className="h-5 w-5 text-blue-600" />
                                                 <span className="font-medium">Improve team collaboration</span>
                                             </div>
-                                            <p className="text-sm text-gray-600">
+                                            <p className="text-sm text-muted-foreground">
                                                 Deep team analysis helps optimize member cooperation and task allocation
                                             </p>
                                         </CardContent>
@@ -152,7 +152,7 @@ const ProUpgradeDialog = ({ open, onOpenChange, onUpgrade, onCancel }: ProUpgrad
                                                 <BarChart3 className="h-5 w-5 text-green-600" />
                                                 <span className="font-medium">Data-driven decision-making</span>
                                             </div>
-                                            <p className="text-sm text-gray-600">
+                                            <p className="text-sm text-muted-foreground">
                                                 Real-time project insights and performance tracking, making management more scientific
                                             </p>
                                         </CardContent>
@@ -165,10 +165,10 @@ const ProUpgradeDialog = ({ open, onOpenChange, onUpgrade, onCancel }: ProUpgrad
                     {/* Call to action */}
                     <div className="mt-6 p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-200">
                         <div className="text-center">
-                            <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                            <h4 className="text-lg font-semibold text-foreground mb-2">
                                     🚀 Now upgrade, immediately experience Pro features!
                             </h4>
-                            <p className="text-gray-600 mb-4">
+                            <p className="text-muted-foreground mb-4">
                                 Join the choice of over 10,000 teams, make project management easier
                             </p>
                         </div>
@@ -176,7 +176,7 @@ const ProUpgradeDialog = ({ open, onOpenChange, onUpgrade, onCancel }: ProUpgrad
                 </div>
 
                 {/* Footer */}
-                <AlertDialogFooter className="bg-gray-50 p-6">
+                <AlertDialogFooter className="bg-muted/50 p-6">
                     <div className="flex flex-col sm:flex-row gap-3 w-2/3">
                         <Button
                             onClick={onCancel}
@@ -194,7 +194,7 @@ const ProUpgradeDialog = ({ open, onOpenChange, onUpgrade, onCancel }: ProUpgrad
                             <ArrowRight className="ml-2 h-4 w-4" />
                         </Button>
                     </div>
-                    <p className="w-1/3 text-xs text-gray-500 text-center p-1">
+                    <p className="w-1/3 text-xs text-muted-foreground text-center p-1">
                         Cancel anytime • No hidden fees • 30-day money-back guarantee
                     </p>
                 </AlertDialogFooter>

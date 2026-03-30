@@ -95,25 +95,25 @@ function SignedInLanding() {
             {/* Nido Scout-style Banner */}
             <div className="relative pt-8 pb-12">
                 <div className="w-full">
-                    <div className="bg-purple-50 rounded-xl p-6 md:p-8 border border-purple-100 shadow-sm">
+                    <div className="rounded-xl border border-border bg-card/80 p-6 shadow-sm md:p-8">
                         <div className="flex flex-col gap-6">
                             <div>
-                                <h2 className="text-xl text-gray-600 mb-1">
+                                <h2 className="text-xl text-muted-foreground mb-1">
                                     {getGreeting()}, {user.firstName || user.username}
                                 </h2>
-                                <p className="text-gray-600 text-sm">
+                                <p className="text-muted-foreground text-sm">
                                     {orgs.length > 0
                                         ? `You've joined ${orgs.length} group${orgs.length > 1 ? "s" : ""}`
                                         : "Start by creating or joining a group"}
                                 </p>
                             </div>
                             <div>
-                                <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                                <h3 className="text-2xl font-bold text-foreground mb-4">
                                     Search your tasks
                                 </h3>
                                 <div className="flex flex-col sm:flex-row gap-3">
                                     <div className="relative flex-1">
-                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                         <Input
                                             type="text"
                                             placeholder="Search tasks by keyword..."
@@ -126,7 +126,7 @@ function SignedInLanding() {
                                                     );
                                                 }
                                             }}
-                                            className="pl-10 bg-white border-gray-200"
+                                            className="pl-10 bg-card border-border"
                                         />
                                     </div>
                                     <Button
@@ -135,7 +135,7 @@ function SignedInLanding() {
                                                 `/my-tasks?q=${encodeURIComponent(searchKeyword.trim())}`
                                             )
                                         }
-                                        className="bg-gray-900 hover:bg-gray-800 text-white shrink-0"
+                                        className="shrink-0"
                                     >
                                         Search
                                     </Button>
@@ -149,7 +149,7 @@ function SignedInLanding() {
             {/* Main Content */}
             <div className="w-full pb-12">
                 <div className="flex justify-between items-center mb-8">
-                    <h2 className="text-2xl font-semibold text-gray-900">My Groups</h2>
+                    <h2 className="text-2xl font-semibold text-foreground">My Groups</h2>
                     
                     {/* Organization Actions */}
                     <div className="relative">
@@ -157,7 +157,7 @@ function SignedInLanding() {
                         <JoinOrgButton isOpen={isJoinOrgOpen} setIsOpen={setIsJoinOrgOpen} />
                         <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
                             <DropdownMenuTrigger asChild>
-                                <button className="flex items-center gap-2 px-4 py-2 bg-white text-indigo-600 rounded-full shadow-md hover:shadow-lg transition-all duration-300 border border-indigo-100 hover:border-indigo-200">
+                                <button className="flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-primary shadow-sm transition-all duration-300 hover:bg-accent hover:shadow-md">
                                     <Plus className="w-5 h-5" />
                                     <span>New Group</span>
                                 </button>
@@ -201,7 +201,7 @@ function SignedInLanding() {
                             ))}
                     </div>
                 ) : (
-                    <div className="flex flex-col items-center justify-center py-16 px-4 bg-white/50 backdrop-blur-sm rounded-2xl border border-gray-100">
+                    <div className="flex flex-col items-center justify-center rounded-2xl border border-border/70 bg-card/60 px-4 py-16 backdrop-blur-sm">
                         <Image
                             src="/logoFull.svg"
                             alt="Logo"
@@ -209,14 +209,14 @@ function SignedInLanding() {
                             height={96}
                             className="mb-6 opacity-80"
                         />
-                        <h2 className="text-2xl font-semibold text-gray-800 mb-3">
+                        <h2 className="text-2xl font-semibold text-foreground mb-3">
                             Create Your First Group
                         </h2>
-                        <p className="text-gray-600 mb-8 text-center max-w-md">
+                        <p className="text-muted-foreground mb-8 text-center max-w-md">
                             Create a group, invite team members, and start your collaboration journey
                         </p>
                         <button 
-                            className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:bg-indigo-700"
+                            className="flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-primary-foreground shadow-lg transition-all duration-300 hover:bg-primary/90 hover:shadow-xl"
                             onClick={() => setIsNewOrgOpen(true)}
                         >
                             <Plus className="w-5 h-5" />

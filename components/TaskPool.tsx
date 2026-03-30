@@ -197,7 +197,7 @@ const TaskPool: React.FC<TaskPoolProps> = ({
                             <div className="text-2xl font-bold text-blue-600">
                                 {stats.totalTasks}
                             </div>
-                            <div className="text-sm text-gray-500">
+                            <div className="text-sm text-muted-foreground">
                                 Total Tasks
                             </div>
                         </div>
@@ -205,7 +205,7 @@ const TaskPool: React.FC<TaskPoolProps> = ({
                             <div className="text-2xl font-bold text-green-600">
                                 {stats.availableTasks}
                             </div>
-                            <div className="text-sm text-gray-500">
+                            <div className="text-sm text-muted-foreground">
                                 Available
                             </div>
                         </div>
@@ -213,7 +213,7 @@ const TaskPool: React.FC<TaskPoolProps> = ({
                             <div className="text-2xl font-bold text-yellow-600">
                                 {stats.assignedTasks}
                             </div>
-                            <div className="text-sm text-gray-500">
+                            <div className="text-sm text-muted-foreground">
                                 Assigned
                             </div>
                         </div>
@@ -221,7 +221,7 @@ const TaskPool: React.FC<TaskPoolProps> = ({
                             <div className="text-2xl font-bold text-green-700">
                                 {stats.completedTasks}
                             </div>
-                            <div className="text-sm text-gray-500">
+                            <div className="text-sm text-muted-foreground">
                                 Completed
                             </div>
                         </div>
@@ -229,13 +229,13 @@ const TaskPool: React.FC<TaskPoolProps> = ({
                             <div className="text-2xl font-bold text-red-600">
                                 {stats.overdueTasks}
                             </div>
-                            <div className="text-sm text-gray-500">Overdue</div>
+                            <div className="text-sm text-muted-foreground">Overdue</div>
                         </div>
                     </div>
 
                     {stats.totalTasks > 0 && (
                         <div className="mt-4">
-                            <div className="flex justify-between text-sm text-gray-600 mb-1">
+                            <div className="flex justify-between text-sm text-muted-foreground mb-1">
                                 <span>Progress</span>
                                 <span>
                                     {Math.round(
@@ -284,11 +284,11 @@ const TaskPool: React.FC<TaskPoolProps> = ({
                                         </div>
                                     </div>
 
-                                    <p className="text-gray-600 text-sm mb-3 line-clamp-3">
+                                    <p className="text-muted-foreground text-sm mb-3 line-clamp-3">
                                         {task.description}
                                     </p>
 
-                                    <div className="flex flex-col gap-1 text-sm text-gray-500">
+                                    <div className="flex flex-col gap-1 text-sm text-muted-foreground">
                                         <div className="flex items-center gap-1">
                                             <Calendar className="h-4 w-4 flex-shrink-0" />
                                             <span className="truncate">
@@ -327,7 +327,7 @@ const TaskPool: React.FC<TaskPoolProps> = ({
                                                         .toUpperCase()}
                                                 </AvatarFallback>
                                             </Avatar>
-                                            <span className="text-sm text-gray-600 truncate">
+                                            <span className="text-sm text-muted-foreground truncate">
                                                 {task.assignee}
                                             </span>
                                         </div>
@@ -436,11 +436,11 @@ const TaskPool: React.FC<TaskPoolProps> = ({
             {tasks.length === 0 && (
                 <Card>
                     <CardContent className="text-center py-8">
-                        <Trophy className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                        <h3 className="text-lg font-semibold text-gray-500 mb-2">
+                        <Trophy className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                        <h3 className="text-lg font-semibold text-muted-foreground mb-2">
                             No tasks in pool
                         </h3>
-                        <p className="text-gray-400">
+                        <p className="text-muted-foreground">
                             Tasks will appear here when they are added to this
                             stage.
                         </p>

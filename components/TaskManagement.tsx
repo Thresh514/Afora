@@ -109,11 +109,11 @@ const TaskManagement = ({
     });
 
     return (
-        <div className="bg-gradient-to-br from-gray-50 to-blue-50 rounded-lg overflow-hidden">
+        <div className="overflow-hidden rounded-lg bg-gradient-to-br from-background to-muted/40">
             {/* Main Task List */}
-            <div className="w-full bg-white flex flex-col shadow-lg rounded-lg">
+            <div className="flex w-full flex-col rounded-lg bg-card shadow-lg">
                 {/* Header */}
-                <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+                <div className="p-6 border-b border-border bg-gradient-to-r from-blue-600 to-purple-600 text-white">
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-white bg-opacity-20 rounded-lg">
                             <User className="h-6 w-6" />
@@ -171,7 +171,7 @@ const TaskManagement = ({
                                                     : isSoftDeadlineSoon
                                                       ? 'border-orange-200'
                                                       : isMyTask
-                                                          ? `border-l-4 border-l-blue-500 ${!task.isCompleted ? 'bg-blue-50' : ''}`
+                                                          ? `border-l-4 border-l-blue-500 ${!task.isCompleted ? 'bg-primary/10' : ''}`
                                                           : ''
                                             }`}
                                         >
@@ -207,7 +207,7 @@ const TaskManagement = ({
                                                                     <Button
                                                                         variant="ghost"
                                                                         size="sm"
-                                                                        className="h-8 w-8 p-0 text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                                                                        className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted"
                                                                     >
                                                                         <MoreVertical className="h-4 w-4" />
                                                                     </Button>
@@ -216,11 +216,11 @@ const TaskManagement = ({
                                                                     <DropdownMenu.Content
                                                                         align="start"
                                                                         side="left"
-                                                                        className="z-50 min-w-[8rem] overflow-hidden rounded-md border border-slate-100 bg-white p-1 shadow-md animate-in slide-in-from-right-2"
+                                                                        className="z-50 min-w-[8rem] overflow-hidden rounded-md border border-slate-100 bg-card p-1 shadow-md animate-in slide-in-from-right-2"
                                                                     >
                                                                         {isUnassigned && handleAcceptTask && (
                                                                             <DropdownMenu.Item
-                                                                                className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-blue-50 text-blue-600 data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+                                                                                className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm text-blue-600 outline-none transition-colors hover:bg-accent/80 data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
                                                                                 onClick={() => handleAcceptTask(task.id)}
                                                                             >
                                                                                 <User className="mr-2 h-4 w-4" />
@@ -231,7 +231,7 @@ const TaskManagement = ({
                                                                             <>
                                                                                 {/* {handleSwapTask && (
                                                                                     <DropdownMenu.Item
-                                                                                        className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-blue-50 text-blue-600 data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+                                                                                        className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm text-blue-600 outline-none transition-colors hover:bg-accent/80 data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
                                                                                         onClick={() => handleSwapTask(task.id)}
                                                                                     >
                                                                                         <ArrowLeftRight className="mr-2 h-4 w-4" />
@@ -240,7 +240,7 @@ const TaskManagement = ({
                                                                                 )}
                                                                                 {handleDropTask && (
                                                                                     <DropdownMenu.Item
-                                                                                        className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-yellow-50 text-yellow-600 data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+                                                                                        className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm text-yellow-600 outline-none transition-colors hover:bg-accent/80 data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
                                                                                         onClick={() => handleDropTask(task.id)}
                                                                                     >
                                                                                         <XCircle className="mr-2 h-4 w-4" />
@@ -248,7 +248,7 @@ const TaskManagement = ({
                                                                                     </DropdownMenu.Item>
                                                                                 )} */}
                                                                                 <DropdownMenu.Item
-                                                                                    className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-red-50 text-red-600 data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+                                                                                    className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm text-red-600 outline-none transition-colors hover:bg-accent/80 data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
                                                                                     onSelect={() => {
                                                                                         setTaskToDelete(task.id);
                                                                                         setIsOpen(true);
@@ -289,7 +289,7 @@ const TaskManagement = ({
                                                                 </AvatarFallback>
                                                             </Avatar>
                                                         )}
-                                                        <span className="text-xs text-gray-500 font-semibold">
+                                                        <span className="text-xs text-muted-foreground font-semibold">
                                                             {task.assignee ||
                                                                 "Unassigned"}
                                                         </span>
@@ -315,7 +315,7 @@ const TaskManagement = ({
                                                 </div>
 
                                                 {/* Deadlines */}
-                                                <div className="text-xs text-gray-500 space-y-1">
+                                                <div className="text-xs text-muted-foreground space-y-1">
                                                     <div>
                                                         Due:{" "}
                                                         {new Date(
@@ -331,10 +331,10 @@ const TaskManagement = ({
                         ) : (
                             <div className="col-span-full text-center py-12">
                                 <CircleCheckBig className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                                <h3 className="text-lg font-medium text-foreground mb-2">
                                     No tasks created yet
                                 </h3>
-                                <p className="text-gray-500">
+                                <p className="text-muted-foreground">
                                     Create your first task to get started with
                                     team management.
                                 </p>
@@ -381,7 +381,7 @@ const TaskManagement = ({
 
                 {/* Actions - Create New Task */}
                 {(isEditing || sortedTasks.length === 0) && (
-                    <div className="p-6 border-t border-gray-200 bg-gray-50">
+                    <div className="p-6 border-t border-border bg-muted/50">
                         <Button
                             className="w-full"
                             size="lg"

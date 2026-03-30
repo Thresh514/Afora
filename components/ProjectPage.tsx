@@ -397,7 +397,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
     ]));
 
     return (
-        <div className="flex flex-col w-full h-full bg-gray-100">
+        <div className="flex flex-col w-full h-full bg-muted">
             {/* Header Section - similar to organization page background image style */}
             <div className="relative">
                 <div
@@ -430,7 +430,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                                 onChange={(e) =>
                                                     setProjTitle(e.target.value)
                                                 }
-                                                className="bg-transparent border-b-2 border-white text-white placeholder-gray-200 focus:outline-none focus:border-gray-200"
+                                                className="bg-transparent border-b-2 border-white text-white placeholder-gray-200 focus:outline-none focus:border-border"
                                                 style={{
                                                     width: `${Math.max(projTitle.length, 10)}ch`,
                                                 }}
@@ -461,7 +461,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                             size="sm"
                                             className={
                                                 isEditing
-                                                    ? "bg-white text-[#6F61EF] hover:bg-gray-100"
+                                                    ? "bg-white text-[#6F61EF] hover:bg-muted"
                                                     : "text-white hover:bg-white/20 transition-colors"
                                             }
                                             onClick={() => {
@@ -510,7 +510,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                                 </span>
                                                 <div className="bg-white bg-opacity-30 rounded-full h-2 w-48 overflow-hidden">
                                                     <div
-                                                        className="h-full bg-white rounded-full transition-all duration-500"
+                                                        className="h-full bg-card rounded-full transition-all duration-500"
                                                         style={{
                                                             width: `${(stages.reduce((acc, stage) => acc + stage.tasksCompleted, 0) / stages.reduce((acc, stage) => acc + stage.totalTasks, 0)) * 100}%`,
                                                         }}
@@ -532,20 +532,20 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
             {/* Content Section with Tabs */}
             <div className="flex-1 p-6">
                 <Tabs defaultValue="roadmap" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 mb-6">
+                    <TabsList className="mb-6 inline-flex h-9 w-fit max-w-full shrink-0 flex-wrap rounded-lg border border-border/70 bg-muted/60 p-1 text-muted-foreground shadow-sm">
                         <TabsTrigger
                             value="roadmap"
-                            className="flex items-center gap-2"
+                            className="flex items-center gap-2 rounded-md px-3 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
                         >
                             <Target className="h-4 w-4" />
                             Team Roadmap
                         </TabsTrigger>
                         <TabsTrigger
                             value="team-analytics"
-                            className="flex items-center gap-2"
+                            className="flex items-center gap-2 rounded-md px-3 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
                         >
                             <BarChart3 className="h-4 w-4" />
-                            Team Informations
+                            Team Information
                         </TabsTrigger>
                     </TabsList>
 
@@ -563,7 +563,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                     <div className="grid grid-cols-6 gap-4">
                                         <div className="text-center flex flex-row items-center gap-2">
                                             
-                                            <div className="text-sm text-gray-500">
+                                            <div className="text-sm text-muted-foreground">
                                                 Total Tasks:
                                             </div>
                                             <div className="text-xl font-bold text-blue-600">
@@ -571,7 +571,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                             </div>
                                         </div>
                                         <div className="text-center flex flex-row items-center gap-2">
-                                            <div className="text-sm text-gray-500">
+                                            <div className="text-sm text-muted-foreground">
                                                 Completed:
                                             </div>
                                             <div className="text-xl font-bold text-green-600">
@@ -580,7 +580,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                             
                                         </div>
                                         <div className="text-center flex flex-row items-center gap-2">
-                                            <div className="text-sm text-gray-500">
+                                            <div className="text-sm text-muted-foreground">
                                                 Assigned:
                                             </div>
                                             <div className="text-xl font-bold text-yellow-600">
@@ -588,15 +588,15 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                             </div>
                                         </div>
                                         <div className="text-center flex flex-row items-center gap-2">
-                                            <div className="text-sm text-gray-500">
+                                            <div className="text-sm text-muted-foreground">
                                                 Available:
                                             </div>
-                                            <div className="text-xl font-bold text-gray-600">
+                                            <div className="text-xl font-bold text-muted-foreground">
                                                 {projectStats.availableTasks}
                                             </div>
                                         </div>
                                         <div className="text-center flex flex-row items-center gap-2">
-                                            <div className="text-sm text-gray-500">
+                                            <div className="text-sm text-muted-foreground">
                                                 Overdue:
                                             </div>
                                             <div className="text-xl font-bold text-red-600">
@@ -604,7 +604,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                             </div>
                                         </div>
                                         <div className="text-center flex flex-row items-center gap-2">
-                                            <div className="text-sm text-gray-500">
+                                            <div className="text-sm text-muted-foreground">
                                                 Completion Rate:
                                             </div>
                                             <div className="text-xl font-bold text-purple-600">
@@ -618,12 +618,12 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
 
                         <div className="space-y-6">
                             {stages.length === 0 ? (
-                                <div className="bg-white rounded-lg shadow-sm border p-8 text-center space-y-6">
-                                    <div className="text-gray-500">
+                                <div className="bg-card rounded-lg shadow-sm border p-8 text-center space-y-6">
+                                    <div className="text-muted-foreground">
                                         <h3 className="text-lg font-medium mb-2">
                                             No stages yet
                                         </h3>
-                                        <p className="text-gray-500">Try generating stages and tasks to start your team.</p>
+                                        <p className="text-muted-foreground">Try generating stages and tasks to start your team.</p>
                                     </div>
                                     
                                         <div className="flex justify-center gap-4">
@@ -665,7 +665,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                                                             <div key={index} className="space-y-2">
                                                                                 <Label
                                                                                     htmlFor={`question-${index}`}
-                                                                                    className="text-sm font-medium text-gray-700"
+                                                                                    className="text-sm font-medium text-foreground"
                                                                                 >
                                                                                     {question}
                                                                                     {isRequired && <span className="text-red-500 ml-1">*</span>}
@@ -744,7 +744,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                                     </div>
                                                 </div>
                                                 
-                                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                                <div className="rounded-lg border border-primary/35 bg-primary/12 p-4">
                                                     <div className="flex items-start gap-3">
                                                         <Info className="h-5 w-5 text-blue-500 mt-0.5" />
                                                         <div className="flex-1">
@@ -776,8 +776,8 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                             ) : (
                                 <div className="space-y-6">
                                     {isEditing ? (
-                                        <div className="bg-white rounded-lg shadow-sm border p-6">
-                                            <h3 className="text-lg font-semibold mb-4 text-gray-800">
+                                        <div className="bg-card rounded-lg shadow-sm border p-6">
+                                            <h3 className="text-lg font-semibold mb-4 text-foreground">
                                                 Edit Stages
                                             </h3>
                                             <Reorder.Group
@@ -804,7 +804,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                                                     }
                                                                 />
                                                                 <div
-                                                                    className={`w-full block flex-1 p-4 bg-gray-50 rounded-lg border hover:shadow-md transition-all duration-300 cursor-grab`}
+                                                                    className={`w-full block flex-1 p-4 bg-muted/50 rounded-lg border hover:shadow-md transition-all duration-300 cursor-grab`}
                                                                 >
                                                                     <div className="flex w-full justify-between items-center">
                                                                         <span className="w-full text-lg font-semibold">
@@ -826,11 +826,11 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                                                                 stage.title
                                                                             )}
                                                                         </span>
-                                                                        <span className="flex items-center text-sm text-gray-500">
+                                                                        <span className="flex items-center text-sm text-muted-foreground">
                                                                             {stageStatus[index] === 0 && (
                                                                                 <HoverCard>
                                                                                     <HoverCardTrigger>
-                                                                                        <Clock className="mr-4 text-gray-500" />
+                                                                                        <Clock className="mr-4 text-muted-foreground" />
                                                                                     </HoverCardTrigger>
                                                                                     <HoverCardContent className="p-2 bg-gray-800 text-white rounded-md shadow-lg">
                                                                                         <p className="text-sm">
@@ -871,7 +871,8 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                                                             >
                                                                                 <Button
                                                                                     variant="ghost"
-                                                                                    className="text-red-500"
+                                                                                    size="icon"
+                                                                                    className="h-9 w-9 rounded-full border border-border/70 bg-card/90 text-red-500 hover:bg-destructive/10 hover:text-red-400"
                                                                                 >
                                                                                     <Trash2 />
                                                                                 </Button>
@@ -923,7 +924,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                                 <ReorderIcon
                                                     dragControls={dragControl}
                                                 />
-                                                <div className="w-full block flex-1 p-4 bg-gray-200 rounded-lg border-2 border-dashed border-gray-300 hover:border-gray-400 transition-colors duration-300 cursor-pointer">
+                                                <div className="w-full block flex-1 p-4 bg-gray-200 rounded-lg border-2 border-dashed border-border hover:border-border transition-colors duration-300 cursor-pointer">
                                                     <div className="flex w-full justify-between items-center">
                                                         <Button
                                                             variant="ghost"
@@ -945,7 +946,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                                                 );
                                                             }}
                                                         >
-                                                            <span className="w-full text-lg font-semibold text-gray-500">
+                                                            <span className="w-full text-lg font-semibold text-muted-foreground">
                                                                 + New Stage
                                                             </span>
                                                         </Button>
@@ -954,8 +955,8 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="bg-white rounded-lg shadow-sm border p-6 space-y-4">
-                                            <h3 className="text-lg font-semibold mb-4 text-gray-800">
+                                        <div className="bg-card rounded-lg shadow-sm border p-6 space-y-4">
+                                            <h3 className="text-lg font-semibold mb-4 text-foreground">
                                                 Team Stages
                                             </h3>
                                             {stages.map((stage, index) => (
@@ -963,15 +964,15 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                                     <HoverCardTrigger asChild>
                                                         <Link
                                                             href={`/org/${id}/proj/${projId}/stage/${stage.id}`}
-                                                            className={`block p-4 ${stageStatus[index] === 1 ? 'bg-green-50 border-green-100 hover:border-green-300 border' : 'bg-gray-50'} rounded-lg border-2 hover:shadow-sm transition-all duration-300`}
+                                                            className={`block rounded-lg border-2 p-4 transition-all duration-300 hover:shadow-sm ${stageStatus[index] === 1 ? 'border-green-300/40 bg-green-500/12 hover:border-green-300/60' : 'bg-muted/50'}`}
                                                         >
                                                             <div className="flex w-full justify-between items-center">
                                                                 <span className="text-lg font-semibold">
                                                                     {index + 1}. {stage.title}
                                                                 </span>
-                                                                <span className="flex items-center text-sm text-gray-500">
+                                                                <span className="flex items-center text-sm text-muted-foreground">
                                                                     {stageStatus[index] === 0 && (
-                                                                    <Clock className="mr-4 text-gray-500" />
+                                                                    <Clock className="mr-4 text-muted-foreground" />
                                                                     )}
                                                                     {stageStatus[index] === 1 && (
                                                                     <NotepadText className="mr-4 text-yellow-500" />
@@ -1029,7 +1030,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                                     return (
                                                         <div
                                                             key={index}
-                                                            className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                                                            className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors"
                                                         >
                                                             <Avatar className="h-10 w-10">
                                                                 <AvatarImage
@@ -1045,7 +1046,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                                                 </AvatarFallback>
                                                             </Avatar>
                                                             <div className="flex-1">
-                                                                <p className="font-medium text-gray-900">
+                                                                <p className="font-medium text-foreground">
                                                                     {member}
                                                                 </p>
                                                                 <div className="flex items-center gap-2 mt-1">
@@ -1064,7 +1065,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                                                     <Button
                                                                         variant="ghost"
                                                                         size="sm"
-                                                                        className="h-8 w-8 p-0 hover:bg-gray-200"
+                                                                        className="h-8 w-8 p-0 hover:bg-accent"
                                                                     >
                                                                         <MoreVertical className="h-4 w-4" />
                                                                     </Button>
@@ -1080,7 +1081,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                                                                 window.location.reload();
                                                                             }}
                                                                             trigger={
-                                                                                <div className="flex items-center w-full px-2 py-1.5 text-sm cursor-pointer hover:bg-gray-100 rounded-sm">
+                                                                                <div className="flex items-center w-full px-2 py-1.5 text-sm cursor-pointer hover:bg-muted rounded-sm">
                                                                                     <EditIcon className="h-4 w-4 mr-2" />
                                                                                     Change Role
                                                                                 </div>
@@ -1111,7 +1112,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                         )}
                                     </div>
                                 ) : (
-                                    <div className="text-center py-8 text-gray-500">
+                                    <div className="text-center py-8 text-muted-foreground">
                                         <UsersIcon className="h-12 w-12 mx-auto mb-4 text-gray-300" />
                                         <p className="text-lg font-medium">
                                             No team members assigned
@@ -1168,7 +1169,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                     <div className="p-4">
                         <Label
                             htmlFor="stage-title"
-                            className="text-sm font-medium text-gray-700"
+                            className="text-sm font-medium text-foreground"
                         >
                             Stage Title
                         </Label>
@@ -1178,7 +1179,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                             value={newStageTitle}
                             onChange={(e) => setNewStageTitle(e.target.value)}
                             placeholder="Enter stage title"
-                            className="w-full border border-gray-300 rounded-md p-2"
+                            className="w-full border border-border rounded-md p-2"
                         />
                     </div>
                     <AlertDialogFooter>

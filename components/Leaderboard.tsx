@@ -64,12 +64,12 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
             case 1:
                 return <Trophy className="h-6 w-6 text-yellow-500" />;
             case 2:
-                return <Medal className="h-6 w-6 text-gray-400" />;
+                return <Medal className="h-6 w-6 text-muted-foreground" />;
             case 3:
                 return <Award className="h-6 w-6 text-amber-600" />;
             default:
                 return (
-                    <div className="h-6 w-6 flex items-center justify-center text-gray-500 font-bold">
+                    <div className="h-6 w-6 flex items-center justify-center text-muted-foreground font-bold">
                         {rank}
                     </div>
                 );
@@ -177,8 +177,8 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
 
                                         const cardClassName = `flex items-center gap-4 p-4 rounded-lg border ${
                                             isCurrentUserCard
-                                                ? "bg-gradient-to-r from-blue-50 to-blue-100 border-blue-300 ring-2 ring-blue-200"
-                                                : "bg-gradient-to-r from-gray-50 to-white"
+                                                ? "bg-primary/12 border-primary/35 ring-1 ring-primary/25"
+                                                : "bg-gradient-to-r from-muted/60 to-card"
                                         } ${isOutOfRange ? "border-dashed border-orange-300 bg-orange-50" : ""}`;
 
                                         return (
@@ -227,7 +227,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                                                             </Badge>
                                                         )}
                                                     </div>
-                                                    <div className="text-sm text-gray-500">
+                                                    <div className="text-sm text-muted-foreground">
                                                         {user.tasksCompleted}{" "}
                                                         tasks completed •{" "}
                                                         {user.averageCompletionTime.toFixed(
@@ -241,7 +241,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                                                     <div className="text-2xl font-bold text-blue-600">
                                                         {user.totalPoints}
                                                     </div>
-                                                    <div className="text-sm text-gray-500">
+                                                    <div className="text-sm text-muted-foreground">
                                                         points
                                                     </div>
                                                 </div>
@@ -274,8 +274,8 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
 
                                         const cardClassName = `flex items-center gap-4 p-3 rounded-lg border ${
                                             isCurrentUserCard
-                                                ? "bg-gradient-to-r from-blue-50 to-blue-100 border-blue-300 ring-2 ring-blue-200"
-                                                : "hover:bg-gray-50"
+                                                ? "bg-primary/12 border-primary/35 ring-1 ring-primary/25"
+                                                : "hover:bg-muted/50"
                                         }`;
 
                                         return (
@@ -284,7 +284,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                                                 className={cardClassName}
                                             >
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 flex items-center justify-center text-gray-500 font-bold">
+                                                    <div className="w-8 h-8 flex items-center justify-center text-muted-foreground font-bold">
                                                         {rank}
                                                     </div>
                                                     <Avatar className="h-8 w-8">
@@ -311,7 +311,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                                                             user.streak,
                                                         )}
                                                     </div>
-                                                    <div className="text-sm text-gray-500">
+                                                    <div className="text-sm text-muted-foreground">
                                                         {user.tasksCompleted}{" "}
                                                         completed •{" "}
                                                         {user.tasksAssigned}{" "}
@@ -336,7 +336,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                             <CardHeader>
                                 <CardTitle className="text-lg">
                                     Your Rank
-                                    <span className="text-sm font-normal text-gray-500 ml-2">
+                                    <span className="text-sm font-normal text-muted-foreground ml-2">
                                         (#{currentUserRank} out of{" "}
                                         {sortedScores.length})
                                     </span>
@@ -349,9 +349,9 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                                         const rank = currentUserRank;
 
                                         return (
-                                            <div className="flex items-center gap-4 p-3 rounded-lg border bg-gradient-to-r from-blue-50 to-blue-100 border-blue-300 ring-2 ring-blue-200">
+                                            <div className="flex items-center gap-4 rounded-lg border border-primary/35 bg-primary/12 p-3 ring-1 ring-primary/25">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 flex items-center justify-center text-gray-500 font-bold">
+                                                    <div className="w-8 h-8 flex items-center justify-center text-muted-foreground font-bold">
                                                         {rank}
                                                     </div>
                                                     <Avatar className="h-8 w-8">
@@ -381,7 +381,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                                                             Your Rank
                                                         </Badge>
                                                     </div>
-                                                    <div className="text-sm text-gray-500">
+                                                    <div className="text-sm text-muted-foreground">
                                                         {user.tasksCompleted}{" "}
                                                         completed •{" "}
                                                         {user.tasksAssigned}{" "}
@@ -403,11 +403,11 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                     {userScores.length === 0 && (
                         <Card>
                             <CardContent className="text-center py-8">
-                                <Trophy className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                                <h3 className="text-lg font-semibold text-gray-500 mb-2">
+                                <Trophy className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                                <h3 className="text-lg font-semibold text-muted-foreground mb-2">
                                     No team members found
                                 </h3>
-                                <p className="text-gray-400">
+                                <p className="text-muted-foreground">
                                     Add members to your team to see the leaderboard!
                                 </p>
                             </CardContent>
@@ -454,9 +454,9 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                                             return (
                                                 <tr
                                                     key={user.userId}
-                                                    className={`border-b hover:bg-gray-50 ${
+                                                    className={`border-b hover:bg-muted/50 ${
                                                         isCurrentUserRow
-                                                            ? "bg-blue-50 hover:bg-blue-100"
+                                                            ? "bg-primary/12 hover:bg-primary/18"
                                                             : ""
                                                     }`}
                                                 >
@@ -523,7 +523,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                                                                 {user.streak}
                                                             </div>
                                                         ) : (
-                                                            <span className="text-gray-400">
+                                                            <span className="text-muted-foreground">
                                                                 -
                                                             </span>
                                                         )}

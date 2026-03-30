@@ -301,7 +301,7 @@ const TeamScoreCard = ({
 
                             {/* Score Breakdown Visualization */}
                             {analysis.score_breakdown && (
-                                <div className="bg-gradient-to-br from-slate-50 to-white rounded-xl p-6 border">
+                                <div className="mx-auto max-w-5xl rounded-xl border border-border bg-gradient-to-br from-muted/70 to-card p-6">
                                     <div className="text-center mb-6">
                                         {/* Calculate overall score from score_breakdown */}
                                         {(() => {
@@ -327,7 +327,7 @@ const TeamScoreCard = ({
                                                     <div className="text-lg text-muted-foreground mb-2">
                                                         Overall Compatibility
                                                     </div>
-                                                    <div className="text-sm font-medium text-slate-600">
+                                                    <div className="text-sm font-medium text-muted-foreground">
                                                         {getScoreDescription(overallScore)}
                                                     </div>
                                                     <Progress
@@ -345,38 +345,38 @@ const TeamScoreCard = ({
                                             <div className="text-2xl font-bold text-blue-600">
                                                 {curveScore(toSafeNumber(analysis.score_breakdown.technical_alignment))}
                                             </div>
-                                            <div className="text-xs text-slate-500 mt-1">Technical</div>
+                                            <div className="text-xs text-muted-foreground mt-1">Technical</div>
                                         </div>
                                         <div className="text-center">
                                             <div className="text-2xl font-bold text-purple-600">
                                                 {curveScore(toSafeNumber(analysis.score_breakdown.interest_alignment))}
                                             </div>
-                                            <div className="text-xs text-slate-500 mt-1">Interest</div>
+                                            <div className="text-xs text-muted-foreground mt-1">Interest</div>
                                         </div>
                                         <div className="text-center">
                                             <div className="text-2xl font-bold text-green-600">
                                                 {curveScore(toSafeNumber(analysis.score_breakdown.communication_alignment))}
                                             </div>
-                                            <div className="text-xs text-slate-500 mt-1">Communication</div>
+                                            <div className="text-xs text-muted-foreground mt-1">Communication</div>
                                         </div>
                                         <div className="text-center">
                                             <div className="text-2xl font-bold text-orange-600">
                                                 {curveScore(toSafeNumber(analysis.score_breakdown.work_style_compatibility))}
                                             </div>
-                                            <div className="text-xs text-slate-500 mt-1">Work Style</div>
+                                            <div className="text-xs text-muted-foreground mt-1">Work Style</div>
                                         </div>
                                         <div className="text-center">
                                             <div className="text-2xl font-bold text-indigo-600">
                                                 {curveScore(toSafeNumber(analysis.score_breakdown.schedule_compatibility))}
                                             </div>
-                                            <div className="text-xs text-slate-500 mt-1">Schedule</div>
+                                            <div className="text-xs text-muted-foreground mt-1">Schedule</div>
                                         </div>
                                     </div>
 
                                     {/* Calculation Comment */}
                                     {analysis.score_breakdown.calculation_comment && (
-                                        <div className="mt-4 p-3 bg-slate-50 rounded-lg">
-                                            <p className="text-sm text-slate-600">
+                                        <div className="mx-auto mt-4 max-w-3xl rounded-lg border border-border bg-muted/40 p-4">
+                                            <p className="text-sm leading-relaxed text-foreground/90">
                                                 {analysis.score_breakdown.calculation_comment}
                                             </p>
                                         </div>
@@ -386,63 +386,69 @@ const TeamScoreCard = ({
 
                             {/* Team Analysis Summary */}
                             {analysis.team_analysis && (
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div className="bg-gradient-to-br from-green-50 to-white rounded-lg p-4 border border-green-100">
-                                        <div className="flex items-center gap-2 mb-3">
-                                            <CheckCircle className="h-4 w-4 text-green-600" />
-                                            <h4 className="font-semibold text-green-700">Strengths</h4>
+                                <div className="mx-auto grid max-w-5xl grid-cols-1 gap-4 md:grid-cols-3">
+                                    <div className="rounded-lg border border-green-500/25 bg-gradient-to-br from-green-500/10 to-card p-4">
+                                        <div className="mb-3 flex items-center gap-2">
+                                            <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                            <h4 className="font-semibold text-green-800 dark:text-green-300">Strengths</h4>
                                         </div>
                                         <div className="space-y-2">
                                             {analysis.team_analysis.team_strengths?.slice(0, 3).map((strength, index) => (
-                                                <div key={index} className="text-sm text-green-700 bg-green-50 px-2 py-1 rounded">
+                                                <div
+                                                    key={index}
+                                                    className="rounded-md border border-green-500/20 bg-green-500/10 px-3 py-2 text-sm leading-snug text-green-900 dark:text-green-100"
+                                                >
                                                     {strength}
                                                 </div>
                                             )) || (
-                                                <div className="text-sm text-slate-500 italic">No strengths identified</div>
+                                                <div className="text-sm italic text-muted-foreground">No strengths identified</div>
                                             )}
                                         </div>
                                     </div>
 
-                                    <div className="bg-gradient-to-br from-orange-50 to-white rounded-lg p-4 border border-orange-100">
-                                        <div className="flex items-center gap-2 mb-3">
-                                            <AlertCircle className="h-4 w-4 text-orange-600" />
-                                            <h4 className="font-semibold text-orange-700">Gaps</h4>
+                                    <div className="rounded-lg border border-orange-500/25 bg-gradient-to-br from-orange-500/10 to-card p-4">
+                                        <div className="mb-3 flex items-center gap-2">
+                                            <AlertCircle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                                            <h4 className="font-semibold text-orange-800 dark:text-orange-300">Gaps</h4>
                                         </div>
                                         <div className="space-y-2">
                                             {analysis.team_analysis.potential_gaps?.slice(0, 3).map((gap, index) => (
-                                                <div key={index} className="text-sm text-orange-700 bg-orange-50 px-2 py-1 rounded">
+                                                <div
+                                                    key={index}
+                                                    className="rounded-md border border-orange-500/20 bg-orange-500/10 px-3 py-2 text-sm leading-snug text-orange-900 dark:text-orange-100"
+                                                >
                                                     {gap}
                                                 </div>
                                             )) || (
-                                                <div className="text-sm text-slate-500 italic">No gaps identified</div>
+                                                <div className="text-sm italic text-muted-foreground">No gaps identified</div>
                                             )}
                                         </div>
                                     </div>
 
-                                    <div className="bg-gradient-to-br from-blue-50 to-white rounded-lg p-4 border border-blue-100">
-                                        <div className="flex items-center gap-2 mb-3">
-                                            <TrendingUp className="h-4 w-4 text-blue-600" />
-                                            <h4 className="font-semibold text-blue-700">Collaboration</h4>
+                                    <div className="rounded-lg border border-blue-500/25 bg-gradient-to-br from-blue-500/10 to-card p-4">
+                                        <div className="mb-3 flex items-center gap-2">
+                                            <TrendingUp className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                            <h4 className="font-semibold text-blue-800 dark:text-blue-300">Collaboration</h4>
                                         </div>
-                                        <p className="text-sm text-blue-700 leading-relaxed">
+                                        <div className="rounded-md border border-blue-500/20 bg-blue-500/10 px-3 py-2 text-sm leading-relaxed text-blue-900 dark:text-blue-100">
                                             {analysis.team_analysis.collaboration_potential || "Collaboration potential not assessed"}
-                                        </p>
+                                        </div>
                                     </div>
                                 </div>
                             )}
 
                             {/* Recommendations */}
                             {analysis.team_analysis && (
-                                <div className="bg-gradient-to-br from-purple-50 to-white rounded-lg p-4 border border-purple-100">
-                                    <h4 className="font-semibold text-purple-700 mb-3">Key Recommendations</h4>
+                                <div className="mx-auto max-w-5xl rounded-lg border border-purple-500/25 bg-gradient-to-br from-purple-500/10 to-card p-4">
+                                    <h4 className="mb-3 font-semibold text-purple-800 dark:text-purple-300">Key Recommendations</h4>
                                     <div className="space-y-2">
                                         {analysis.team_analysis.recommendations?.slice(0, 3).map((rec, index) => (
                                             <div key={index} className="flex items-start gap-2">
-                                                <span className="text-purple-600 mt-1">•</span>
-                                                <span className="text-sm text-purple-700">{rec}</span>
+                                                <span className="mt-1 text-purple-600 dark:text-purple-400">•</span>
+                                                <span className="text-sm text-purple-900 dark:text-purple-100">{rec}</span>
                                             </div>
                                         )) || (
-                                            <div className="text-sm text-slate-500 italic">No recommendations available</div>
+                                            <div className="text-sm italic text-muted-foreground">No recommendations available</div>
                                         )}
                                     </div>
                                 </div>
@@ -451,16 +457,16 @@ const TeamScoreCard = ({
                             {/* Member Analysis */}
                             {analysis.member_analyses && analysis.member_analyses.length > 0 && (
                                 <div className="space-y-4">
-                                    <h4 className="font-semibold text-slate-700 flex items-center gap-2">
+                                    <h4 className="flex items-center gap-2 font-semibold text-foreground">
                                         <Users className="h-4 w-4" />
                                         Member Analysis
                                     </h4>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="mx-auto grid max-w-5xl grid-cols-1 gap-4 md:grid-cols-2">
                                         {analysis.member_analyses.map((member) => (
-                                            <div key={member.member_email} className="bg-white rounded-lg border p-4 hover:shadow-md transition-shadow">
-                                                <div className="flex items-center justify-between mb-3">
+                                            <div key={member.member_email} className="rounded-lg border bg-card p-4 transition-shadow hover:shadow-md">
+                                                <div className="mb-3 flex items-center justify-between">
                                                     <div>
-                                                        <h5 className="font-medium text-slate-800">{member.member_email}</h5>
+                                                        <h5 className="font-medium text-foreground">{member.member_email}</h5>
                                                         <Badge variant="outline" className="mt-1 text-xs">
                                                             {member.role_suggestion}
                                                         </Badge>
@@ -474,33 +480,41 @@ const TeamScoreCard = ({
                                                                 </div>
                                                             );
                                                         })()}
-                                                        <div className="text-xs text-slate-500">Compatibility</div>
+                                                        <div className="text-xs text-muted-foreground">Compatibility</div>
                                                     </div>
                                                 </div>
 
                                                 <div className="space-y-3">
                                                     <div>
-                                                        <div className="text-xs font-medium text-slate-600 mb-1">Strengths</div>
+                                                        <div className="mb-1 text-xs font-medium text-muted-foreground">Strengths</div>
                                                         <div className="flex flex-wrap gap-1">
                                                             {member.strengths?.slice(0, 2).map((strength, i) => (
-                                                                <Badge key={i} variant="secondary" className="text-xs bg-green-100 text-green-800">
+                                                                <Badge
+                                                                    key={i}
+                                                                    variant="secondary"
+                                                                    className="border border-green-500/25 bg-green-500/15 text-xs text-green-900 dark:text-green-100"
+                                                                >
                                                                     {strength}
                                                                 </Badge>
                                                             )) || (
-                                                                <div className="text-xs text-slate-500 italic">No strengths listed</div>
+                                                                <div className="text-xs italic text-muted-foreground">No strengths listed</div>
                                                             )}
                                                         </div>
                                                     </div>
 
                                                     <div>
-                                                        <div className="text-xs font-medium text-slate-600 mb-1">Skills</div>
+                                                        <div className="mb-1 text-xs font-medium text-muted-foreground">Skills</div>
                                                         <div className="flex flex-wrap gap-1">
                                                             {member.skills?.slice(0, 3).map((skill, i) => (
-                                                                <Badge key={i} variant="outline" className="text-xs border-blue-300 text-blue-700">
+                                                                <Badge
+                                                                    key={i}
+                                                                    variant="outline"
+                                                                    className="text-xs border-blue-500/35 text-blue-800 dark:text-blue-200"
+                                                                >
                                                                     {skill}
                                                                 </Badge>
                                                             )) || (
-                                                                <div className="text-xs text-slate-500 italic">No skills listed</div>
+                                                                <div className="text-xs italic text-muted-foreground">No skills listed</div>
                                                             )}
                                                         </div>
                                                     </div>

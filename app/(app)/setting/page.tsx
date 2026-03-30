@@ -394,19 +394,19 @@ function SettingPage() {
         return (
             <div className="flex min-h-screen items-center justify-center bg-background px-4">
                 <div
-                    className="settings-enter w-full max-w-md border border-neutral-900/10 bg-white/75 px-8 py-10 shadow-[8px_8px_0_0_rgba(18,16,24,0.08)]"
+                    className="settings-enter w-full max-w-md border border-border bg-card/80 px-8 py-10 shadow-[8px_8px_0_0_rgba(18,16,24,0.08)]"
                     style={{ animationDelay: "0.05s" }}
                 >
                     <div className="flex flex-col items-center gap-5">
                         <div
-                            className="h-11 w-11 animate-spin rounded-full border-2 border-neutral-300 border-t-[var(--afora)]"
+                            className="h-11 w-11 animate-spin rounded-full border-2 border-border border-t-[var(--afora)]"
                             aria-hidden
                         />
                         <div className="text-center">
                             <p className="settings-display text-lg font-semibold text-foreground">
                                 Loading
                             </p>
-                            <p className="mt-1 text-sm text-neutral-600">
+                            <p className="mt-1 text-sm text-muted-foreground">
                                 {!user ? "Getting user information" : "Checking permissions"}
                             </p>
                         </div>
@@ -417,7 +417,7 @@ function SettingPage() {
     }
 
     const fieldLabel =
-        "text-[0.65rem] font-semibold uppercase tracking-[0.22em] text-neutral-500";
+        "text-[0.65rem] font-semibold uppercase tracking-[0.22em] text-muted-foreground";
 
     return (
         <div className="min-h-screen bg-background pb-20">
@@ -431,7 +431,7 @@ function SettingPage() {
             />
 
             {/* Hero: asymmetric grid, single avatar + actions */}
-            <header className="relative overflow-hidden border-b border-neutral-900/10 bg-[#f2efe6]">
+            <header className="relative overflow-hidden border-b border-border bg-muted/40">
                 <div
                     className="pointer-events-none absolute -right-24 top-1/2 h-[min(120vw,520px)] w-[min(120vw,520px)] -translate-y-1/2 rotate-[18deg] rounded-[2.5rem] border-2 border-[var(--afora)]/25 bg-[var(--afora)]/[0.06]"
                     aria-hidden
@@ -448,11 +448,11 @@ function SettingPage() {
                                     Settings
                                 </h1>
                                 <span
-                                    className="hidden h-px flex-1 min-w-[3rem] bg-neutral-900/15 sm:block"
+                                    className="hidden h-px flex-1 min-w-[3rem] bg-border sm:block"
                                     aria-hidden
                                 />
                             </div>
-                            <p className="max-w-md text-base leading-relaxed text-neutral-600">
+                            <p className="max-w-md text-base leading-relaxed text-muted-foreground">
                                 Profile, preferences, and tools that shape how you show up in teams.
                             </p>
                         </div>
@@ -466,13 +466,13 @@ function SettingPage() {
                                     className="absolute -inset-3 -z-10 rotate-6 rounded-3xl bg-[var(--afora)]/10"
                                     aria-hidden
                                 />
-                                <Avatar className="h-28 w-28 rounded-2xl border-2 border-neutral-900/10 shadow-[6px_6px_0_0_rgba(18,16,24,0.12)] ring-0 ring-offset-0">
+                                <Avatar className="h-28 w-28 rounded-2xl border-2 border-border shadow-[6px_6px_0_0_rgba(18,16,24,0.12)] ring-0 ring-offset-0">
                                     <AvatarImage
                                         src={user.imageUrl || ""}
                                         alt={user.fullName || "User Avatar"}
                                         className="rounded-2xl object-cover"
                                     />
-                                    <AvatarFallback className="settings-display rounded-2xl bg-neutral-200 text-3xl font-bold text-neutral-700">
+                                    <AvatarFallback className="settings-display rounded-2xl bg-muted text-3xl font-bold text-foreground">
                                         {user.fullName?.charAt(0) ||
                                             user.primaryEmailAddress?.emailAddress?.charAt(0) ||
                                             "U"}
@@ -504,7 +504,7 @@ function SettingPage() {
                                     </>
                                 ) : null}
                             </div>
-                            <div className="w-full border-t border-neutral-900/10 pt-4 text-center lg:text-right">
+                            <div className="w-full border-t border-border pt-4 text-center lg:text-right">
                                 <div className="flex flex-wrap items-center justify-center gap-2 lg:justify-end">
                                     <p className="settings-display text-xl font-bold text-foreground">
                                         {user.fullName || "User"}
@@ -516,7 +516,7 @@ function SettingPage() {
                                         Verified
                                     </Badge>
                                 </div>
-                                <p className="mt-1 break-all text-sm text-neutral-600">
+                                <p className="mt-1 break-all text-sm text-muted-foreground">
                                     {user.primaryEmailAddress?.emailAddress || "No email set"}
                                 </p>
                             </div>
@@ -531,12 +531,12 @@ function SettingPage() {
                     className="flex flex-col gap-10 lg:flex-row lg:items-start lg:gap-14"
                 >
                     <TabsList
-                        className="settings-enter flex h-auto w-full flex-shrink-0 flex-row gap-1 rounded-xl border border-neutral-900/10 bg-white/70 p-1.5 shadow-sm backdrop-blur-sm lg:w-52 lg:flex-col lg:items-stretch"
+                        className="settings-enter flex h-auto w-full flex-shrink-0 flex-row gap-1 rounded-xl border border-border bg-card/80 p-1.5 shadow-sm backdrop-blur-sm lg:w-52 lg:flex-col lg:items-stretch"
                         style={{ animationDelay: "0.22s" }}
                     >
                         <TabsTrigger
                             value="profile"
-                            className="settings-display flex flex-1 justify-center gap-2 rounded-lg border border-transparent px-3 py-2.5 text-sm font-semibold data-[state=active]:border-neutral-900/10 data-[state=active]:bg-background data-[state=active]:shadow-none lg:justify-start lg:border-l-[3px] lg:border-l-transparent lg:pl-3 lg:data-[state=active]:border-l-[var(--afora)]"
+                            className="settings-display flex flex-1 justify-center gap-2 rounded-lg border border-transparent px-3 py-2.5 text-sm font-semibold data-[state=active]:border-border data-[state=active]:bg-background data-[state=active]:shadow-none lg:justify-start lg:border-l-[3px] lg:border-l-transparent lg:pl-3 lg:data-[state=active]:border-l-[var(--afora)]"
                         >
                             <User className="h-4 w-4 opacity-70" />
                             Profile
@@ -544,7 +544,7 @@ function SettingPage() {
                         {isAdmin && (
                             <TabsTrigger
                                 value="admin"
-                                className="settings-display flex flex-1 justify-center gap-2 rounded-lg border border-transparent px-3 py-2.5 text-sm font-semibold data-[state=active]:border-neutral-900/10 data-[state=active]:bg-background data-[state=active]:shadow-none lg:justify-start lg:border-l-[3px] lg:border-l-transparent lg:pl-3 lg:data-[state=active]:border-l-[var(--afora)]"
+                                className="settings-display flex flex-1 justify-center gap-2 rounded-lg border border-transparent px-3 py-2.5 text-sm font-semibold data-[state=active]:border-border data-[state=active]:bg-background data-[state=active]:shadow-none lg:justify-start lg:border-l-[3px] lg:border-l-transparent lg:pl-3 lg:data-[state=active]:border-l-[var(--afora)]"
                             >
                                 <Shield className="h-4 w-4 opacity-70" />
                                 Admin
@@ -791,7 +791,7 @@ function SettingPage() {
                                                     <Button
                                                         type="submit"
                                                         disabled={profileSubmitting}
-                                                        className="rounded-md bg-foreground px-6 font-semibold text-background hover:bg-neutral-800"
+                                                        className="rounded-md bg-foreground px-6 font-semibold text-background hover:bg-foreground/85"
                                                     >
                                                         {profileSubmitting ? "Saving…" : "Save profile"}
                                                     </Button>
@@ -805,15 +805,15 @@ function SettingPage() {
                         {isAdmin && (
                             <TabsContent value="admin" className="mt-0 space-y-8 focus-visible:outline-none">
                                 <Card
-                                    className="settings-enter border border-neutral-900/10 bg-white/80 shadow-[12px_12px_0_0_rgba(18,16,24,0.06)] backdrop-blur-sm"
+                                    className="settings-enter border border-border bg-card/85 shadow-[12px_12px_0_0_rgba(18,16,24,0.06)] backdrop-blur-sm"
                                     style={{ animationDelay: "0.28s" }}
                                 >
-                                    <CardHeader className="space-y-1 border-b border-neutral-900/10 pb-6">
+                                    <CardHeader className="space-y-1 border-b border-border pb-6">
                                         <CardTitle className="settings-display flex items-center gap-2 text-2xl font-bold">
                                             <Settings className="h-5 w-5 text-[var(--afora)]" />
                                             Admin participation
                                         </CardTitle>
-                                        <CardDescription className="text-base text-neutral-600">
+                                        <CardDescription className="text-base text-muted-foreground">
                                             Control how your admin role is included in matching and workflows.
                                         </CardDescription>
                                     </CardHeader>

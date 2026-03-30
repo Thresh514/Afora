@@ -26,7 +26,7 @@ export default function AppLayout({
           <MySidebar />
           <div className="flex flex-col overflow-hidden w-full">
             <AppOnboarding />
-            <main className="flex-1 overflow-auto w-full bg-gray-100">
+            <main className="flex-1 overflow-auto w-full bg-muted/40">
               <StoreProvider>{children}</StoreProvider>
             </main>
           </div>

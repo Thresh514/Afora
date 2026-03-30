@@ -16,7 +16,7 @@ export default function ThemeToggle() {
     return (
       <button
         aria-label="Toggle theme"
-        className="rounded-full p-2.5 shadow-lg backdrop-blur-xl transition hover:scale-105 bg-white/80 border border-white/30 dark:bg-gray-800/80 dark:border-white/10 text-gray-700 dark:text-gray-300"
+        className="rounded-full border border-border/70 bg-background/80 p-2.5 text-foreground shadow-lg backdrop-blur-xl transition hover:scale-105"
       >
         <Sun className="h-4 w-4" />
       </button>
@@ -29,7 +29,7 @@ export default function ThemeToggle() {
     <button
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
       onClick={() => setTheme(isDark ? "light" : "dark")}
-      className="rounded-full p-2 shadow-sm backdrop-blur-xl transition hover:scale-105 bg-white/80 border border-white/30 dark:bg-gray-800/80 dark:border-white/10 text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+      className="rounded-full border border-border/70 bg-background/80 p-2 text-foreground shadow-sm backdrop-blur-xl transition hover:scale-105 hover:bg-accent hover:text-accent-foreground"
     >
       {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
     </button>

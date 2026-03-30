@@ -158,7 +158,7 @@ const SubmissionCard = ({
                 {/* Submitted Files Section */}
                 {submittedFiles.length > 0 && (
                     <div className="space-y-3">
-                        <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                        <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
                             <Check className="h-4 w-4 text-green-500" />
                             Submitted Files
                         </h4>
@@ -193,7 +193,7 @@ const SubmissionCard = ({
                 {/* Pending Files Section */}
                 {files.length > 0 && (
                     <div className="space-y-3">
-                        <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                        <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
                             <Clock7 className="h-4 w-4 text-orange-500" />
                             Files to Submit
                         </h4>
@@ -240,7 +240,7 @@ const SubmissionCard = ({
                 {/* File Upload Section */}
                 {!task?.isCompleted && (
                     <div className="space-y-4">
-                        <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                        <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
                             <Upload className="h-4 w-4 text-blue-500" />
                             Upload Files
                         </h4>
@@ -249,12 +249,12 @@ const SubmissionCard = ({
                         {task?.assignee === user?.primaryEmailAddress?.emailAddress ? (
                             <>
                                 <div
-                                    className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors bg-gray-50 hover:bg-blue-50"
+                                    className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-blue-400 transition-colors bg-muted/50 hover:bg-blue-50"
                                     onDragOver={(e) => e.preventDefault()}
                                     onDrop={handleDrop}
                                 >
-                                    <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                                    <p className="text-sm text-gray-600 mb-2">
+                                    <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                                    <p className="text-sm text-muted-foreground mb-2">
                                         Drag & drop files here, or{" "}
                                         <label className="text-blue-600 hover:text-blue-700 cursor-pointer font-medium">
                                             browse
@@ -271,7 +271,7 @@ const SubmissionCard = ({
                                             />
                                         </label>
                                     </p>
-                                    <p className="text-xs text-gray-500">
+                                    <p className="text-xs text-muted-foreground">
                                         Maximum file size: 10MB total
                                     </p>
                                 </div>
@@ -299,21 +299,21 @@ const SubmissionCard = ({
                                 )}
                             </>
                         ) : (
-                            <div className="text-center py-6 bg-gray-50 rounded-lg border border-gray-200">
+                            <div className="text-center py-6 bg-muted/50 rounded-lg border border-border">
                                 <div className="flex flex-col items-center space-y-3">
                                     <Target className="h-8 w-8 text-gray-300" />
                                     <div className="space-y-1">
-                                        <p className="text-gray-700 font-medium text-sm">
+                                        <p className="text-foreground font-medium text-sm">
                                             {task?.assignee
                                                 ? "This task is assigned by others"
                                                 : "This task is unassigned"}
                                         </p>
-                                        <p className="text-gray-500 text-xs">
+                                        <p className="text-muted-foreground text-xs">
                                             {task?.assignee
                                                 ? `Assigned to: ${task.assignee}`
                                                 : "No one has been assigned to this task yet"}
                                         </p>
-                                        <p className="text-gray-500 text-xs">
+                                        <p className="text-muted-foreground text-xs">
                                             You can browse other tasks in the team
                                         </p>
                                     </div>
@@ -331,9 +331,9 @@ const SubmissionCard = ({
                     onDrop={handleDrop}
                     onDragLeave={() => setIsDragging(false)}
                 >
-                    <div className="bg-white p-4 md:p-8 rounded-lg shadow-lg flex flex-col items-center space-y-4">
-                        <Upload className="h-8 w-8 md:h-12 md:w-12 text-gray-400" />
-                        <p className="text-sm md:text-base text-gray-500">
+                    <div className="bg-card p-4 md:p-8 rounded-lg shadow-lg flex flex-col items-center space-y-4">
+                        <Upload className="h-8 w-8 md:h-12 md:w-12 text-muted-foreground" />
+                        <p className="text-sm md:text-base text-muted-foreground">
                             Drop your files here
                         </p>
                     </div>

@@ -141,7 +141,7 @@ function TaskPage() {
     if (taskError) return <div>Error: {taskError.message}</div>;
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
+        <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/60">
             {isSignedIn && (
                 <div className="container mx-auto px-4 py-8 max-w-8xl">
                     {/* Header Section */}
@@ -218,7 +218,7 @@ function TaskPage() {
                                             <DrawerTitle className="text-2xl font-bold mb-2">
                                                 📝 Edit Task
                                             </DrawerTitle>
-                                            <DrawerDescription className="text-gray-600 mb-6">
+                                            <DrawerDescription className="mb-6 text-muted-foreground">
                                                 Please edit the task information
                                                 below
                                             </DrawerDescription>
@@ -226,7 +226,7 @@ function TaskPage() {
                                                 <div>
                                                     <Label
                                                         htmlFor="title"
-                                                        className="text-sm font-semibold text-gray-700 mb-2 block"
+                                                        className="mb-2 block text-sm font-semibold text-foreground"
                                                     >
                                                         Task Title
                                                     </Label>
@@ -243,7 +243,7 @@ function TaskPage() {
                                                 <div>
                                                     <Label
                                                         htmlFor="description"
-                                                        className="text-sm font-semibold text-gray-700 mb-2 block"
+                                                        className="mb-2 block text-sm font-semibold text-foreground"
                                                     >
                                                         Task Description
                                                     </Label>
@@ -260,7 +260,7 @@ function TaskPage() {
                                                 <div>
                                                     <Label
                                                         htmlFor="assignee"
-                                                        className="text-sm font-semibold text-gray-700 mb-2 block"
+                                                        className="mb-2 block text-sm font-semibold text-foreground"
                                                     >
                                                         Assignee
                                                     </Label>
@@ -279,7 +279,7 @@ function TaskPage() {
                                                     <div>
                                                         <Label
                                                             htmlFor="soft_deadline"
-                                                            className="text-sm font-semibold text-gray-700 mb-2 block"
+                                                            className="mb-2 block text-sm font-semibold text-foreground"
                                                         >
                                                             Soft Deadline
                                                         </Label>
@@ -297,7 +297,7 @@ function TaskPage() {
                                                     <div>
                                                         <Label
                                                             htmlFor="hard_deadline"
-                                                            className="text-sm font-semibold text-gray-700 mb-2 block"
+                                                            className="mb-2 block text-sm font-semibold text-foreground"
                                                         >
                                                             Hard Deadline
                                                         </Label>
@@ -315,7 +315,7 @@ function TaskPage() {
                                                     <div>
                                                         <Label
                                                             htmlFor="points"
-                                                            className="text-sm font-semibold text-gray-700 mb-2 block"
+                                                            className="mb-2 block text-sm font-semibold text-foreground"
                                                         >
                                                             Points
                                                         </Label>

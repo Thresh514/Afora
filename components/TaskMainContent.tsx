@@ -134,12 +134,12 @@ function TaskMainContent({
                             <span>Task Progress</span>
 
                             <div
-                                className={`ml-auto flex items-center space-x-2 px-3 py-1 rounded-full text-sm font-medium ${
+                                className={`ml-auto flex items-center space-x-2 rounded-full px-3 py-1 text-sm font-medium ${
                                     isCompleted
-                                        ? "bg-green-100 text-green-700"
+                                        ? "bg-green-500/15 text-green-300"
                                         : completionPercentage[0] > 50
-                                          ? "bg-blue-100 text-blue-700"
-                                          : "bg-gray-100 text-gray-700"
+                                          ? "bg-primary/15 text-primary"
+                                          : "bg-muted text-foreground"
                                 }`}
                             >
                                 {isCompleted && (
@@ -155,7 +155,7 @@ function TaskMainContent({
                         <div className="space-y-4">
                             <div className="flex items-center space-x-2">
                                 <div className="w-2 h-6 bg-gradient-to-b from-[#6F61EF] to-purple-600 rounded-full"></div>
-                                <h3 className="text-xl font-semibold text-gray-800">
+                                <h3 className="text-xl font-semibold text-foreground">
                                     Proof of Completion
                                 </h3>
                             </div>
@@ -169,7 +169,7 @@ function TaskMainContent({
                             <Separator className="my-6" />
                         </div>
                         <div className="flex justify-between items-center">
-                            <Label className="text-sm font-medium text-gray-700">
+                            <Label className="text-sm font-medium text-foreground">
                                 Completion
                             </Label>
                             <span className="text-lg font-bold text-[#6F61EF]">
@@ -225,10 +225,10 @@ function TaskMainContent({
                                 ) : (
                                     /* Edit Mode */
                                     <div
-                                        className={`space-y-3 p-4 rounded-lg border-2 ${
+                                        className={`space-y-3 rounded-lg border-2 p-4 ${
                                             tempCompletionPercentage[0] === 100
-                                                ? "bg-green-50 border-green-200"
-                                                : "bg-blue-50 border-blue-200"
+                                                ? "border-green-300/40 bg-green-500/12"
+                                                : "border-primary/35 bg-primary/12"
                                         }`}
                                     >
                                         <div className="flex justify-between items-center">
@@ -236,8 +236,8 @@ function TaskMainContent({
                                                 className={`text-sm font-medium ${
                                                     tempCompletionPercentage[0] ===
                                                     100
-                                                        ? "text-green-700"
-                                                        : "text-blue-700"
+                                                        ? "text-green-300"
+                                                        : "text-primary"
                                                 }`}
                                             >
                                                 {tempCompletionPercentage[0] ===
@@ -250,8 +250,8 @@ function TaskMainContent({
                                                     className={`text-sm font-bold ${
                                                         tempCompletionPercentage[0] ===
                                                         100
-                                                            ? "text-green-600"
-                                                            : "text-blue-600"
+                                                            ? "text-green-300"
+                                                            : "text-primary"
                                                     }`}
                                                 >
                                                     {
@@ -288,11 +288,11 @@ function TaskMainContent({
                                                     !hasUnsavedChanges
                                                 }
                                                 size="sm"
-                                                className={`flex-1 text-white ${
+                                                className={`flex-1 ${
                                                     tempCompletionPercentage[0] ===
                                                     100
-                                                        ? "bg-green-600 hover:bg-green-700"
-                                                        : "bg-blue-600 hover:bg-blue-700"
+                                                        ? "bg-green-600 text-white hover:bg-green-700"
+                                                        : "bg-primary text-primary-foreground hover:bg-primary/90"
                                                 }`}
                                             >
                                                 {tempCompletionPercentage[0] ===
@@ -371,13 +371,13 @@ function TaskMainContent({
 
             {/* Right Side - Comments (1/2 width) */}
             <div className="lg:col-span-2">
-                <Card className="bg-white h-full relative flex flex-col">
+                <Card className="relative flex h-full flex-col bg-card">
                     <CardHeader className="pb-4 flex-shrink-0">
-                        <CardTitle className="text-xl font-semibold text-gray-800 flex items-center justify-between">
+                        <CardTitle className="text-xl font-semibold text-foreground flex items-center justify-between">
                             <div className="flex items-center space-x-2">
                                 <MessageSquare className="h-5 w-5 text-[#6F61EF]" />
                                 <span>Comments</span>
-                                <span className="text-sm font-normal text-gray-500">
+                                <span className="text-sm font-normal text-muted-foreground">
                                     ({sortedPublicComments.length})
                                 </span>
                             </div>
@@ -389,8 +389,8 @@ function TaskMainContent({
                     <div className="flex-1 px-6 pt-6 pb-2 overflow-hidden">
                         <div className="space-y-4 h-full overflow-y-auto pr-2">
                             {sortedPublicComments.length === 0 ? (
-                                <div className="text-center py-8 text-gray-500">
-                                    <MessageSquare className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                                <div className="py-8 text-center text-muted-foreground">
+                                    <MessageSquare className="mx-auto mb-3 h-12 w-12 text-muted-foreground" />
                                     <p className="text-sm">
                                         No comments yet. Be the first to
                                         comment!
@@ -400,7 +400,7 @@ function TaskMainContent({
                                 sortedPublicComments.map((comment) => (
                                     <div
                                         key={comment.id}
-                                        className="border-b border-gray-100 last:border-b-0 pb-4 last:pb-0"
+                                        className="border-b border-border/70 last:border-b-0 pb-4 last:pb-0"
                                     >
                                         <CommentView comment={comment} />
                                     </div>
@@ -410,13 +410,13 @@ function TaskMainContent({
                     </div>
 
                     {/* Comment Input - 固定在底部 */}
-                    <div className="flex-shrink-0 border-t bg-gray-50/50 px-6 py-4">
+                    <div className="flex-shrink-0 border-t border-border bg-muted/40 px-6 py-4">
                         <CommentBox
                             isPublic={true}
                             projId={projId}
                             stageId={stageId}
                             taskId={taskId}
-                            className="shadow-none border-0 bg-white"
+                            className="border-0 bg-transparent shadow-none"
                         />
                     </div>
                 </Card>

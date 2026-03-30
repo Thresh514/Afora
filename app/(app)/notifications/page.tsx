@@ -79,7 +79,7 @@ export default function NotificationsPage() {
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold">Notifications</h1>
                 {/* <p>This is a mock page for notifications.</p> */}
-                <div className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm">
+                <div className="rounded-full bg-primary/10 px-3 py-1 text-sm text-primary">
                     {unreadCount} unread
                 </div>
             </div>
@@ -91,24 +91,24 @@ export default function NotificationsPage() {
                         <div
                             key={notification.id}
                             className={`flex items-start gap-4 p-4 rounded-lg transition-colors ${
-                                notification.read ? 'bg-white' : 'bg-purple-50'
-                            } hover:bg-purple-50/80`}
+                                notification.read ? "bg-card border border-border/70" : "bg-accent/40 border border-primary/20"
+                            } hover:bg-accent/60`}
                             style={{cursor: link? "pointer" : "auto"}}
                             onClick={link ? () => document.location.assign(link) : undefined}
                         >
                             <div className={`p-2 rounded-full ${
-                                notification.read ? 'bg-gray-100 text-gray-600' : 'bg-purple-100 text-purple-600'
+                                notification.read ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary"
                             }`}>
                                 {getNotificationIcon(notification.type)}
                             </div>
 
                             <div className="flex-1">
                                 <div className="flex justify-between items-start">
-                                    <h3 className="font-semibold text-gray-900">
+                                    <h3 className="font-semibold text-card-foreground">
                                         {notification.title}
                                     </h3>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-sm text-gray-500">
+                                        <span className="text-sm text-muted-foreground">
                                             {notification.time}
                                         </span>
                                         {!notification.read && (
@@ -117,7 +117,7 @@ export default function NotificationsPage() {
                                                     evt.stopPropagation();
                                                     markAsRead(notification.id)
                                                 }}
-                                                className="text-purple-600 hover:text-purple-700"
+                                                className="text-primary transition-colors hover:text-primary/80"
                                                 title="Mark as read"
                                             >
                                                 <Check className="h-4 w-4" />
@@ -125,7 +125,7 @@ export default function NotificationsPage() {
                                         )}
                                     </div>
                                 </div>
-                                <p className="text-gray-600 mt-1">
+                                <p className="mt-1 text-muted-foreground">
                                     {notification.description}
                                 </p>
                             </div>

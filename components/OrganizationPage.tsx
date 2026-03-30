@@ -102,16 +102,16 @@ const OrganizationPage = ({ id }: { id: string }) => {
             
             {/* Tabs Section */}
             <Tabs defaultValue="projects" className="mt-6 w-full">
-                <TabsList className="grid w-full grid-cols-2 bg-gray-100 rounded-xl p-1">
+                <TabsList className="grid h-9 w-full grid-cols-2 rounded-lg border border-border/70 bg-muted/60 p-1 text-muted-foreground shadow-sm">
                     <TabsTrigger
                         value="projects"
-                        className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm"
+                        className="flex w-full items-center justify-center rounded-md data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
                     >
                         Teams
                     </TabsTrigger>
                     <TabsTrigger
                         value="members"
-                        className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm"
+                        className="flex w-full items-center justify-center rounded-md data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
                     >
                         Members
                     </TabsTrigger>

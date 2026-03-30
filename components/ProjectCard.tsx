@@ -78,8 +78,8 @@ const ProjectCard = ({
             },
             {
                 bg: "from-gray-400 to-gray-500",
-                accent: "text-gray-600",
-                badge: "bg-gray-100 text-gray-700",
+                accent: "text-muted-foreground",
+                badge: "bg-muted text-foreground",
             },
             {
                 bg: "from-blue-300 to-blue-400",
@@ -104,7 +104,7 @@ const ProjectCard = ({
 
     return (
         <a href={`/org/${orgId}/proj/${projId}`} className="block group">
-            <Card className="w-full h-full overflow-hidden border-0 bg-white">
+            <Card className="h-full w-full overflow-hidden border border-border/70 bg-card">
                 {/* Header with gradient background */}
                 <CardHeader className="p-0 relative">
                     <div
@@ -139,10 +139,10 @@ const ProjectCard = ({
                                         <DropdownMenu.Content
                                             align="start"
                                             side="left"
-                                            className="z-50 min-w-[8rem] overflow-hidden rounded-md border border-slate-100 bg-white p-1 shadow-md animate-in slide-in-from-right-2"
+                                            className="z-50 min-w-[8rem] overflow-hidden rounded-md border border-border/80 bg-popover p-1 text-popover-foreground shadow-md animate-in slide-in-from-right-2"
                                         >
                                             <DropdownMenu.Item
-                                                className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-red-50 text-red-600 data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+                                                className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm text-red-600 outline-none transition-colors hover:bg-destructive/10 data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
                                                 onClick={(e) => {
                                                     e.preventDefault();
                                                     setIsDeleteDialogOpen(true);
@@ -167,20 +167,20 @@ const ProjectCard = ({
                     {/* Progress section */}
                     <div className="space-y-2">
                         <div className="flex justify-between items-center">
-                            <h3 className="text-sm font-medium text-gray-700">
+                            <h3 className="text-sm font-medium text-foreground">
                                 Progress
                             </h3>
-                            <span className="text-sm font-semibold text-gray-900">
+                            <span className="text-sm font-semibold text-foreground">
                                 {progress}%
                             </span>
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                        <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                             <div
                                 className={`h-full bg-gradient-to-r ${theme.bg} transition-all duration-500 ease-out`}
                                 style={{ width: `${progress}%` }}
                             ></div>
                         </div>
-                        <div className="flex justify-between text-xs text-gray-500">
+                        <div className="flex justify-between text-xs text-muted-foreground">
                             <span>{completedTasks} completed</span>
                             <span>{taskCount - completedTasks} remaining</span>
                         </div>
@@ -189,7 +189,7 @@ const ProjectCard = ({
                     {/* Action button */}
                     <Button
                         variant="outline"
-                        className="w-full group-hover:bg-slate-100 group-hover:border-slate-300 transition-all duration-300"
+                        className="w-full transition-all duration-300 group-hover:border-border group-hover:bg-accent"
                     >
                         <FolderOpen className="h-4 w-4 mr-2" />
                         View Team

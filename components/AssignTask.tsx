@@ -47,7 +47,7 @@
 //           {assigned && assigned.map((email, index) => (
 //             <div
 //               key={index}
-//               className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded text-sm group"
+//               className="flex items-center gap-1 px-2 py-1 bg-muted rounded text-sm group"
 //             >
 //               <span>{email}</span>
 //               <button

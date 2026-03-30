@@ -109,11 +109,11 @@ const OrgHeader = ({ id }: OrgHeaderProps) => {
                         {/* Organization Title */}
                         <div className="flex">
                             <div className="backdrop-blur-md bg-white/75 rounded-xl p-4 inline-block">
-                                <h1 title={orgData.title} className="text-5xl font-lighter tracking-wide text-gray-900 mb-2 truncate">
+                                <h1 title={orgData.title} className="text-5xl font-lighter tracking-wide text-foreground mb-2 truncate">
                                     {orgData.title.slice(0, 60).trim() + (orgData.title.length>60? "..." : "")}
                                 </h1>
                                 {orgData.description && (
-                                    <p title={orgData.description} className="text-gray-700 text-lg max-w-2xl tracking-wide pl-2 truncate">
+                                    <p title={orgData.description} className="text-foreground text-lg max-w-2xl tracking-wide pl-2 truncate">
                                         {orgData.description}
                                     </p>
                                 )}
@@ -123,11 +123,11 @@ const OrgHeader = ({ id }: OrgHeaderProps) => {
                         {/* Access Code Card */}
                         {userOrgData && userOrgData.role === "admin" && (
                             <div className="backdrop-blur-md bg-white/75 rounded-xl p-4 ">
-                                <div className="text-sm font-medium text-gray-600 mb-1">
+                                <div className="text-sm font-medium text-muted-foreground mb-1">
                                     Access Code
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <code className="text-sm  font-semibold text-gray-900 bg-gray-100 px-2 py-1 rounded select-all">
+                                    <code className="text-sm  font-semibold text-foreground bg-muted px-2 py-1 rounded select-all">
                                         {showAccessCode ? userOrgData.orgId : "••••••••••••••••••••"}
                                     </code>
                                     <button
@@ -137,13 +137,13 @@ const OrgHeader = ({ id }: OrgHeaderProps) => {
                                         title={showAccessCode ? "Hide" : "Show"}
                                     >
                                         {showAccessCode ? (
-                                            <EyeOff className="w-4 h-4 text-gray-600 hover:text-gray-900 transition-colors" />
+                                            <EyeOff className="w-4 h-4 text-muted-foreground hover:text-foreground transition-colors" />
                                         ) : (
-                                            <Eye className="w-4 h-4 text-gray-600 hover:text-gray-900 transition-colors" />
+                                            <Eye className="w-4 h-4 text-muted-foreground hover:text-foreground transition-colors" />
                                         )}
                                     </button>
                                     <Copy
-                                        className="w-5 h-5 cursor-pointer text-gray-600 hover:text-gray-900 transition-colors"
+                                        className="w-5 h-5 cursor-pointer text-muted-foreground hover:text-foreground transition-colors"
                                         onClick={() => {
                                             navigator.clipboard.writeText(userOrgData.orgId);
                                             toast.success("Access code copied to clipboard!");

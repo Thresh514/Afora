@@ -18,14 +18,14 @@ const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
 
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <div className="flex flex-col items-center space-y-4 rounded-lg bg-white p-8 shadow-2xl">
+            <div className="flex flex-col items-center space-y-4 rounded-lg bg-card p-8 shadow-2xl">
                 <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
                 <div className="text-center">
-                    <h3 className="text-lg font-semibold text-gray-900">
+                    <h3 className="text-lg font-semibold text-foreground">
                         {message}
                     </h3>
                     {description && (
-                        <p className="mt-2 text-sm text-gray-600">
+                        <p className="mt-2 text-sm text-muted-foreground">
                             {description}
                         </p>
                     )}

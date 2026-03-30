@@ -276,7 +276,7 @@ function StagePage() {
     // };
 
     return (
-        <div className="w-full h-full flex flex-col bg-gray-100">
+        <div className="flex h-full w-full flex-col bg-muted/40">
             {/* Header Section - similar to the project page design */}
             <div className="relative">
                 <div
@@ -350,11 +350,11 @@ function StagePage() {
                         <DialogHeader className="flex-shrink-0">
                             <DialogTitle className="flex items-center gap-2 text-2xl font-bold">
                                 Bounty Board
-                                <span className="text-base font-normal text-gray-500">
+                                <span className="text-base font-normal text-muted-foreground">
                                     ({overdueTasks.length} tasks)
                                 </span>
                             </DialogTitle>
-                            <DialogDescription className="text-gray-600">
+                            <DialogDescription className="text-muted-foreground">
                                 Claim overdue tasks to earn extra points and help the team stay on track.
                             </DialogDescription>
                         </DialogHeader>
@@ -365,7 +365,7 @@ function StagePage() {
                                     {overdueTasks.map((task) => (
                                         <div
                                             key={task.id}
-                                            className="group bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-lg hover:border-orange-300 transition-all duration-300 overflow-hidden"
+                                            className="group overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all duration-300 hover:border-orange-300 hover:shadow-lg"
                                         >
                                             {/* card header */}
                                             <div className="bg-gradient-to-r from-orange-500 to-red-500 px-4 py-3">
@@ -389,17 +389,17 @@ function StagePage() {
                                             {/* card content */}
                                             <div className="p-6">
                                                 <div className="mb-4">
-                                                    <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-orange-600 transition-colors">
+                                                    <h3 className="mb-2 line-clamp-2 text-lg font-bold text-card-foreground transition-colors group-hover:text-orange-600">
                                                         {task.title}
                                                     </h3>
-                                                    <p className="text-gray-600 text-sm line-clamp-3 leading-relaxed">
+                                                    <p className="line-clamp-3 text-sm leading-relaxed text-muted-foreground">
                                                         {task.description}
                                                     </p>
                                                 </div>
 
                                                 {/* bottom information */}
-                                                <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                                                    <div className="flex items-center gap-2 text-gray-500">
+                                                <div className="flex items-center justify-between border-t border-border pt-4">
+                                                    <div className="flex items-center gap-2 text-muted-foreground">
                                                         <svg
                                                             className="w-4 h-4"
                                                             fill="none"
@@ -455,14 +455,14 @@ function StagePage() {
                                     ))}
                                 </div>
                             ) : (
-                                <div className="text-center py-16 text-gray-500">
-                                    <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6">
-                                        <DollarSign className="h-12 w-12 text-gray-400" />
+                                <div className="py-16 text-center text-muted-foreground">
+                                    <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-muted to-muted/70">
+                                        <DollarSign className="h-12 w-12 text-muted-foreground" />
                                     </div>
-                                    <p className="text-xl font-semibold text-gray-700 mb-2">
+                                    <p className="mb-2 text-xl font-semibold text-foreground">
                                         No overdue tasks available
                                     </p>
-                                    <p className="text-sm text-gray-500">
+                                    <p className="text-sm text-muted-foreground">
                                         All tasks are on track! 🎉
                                     </p>
                                 </div>
@@ -537,7 +537,7 @@ function StagePage() {
                         </AlertDialogHeader>
                         <div className="p-4 space-y-4">
                             <div>
-                                <Label htmlFor="task-title" className="text-sm font-medium text-gray-700">
+                                <Label htmlFor="task-title" className="text-sm font-medium text-foreground">
                                     Task Title
                                 </Label>
                                 <Input
@@ -548,7 +548,7 @@ function StagePage() {
                                 />
                             </div>
                             <div>
-                                <Label htmlFor="task-description" className="text-sm font-medium text-gray-700">
+                                <Label htmlFor="task-description" className="text-sm font-medium text-foreground">
                                     Task Description
                                 </Label>
                                 <Textarea
@@ -559,7 +559,7 @@ function StagePage() {
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <Label htmlFor="soft-deadline" className="text-sm font-medium text-gray-700">
+                                    <Label htmlFor="soft-deadline" className="text-sm font-medium text-foreground">
                                         Soft Deadline
                                     </Label>
                                     <Input
@@ -569,7 +569,7 @@ function StagePage() {
                                     />
                                 </div>
                                 <div>
-                                    <Label htmlFor="hard-deadline" className="text-sm font-medium text-gray-700">
+                                    <Label htmlFor="hard-deadline" className="text-sm font-medium text-foreground">
                                         Hard Deadline
                                     </Label>
                                     <Input
@@ -580,7 +580,7 @@ function StagePage() {
                                 </div>
                             </div>
                             <div>
-                                <Label htmlFor="task-points" className="text-sm font-medium text-gray-700">
+                                <Label htmlFor="task-points" className="text-sm font-medium text-foreground">
                                     Points
                                 </Label>
                                 <Input

@@ -63,17 +63,17 @@ function MyTasksContent() {
     return (
         <div className="min-h-screen w-full max-w-[90rem] mx-auto px-3 py-8">
             <div className="mb-8">
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">My Tasks</h1>
-                <p className="text-gray-600 text-sm">
+                <h1 className="mb-2 text-2xl font-bold text-foreground">My Tasks</h1>
+                <p className="text-sm text-muted-foreground">
                     Your incomplete tasks, sorted by deadline
                 </p>
             </div>
 
             {/* Search bar - Nido Scout style */}
-            <div className="bg-purple-50 rounded-xl p-4 mb-8 border border-purple-100">
+            <div className="mb-8 rounded-xl border border-border/70 bg-card/60 p-4">
                 <div className="flex flex-col sm:flex-row gap-3">
                     <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             type="text"
                             placeholder="Search tasks by keyword..."
@@ -82,12 +82,12 @@ function MyTasksContent() {
                             onKeyDown={(e) => {
                                 if (e.key === "Enter") handleSearch();
                             }}
-                            className="pl-10 bg-white border-gray-200"
+                            className="border-border bg-background pl-10"
                         />
                     </div>
                     <Button
                         onClick={handleSearch}
-                        className="bg-gray-900 hover:bg-gray-800 text-white shrink-0"
+                        className="shrink-0"
                     >
                         Search
                     </Button>
@@ -99,16 +99,16 @@ function MyTasksContent() {
                     <LoadingSpinner />
                 </div>
             ) : error ? (
-                <div className="bg-red-50 text-red-700 px-4 py-3 rounded-lg">
+                <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-destructive">
                     {error}
                 </div>
             ) : tasks.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 px-4 bg-white rounded-xl border border-gray-100">
-                    <ListTodo className="h-12 w-12 text-gray-300 mb-4" />
-                    <h2 className="text-lg font-semibold text-gray-800 mb-2">
+                <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-card px-4 py-16">
+                    <ListTodo className="mb-4 h-12 w-12 text-muted-foreground" />
+                    <h2 className="mb-2 text-lg font-semibold text-card-foreground">
                         No incomplete tasks
                     </h2>
-                    <p className="text-gray-600 text-center max-w-sm">
+                    <p className="max-w-sm text-center text-muted-foreground">
                         {searchKeyword.trim()
                             ? "No tasks match your search. Try a different keyword."
                             : "You're all caught up! No tasks assigned to you right now."}
@@ -122,36 +122,36 @@ function MyTasksContent() {
                             href={`/org/${task.orgId}/proj/${task.projId}/stage/${task.stageId}/task/${task.id}`}
                             className="block"
                         >
-                            <div className="bg-white rounded-xl border border-gray-100 p-4 hover:border-indigo-200 hover:shadow-md transition-all">
+                            <div className="rounded-xl border border-border bg-card p-4 transition-all hover:border-primary/30 hover:shadow-md">
                                 <div className="flex justify-between items-start gap-4">
                                     <div className="flex-1 min-w-0">
-                                        <h3 className="font-semibold text-gray-900 truncate">
+                                        <h3 className="truncate font-semibold text-card-foreground">
                                             {task.title}
                                         </h3>
                                         {task.description && (
-                                            <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                                            <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
                                                 {task.description}
                                             </p>
                                         )}
                                         <div className="flex flex-wrap gap-2 mt-2">
                                             {task.projectTitle && (
-                                                <span className="text-xs text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
+                                                <span className="rounded bg-primary/10 px-2 py-0.5 text-xs text-primary">
                                                     {task.projectTitle}
                                                 </span>
                                             )}
                                             {task.stageTitle && (
-                                                <span className="text-xs text-gray-500">
+                                                <span className="text-xs text-muted-foreground">
                                                     {task.stageTitle}
                                                 </span>
                                             )}
                                         </div>
                                     </div>
                                     <div className="flex flex-col items-end shrink-0">
-                                        <div className="flex items-center gap-1 text-sm text-gray-500">
+                                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
                                             <Calendar className="h-4 w-4" />
                                             {formatDeadline(task.hard_deadline)}
                                         </div>
-                                        <ExternalLink className="h-4 w-4 text-gray-400 mt-2" />
+                                        <ExternalLink className="mt-2 h-4 w-4 text-muted-foreground" />
                                     </div>
                                 </div>
                             </div>
