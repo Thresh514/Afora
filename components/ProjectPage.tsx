@@ -532,17 +532,17 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
             {/* Content Section with Tabs */}
             <div className="flex-1 p-6">
                 <Tabs defaultValue="roadmap" className="w-full">
-                    <TabsList className="mb-6 inline-flex h-9 w-fit max-w-full shrink-0 flex-wrap rounded-lg border border-border/70 bg-muted/60 p-1 text-muted-foreground shadow-sm">
+                    <TabsList className="mb-6 grid min-h-10 w-full grid-cols-2 rounded-lg border border-border/70 bg-muted/60 p-1 text-muted-foreground shadow-sm">
                         <TabsTrigger
                             value="roadmap"
-                            className="flex items-center gap-2 rounded-md px-3 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+                            className="flex w-full items-center justify-center gap-2 rounded-md data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
                         >
                             <Target className="h-4 w-4" />
                             Team Roadmap
                         </TabsTrigger>
                         <TabsTrigger
                             value="team-analytics"
-                            className="flex items-center gap-2 rounded-md px-3 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+                            className="flex w-full items-center justify-center gap-2 rounded-md data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
                         >
                             <BarChart3 className="h-4 w-4" />
                             Team Information
