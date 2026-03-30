@@ -567,9 +567,7 @@ function SettingPage() {
                                         Personal profile
                                     </CardTitle>
                                     <CardDescription className="text-sm leading-relaxed text-muted-foreground">
-                                        One place for your account info and preferences. Email is from your
-                                        sign-in; change your photo in the page header. Use Save profile to persist
-                                        name and demographic fields.
+                                        Your personal profile information.
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent className="p-0">
@@ -650,9 +648,8 @@ function SettingPage() {
                                                     <p className="text-xs text-muted-foreground">
                                                         Shown across Afora.
                                                     </p>
-                                                    
                                                 </div>
-                                                <dl className="space-y-3">
+                                                <dl className="space-y-4">
                                                     <div>
                                                         <dt className={fieldLabel}>Email</dt>
                                                         <dd className="mt-1.5 break-all text-base text-foreground">
@@ -671,12 +668,6 @@ function SettingPage() {
                                                         </dd>
                                                     </div>
                                                 </dl>
-
-                                                
-                                            </div>
-
-                                            <div className="space-y-4 border-t border-border pt-6">
-                                                <p className={fieldLabel}>Demographics</p>
 
                                                 {DEMO_SELECT_FIELDS.map(
                                                     ({ key, label, options, inputId }) => {
