@@ -121,6 +121,25 @@
   }
 }
 
+.settings-display {
+  letter-spacing: -0.02em;
+}
+
+@keyframes settings-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.settings-enter {
+  animation: settings-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
 @layer utilities {
   @keyframes marquee {
     0% {

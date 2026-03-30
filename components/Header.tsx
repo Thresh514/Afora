@@ -56,7 +56,19 @@ function Header() {
                         </SignedOut>
                         <SignedIn>
                             <NotificationDropdown />
-                            <UserButton />
+                            <UserButton
+                                appearance={{
+                                    elements: {
+                                        formFieldInput:
+                                            "!max-w-[min(100%,16rem)] w-full sm:!w-[16rem]",
+                                        formFieldRow: "flex-wrap items-center gap-2",
+                                        profileSectionContent__emailAddresses:
+                                            "flex flex-col gap-2",
+                                        profileSectionPrimaryButton__emailAddresses:
+                                            "w-fit self-start",
+                                    },
+                                }}
+                            />
                         </SignedIn>
                     </div>
                 </div>
