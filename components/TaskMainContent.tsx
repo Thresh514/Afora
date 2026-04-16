@@ -72,6 +72,41 @@ function TaskMainContent({ projId, stageId, taskId, task, taskLocked }: TaskMain
     }
   }, [task]);
 
+  /** 与 Firestore 的 assignee/status 对齐；避免「未分配却显示 In Progress」的假矛盾 */
+  const progressBadge = useMemo(() => {
+    const done = isCompleted || task?.isCompleted;
+    if (done) {
+      return {
+        label: "Completed" as const,
+        className:
+          "bg-green-100 text-green-800 dark:bg-green-500/15 dark:text-green-300",
+        showCheck: true,
+      };
+    }
+    if (task?.status === "overdue") {
+      return {
+        label: "Overdue" as const,
+        className: "bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300",
+        showCheck: false,
+      };
+    }
+    if (!task?.assignee || task?.status === "available") {
+      return {
+        label: "Unassigned" as const,
+        className: "bg-muted text-muted-foreground",
+        showCheck: false,
+      };
+    }
+    return {
+      label: "In Progress" as const,
+      className:
+        completionPercentage[0] > 50
+          ? "bg-primary/15 text-primary"
+          : "bg-yellow-100 text-yellow-800 dark:bg-yellow-950/30 dark:text-yellow-200",
+      showCheck: false,
+    };
+  }, [isCompleted, task?.assignee, task?.isCompleted, task?.status, completionPercentage]);
+
   const handleProgressChange = (value: number[]) => {
     setTempCompletionPercentage(value);
     setHasUnsavedChanges(value[0] !== completionPercentage[0]);
@@ -132,16 +167,10 @@ function TaskMainContent({ projId, stageId, taskId, task, taskLocked }: TaskMain
               <span>Task Progress</span>
 
               <div
-                className={`ml-auto flex items-center space-x-2 rounded-full px-3 py-1 text-sm font-medium ${
-                  isCompleted
-                    ? "bg-green-500/15 text-green-300"
-                    : completionPercentage[0] > 50
-                      ? "bg-primary/15 text-primary"
-                      : "bg-muted text-foreground"
-                }`}
+                className={`ml-auto flex items-center space-x-2 rounded-full px-3 py-1 text-sm font-medium ${progressBadge.className}`}
               >
-                {isCompleted && <CheckCircle2 className="h-4 w-4" />}
-                <span>{isCompleted ? "Completed" : "In Progress"}</span>
+                {progressBadge.showCheck && <CheckCircle2 className="h-4 w-4" />}
+                <span>{progressBadge.label}</span>
               </div>
             </CardTitle>
           </CardHeader>

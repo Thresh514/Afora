@@ -1267,6 +1267,9 @@ export async function assignTask(
       points: taskData?.points || 10,
       completion_percentage: 0,
       can_be_reassigned: true,
+      canBeReassigned: true,
+      // 清除上次自动回收标记，避免与本次领取并存造成误解
+      auto_dropped_at: FieldValue.delete(),
     });
 
     // 更新用户任务统计
@@ -4082,6 +4085,35 @@ export async function updateAnimationPreference(animationsEnabled: boolean) {
   }
 }
 
+/** 领取任务后的宽限期内不因已过 soft deadline 被 cron 回收（否则会「Accept 成功随即被清空」） */
+const AUTO_DROP_GRACE_AFTER_ASSIGN_MS = 72 * 60 * 60 * 1000;
+
+function readTaskDate(value: unknown): Date | null {
+  if (value == null) return null;
+  if (typeof (value as { toDate?: () => Date }).toDate === "function") {
+    return (value as { toDate: () => Date }).toDate();
+  }
+  if (value instanceof Date) return value;
+  if (typeof value === "string" || typeof value === "number") {
+    const d = new Date(value);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+  return null;
+}
+
+/** assignTask 写 can_be_reassigned，部分创建路径写 canBeReassigned；两者需同时识别 */
+function taskAllowsSoftDeadlineAutoDrop(taskData: Record<string, unknown>): boolean {
+  if (taskData.can_be_reassigned === false) return false;
+  if (taskData.canBeReassigned === false) return false;
+  return true;
+}
+
+function isWithinGraceAfterAssignment(taskData: Record<string, unknown>, now: Date): boolean {
+  const assignedAt = readTaskDate(taskData.assigned_at);
+  if (!assignedAt) return false;
+  return now.getTime() - assignedAt.getTime() < AUTO_DROP_GRACE_AFTER_ASSIGN_MS;
+}
+
 export async function autoDropOverdueTasks() {
   const { userId } = await auth();
   if (!userId) {
@@ -4117,13 +4149,15 @@ export async function autoDropOverdueTasksInternal(executedBy: string = "system"
           const taskData = taskDoc.data();
 
           // 匹配现有的 getOverdueTasks 逻辑，但查找已分配的任务
+          const td = taskData as Record<string, unknown>;
           if (
             taskData.assignee && // 已分配
             taskData.status !== "available" && // 只处理非 available 的任务
             taskData.isCompleted !== true && // 处理 undefined 情况
             taskData.soft_deadline &&
-            new Date(taskData.soft_deadline) < now &&
-            taskData.canBeReassigned !== false // 默认允许重新分配
+            new Date(String(taskData.soft_deadline)) < now &&
+            taskAllowsSoftDeadlineAutoDrop(td) &&
+            !isWithinGraceAfterAssignment(td, now) // 刚领取的任务先不回收
           ) {
             overdueTasks.push({
               ref: taskDoc.ref,

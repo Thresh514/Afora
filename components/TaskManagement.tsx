@@ -152,10 +152,11 @@ const TaskManagement = ({
                   <Link
                     href={`/org/${orgId}/proj/${projId}/stage/${stageId}/task/${task.id}`}
                     key={task.id}
+                    className="block min-w-0"
                   >
                     <Card
                       key={task.id}
-                      className={`transition-all duration-200 hover:shadow-lg group relative border-2 ${
+                      className={`min-w-0 overflow-hidden transition-all duration-200 hover:shadow-lg group relative border-2 ${
                         isDeadlineSoon
                           ? "border-red-500 animate-flash-red"
                           : isSoftDeadlineSoon
@@ -165,11 +166,11 @@ const TaskManagement = ({
                               : ""
                       }`}
                     >
-                      <CardHeader className="pb-3">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-start gap-3 flex-1 container">
+                      <CardHeader className="min-w-0 pb-3">
+                        <div className="flex min-w-0 items-start justify-between gap-2">
+                          <div className="flex min-w-0 flex-1 items-start gap-3">
                             <div
-                              className={`mt-1 ${task.isCompleted ? "text-green-500" : "text-yellow-500"}`}
+                              className={`mt-1 shrink-0 ${task.isCompleted ? "text-green-500" : "text-yellow-500"}`}
                             >
                               {task.isCompleted ? (
                                 <CircleCheckBig className="h-5 w-5" />
@@ -177,7 +178,7 @@ const TaskManagement = ({
                                 <Clock7 className="h-5 w-5" />
                               )}
                             </div>
-                            <div className="flex-1 min-w-0">
+                            <div className="min-w-0 flex-1">
                               <CardTitle className="text-base font-medium truncate">
                                 {index + 1}. {task.title} (⭐{task.points || 10})
                               </CardTitle>
@@ -187,7 +188,7 @@ const TaskManagement = ({
                           {/* Task Actions - 阻止点击冒泡到外层 Link，避免误导航 */}
                           {(currentUserEmail || isCurrentUserAdmin) && (
                             <div
-                              className="flex-shrink-0"
+                              className="shrink-0"
                               onClick={(e) => e.stopPropagation()}
                               onPointerDown={(e) => e.stopPropagation()}
                             >
@@ -256,12 +257,12 @@ const TaskManagement = ({
                         </div>
                       </CardHeader>
 
-                      <CardContent className="space-y-4 group-data-[state=open]:blur-sm transition-all">
-                        {/* Assignee and Status */}
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
+                      <CardContent className="min-w-0 space-y-4 group-data-[state=open]:blur-sm transition-all">
+                        {/* Assignee and Status — grid 保证长邮箱截断时状态徽标不挤出卡片 */}
+                        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+                          <div className="flex min-w-0 items-center gap-2">
                             {task.assignee && (
-                              <Avatar className="h-6 w-6">
+                              <Avatar className="h-6 w-6 shrink-0">
                                 <AvatarImage
                                   src={assigneeClerkAvatarUrl(task.assignee) || undefined}
                                   alt=""
@@ -272,25 +273,29 @@ const TaskManagement = ({
                                 </AvatarFallback>
                               </Avatar>
                             )}
-                            <span className="text-xs text-muted-foreground font-semibold">
+                            <span className="min-w-0 truncate text-xs font-semibold text-muted-foreground">
                               {task.assignee || "Unassigned"}
                             </span>
                           </div>
 
                           <span
-                            className={`text-xs px-2 py-1 rounded-full ${
+                            className={`shrink-0 justify-self-end text-xs px-2 py-1 rounded-full ${
                               task.isCompleted
                                 ? "bg-green-100 text-green-800"
                                 : task.status === "overdue"
                                   ? "bg-red-100 text-red-800"
-                                  : "bg-yellow-100 text-yellow-800"
+                                  : !task.assignee || task.status === "available"
+                                    ? "bg-slate-100 text-slate-700"
+                                    : "bg-yellow-100 text-yellow-800"
                             }`}
                           >
                             {task.isCompleted
                               ? "Completed"
                               : task.status === "overdue"
                                 ? "Overdue"
-                                : "In Progress"}
+                                : !task.assignee || task.status === "available"
+                                  ? "Unassigned"
+                                  : "In Progress"}
                           </span>
                         </div>
 

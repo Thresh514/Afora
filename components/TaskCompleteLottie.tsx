@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import Lottie from "lottie-react";
-import tickMarketAnimation from "@/lib/lottie/tick-market.json";
+
+/** Served from `public/complete.json` (see Next.js `public/` static files). */
+const COMPLETE_LOTTIE_SRC = "/complete.json";
 
 interface TaskCompleteLottieProps {
   onComplete: () => void;
@@ -12,6 +14,25 @@ interface TaskCompleteLottieProps {
 
 export default function TaskCompleteLottie({ onComplete }: TaskCompleteLottieProps) {
   const doneRef = useRef(false);
+  const [animationData, setAnimationData] = useState<object | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(COMPLETE_LOTTIE_SRC)
+      .then((r) => {
+        if (!r.ok) throw new Error(r.statusText);
+        return r.json();
+      })
+      .then((json) => {
+        if (!cancelled) setAnimationData(json);
+      })
+      .catch(() => {
+        if (!cancelled) setAnimationData(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const finish = useCallback(() => {
     if (doneRef.current) return;
@@ -24,7 +45,7 @@ export default function TaskCompleteLottie({ onComplete }: TaskCompleteLottiePro
     return () => window.clearTimeout(t);
   }, [finish]);
 
-  if (typeof document === "undefined") return null;
+  if (typeof document === "undefined" || !animationData) return null;
 
   return createPortal(
     <motion.div
@@ -41,7 +62,7 @@ export default function TaskCompleteLottie({ onComplete }: TaskCompleteLottiePro
         transition={{ type: "spring", stiffness: 420, damping: 24 }}
       >
         <Lottie
-          animationData={tickMarketAnimation}
+          animationData={animationData}
           loop={false}
           className="h-full w-full"
           onComplete={finish}
