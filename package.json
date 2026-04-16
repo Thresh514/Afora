@@ -7,7 +7,9 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "@blocknote/core": "^0.16.0",
@@ -55,6 +57,7 @@
     "framer-motion": "^11.18.0",
     "jodit": "^4.2.38",
     "jodit-react": "^4.1.2",
+    "lottie-react": "^2.4.1",
     "lucide-react": "^0.451.0",
     "marked": "^15.0.6",
     "next": "^15.5.9",
@@ -102,6 +105,7 @@
     "eslint-config-prettier": "^10.1.8",
     "firebase-admin": "^13.4.0",
     "postcss": "^8",
+    "prettier": "^3.6.2",
     "tailwindcss": "^3.4.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"

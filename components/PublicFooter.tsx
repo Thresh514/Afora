@@ -10,7 +10,6 @@ const platformLinks = [
   { label: "All Features", href: "/#features" },
 ];
 
-
 const companyLinks = [
   { label: "About", href: "#" },
   { label: "Careers", href: "#" },
@@ -29,8 +28,9 @@ export default function PublicFooter() {
               <Image src="/logoFull.svg" alt="Afora" width={120} height={40} />
             </Link>
             <p className="mt-4 text-sm text-gray-500">
-            Great Neck Estates, Great Neck,<br />
-            NY 11021, USA
+              Great Neck Estates, Great Neck,
+              <br />
+              NY 11021, USA
             </p>
           </div>
           <div className="flex flex-1 justify-between">
@@ -41,10 +41,7 @@ export default function PublicFooter() {
               <ul className="mt-4 space-y-3">
                 {platformLinks.map((item) => (
                   <li key={item.label}>
-                    <Link
-                      href={item.href}
-                      className="text-sm text-gray-600 hover:text-afora"
-                    >
+                    <Link href={item.href} className="text-sm text-gray-600 hover:text-afora">
                       {item.label}
                     </Link>
                   </li>
@@ -58,10 +55,7 @@ export default function PublicFooter() {
               <ul className="mt-4 space-y-3">
                 {companyLinks.map((item) => (
                   <li key={item.label}>
-                    <Link
-                      href={item.href}
-                      className="text-sm text-gray-600 hover:text-afora"
-                    >
+                    <Link href={item.href} className="text-sm text-gray-600 hover:text-afora">
                       {item.label}
                     </Link>
                   </li>

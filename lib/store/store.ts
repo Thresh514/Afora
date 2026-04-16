@@ -1,9 +1,9 @@
 import { configureStore } from "@reduxjs/toolkit";
 import stageStatusReducer from "./features/stageStatus/stageStatusSlice";
 export const store = configureStore({
-    reducer: {
-        stageStatus: stageStatusReducer,
-    },
+  reducer: {
+    stageStatus: stageStatusReducer,
+  },
 });
 
 export type RootState = ReturnType<typeof store.getState>;

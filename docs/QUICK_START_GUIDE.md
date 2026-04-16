@@ -18,7 +18,7 @@ cp types/firebase-types.ts your-project/types/
 # 安装AI功能依赖
 npm install openai
 
-# 安装数据验证依赖  
+# 安装数据验证依赖
 npm install zod
 ```
 
@@ -33,13 +33,13 @@ OPENAI_API_KEY=sk-your_openai_api_key
 
 ```typescript
 // 在您的React组件中使用新的actions
-import { assignTask, completeTaskWithProgress } from '@/actions/actions';
+import { assignTask, completeTaskWithProgress } from "@/actions/actions";
 
 // 任务分配示例
 const handleAssignTask = async () => {
-  const result = await assignTask(projId, stageId, taskId, 'user@example.com');
+  const result = await assignTask(projId, stageId, taskId, "user@example.com");
   if (result.success) {
-    toast.success('Task assigned!');
+    toast.success("Task assigned!");
   }
 };
 
@@ -100,16 +100,19 @@ projects/{projId}/stages/{stageId}/tasks/{taskId}/
 ## 🎯 推荐的实施顺序
 
 ### 阶段1：核心任务功能 (第1天)
+
 1. 实现任务分配 (`assignTask`)
 2. 实现任务完成 (`completeTaskWithProgress`)
 3. 更新前端任务卡片组件
 
 ### 阶段2：提交和评论 (第2天)
+
 1. 实现任务提交 (`submitTask`)
 2. 获取提交记录 (`getTaskSubmissions`)
 3. 前端提交界面
 
 ### 阶段3：悬赏和排行 (第3天)
+
 1. 实现过期任务获取 (`getOverdueTasks`)
 2. 实现用户积分系统
 3. 创建排行榜页面
@@ -126,13 +129,13 @@ projects/{projId}/stages/{stageId}/tasks/{taskId}/
 
 ```typescript
 // 1. 迁移任务数据
-import { migrateTasksToTaskPool } from '@/actions/actions';
+import { migrateTasksToTaskPool } from "@/actions/actions";
 
 const result = await migrateTasksToTaskPool();
 // console.log(result.message);
 
 // 2. 初始化用户积分
-import { initializeUserScores } from '@/actions/actions';
+import { initializeUserScores } from "@/actions/actions";
 
 const scoreResult = await initializeUserScores();
 // console.log(scoreResult.message);
@@ -141,6 +144,7 @@ const scoreResult = await initializeUserScores();
 ### 数据库结构变更总结
 
 #### 任务 (Tasks) 新增字段：
+
 - `status`: 'available' | 'assigned' | 'in_progress' | 'completed' | 'overdue'
 - `points`: number (积分)
 - `completion_percentage`: number (0-100)
@@ -150,6 +154,7 @@ const scoreResult = await initializeUserScores();
 - 字段重命名：`assignedTo` → `assignee`
 
 #### 新增集合：
+
 ```
 user_scores/
 ├── user_email: string
@@ -182,18 +187,18 @@ tasks/{taskId}/submissions/
 
 ```typescript
 // 在 React 组件中使用新功能
-import { 
-  assignTask, 
-  completeTaskWithProgress, 
+import {
+  assignTask,
+  completeTaskWithProgress,
   getOverdueTasks,
-  getProjectLeaderboard 
-} from '@/actions/actions';
+  getProjectLeaderboard,
+} from "@/actions/actions";
 
 // 任务分配
 const handleAssign = async (taskId: string, userEmail: string) => {
   const result = await assignTask(projId, stageId, taskId, userEmail);
   if (result.success) {
-    toast.success('任务分配成功！');
+    toast.success("任务分配成功！");
   }
 };
 
@@ -237,6 +242,7 @@ const loadLeaderboard = async () => {
 ## 🚀 立即开始
 
 **强烈建议按以下顺序实施：**
+
 1. 先运行数据库迁移
 2. 测试基础任务分配功能
 3. 逐步添加高级功能

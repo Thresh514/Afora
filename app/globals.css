@@ -5,7 +5,7 @@
 @layer base {
   :root {
     /* Afora brand: blue-purple from logo icon (#4437C3) */
-    --afora: #4437C3;
+    --afora: #4437c3;
     --afora-hover: #5646e4;
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
@@ -39,7 +39,7 @@
     --sidebar-accent: 240 4.8% 95.9%;
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
   .dark {
@@ -76,7 +76,7 @@
     --sidebar-accent: 228 22% 18%;
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 226 18% 23%;
-    --sidebar-ring: 248 90% 76%
+    --sidebar-ring: 248 90% 76%;
   }
 }
 
@@ -166,22 +166,54 @@
 
   /* Hero slogan: 7 句无缝循环，每句停留 2.5s，过渡 0.5s，8 段共 24s */
   @keyframes sentence-roll {
-    0% { transform: translateY(0); }
-    10.42% { transform: translateY(0); }
-    12.5% { transform: translateY(-1.25em); }
-    22.92% { transform: translateY(-1.25em); }
-    25% { transform: translateY(-2.5em); }
-    35.42% { transform: translateY(-2.5em); }
-    37.5% { transform: translateY(-3.75em); }
-    47.92% { transform: translateY(-3.75em); }
-    50% { transform: translateY(-5em); }
-    60.42% { transform: translateY(-5em); }
-    62.5% { transform: translateY(-6.25em); }
-    72.92% { transform: translateY(-6.25em); }
-    75% { transform: translateY(-7.5em); }
-    85.42% { transform: translateY(-7.5em); }
-    87.5% { transform: translateY(-8.75em); }
-    100% { transform: translateY(-8.75em); }
+    0% {
+      transform: translateY(0);
+    }
+    10.42% {
+      transform: translateY(0);
+    }
+    12.5% {
+      transform: translateY(-1.25em);
+    }
+    22.92% {
+      transform: translateY(-1.25em);
+    }
+    25% {
+      transform: translateY(-2.5em);
+    }
+    35.42% {
+      transform: translateY(-2.5em);
+    }
+    37.5% {
+      transform: translateY(-3.75em);
+    }
+    47.92% {
+      transform: translateY(-3.75em);
+    }
+    50% {
+      transform: translateY(-5em);
+    }
+    60.42% {
+      transform: translateY(-5em);
+    }
+    62.5% {
+      transform: translateY(-6.25em);
+    }
+    72.92% {
+      transform: translateY(-6.25em);
+    }
+    75% {
+      transform: translateY(-7.5em);
+    }
+    85.42% {
+      transform: translateY(-7.5em);
+    }
+    87.5% {
+      transform: translateY(-8.75em);
+    }
+    100% {
+      transform: translateY(-8.75em);
+    }
   }
   .animate-sentence-roll {
     animation: sentence-roll 24s ease-in-out infinite;
@@ -191,7 +223,8 @@
 
   /* Task card: red flashing outline when 1 day from deadline */
   @keyframes flash-red {
-    0%, 100% {
+    0%,
+    100% {
       border-color: #ef4444;
       box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
     }

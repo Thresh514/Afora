@@ -1,0 +1,22 @@
+# dependencies & build
+node_modules
+.next
+out
+build
+coverage
+.vercel
+
+# lockfiles (large, generated)
+package-lock.json
+
+# generated / local secrets
+next-env.d.ts
+*.tsbuildinfo
+service_key.json
+aiconfig.json
+.env
+.env.*
+
+# misc
+.DS_Store
+*.pem

@@ -4,362 +4,367 @@
 import { apiRequest } from "./apiRequest.js";
 
 const responseFormat = {
-    type: "json_schema",
-    json_schema: {
-        name: "team_compatibility",
-        schema: {
-        type: "object",
-        properties: {
-            score_breakdown: {
-                type: "object",
-                description: "Weighted breakdown of final score based on Hackathon rubric",
-                properties: {
-                    technical_alignment: {
-                        type: "number",
-                        description: "Technical alignment score (40-100)",
-                        minimum: 50,
-                        maximum: 100
-                    },
-                    schedule_compatibility: {
-                        type: "number",
-                        description: "Schedule compatibility score (40-100)",
-                        minimum: 50,
-                        maximum: 100
-                    },
-                    interest_alignment: {
-                        type: "number",
-                        description: "Interest alignment score (40-100)",
-                        minimum: 50,
-                        maximum: 100
-                    },
-                    communication_alignment: {
-                        type: "number",
-                        description: "Communication and collaboration style alignment score (40-100)",
-                        minimum: 50,
-                        maximum: 100
-                    },
-                    work_style_compatibility: {
-                        type: "number",
-                        description: "Work style and methodology compatibility score (40-100)",
-                        minimum: 50,
-                        maximum: 100
-                    },
-                    weight_applied: {
-                        type: "object",
-                        description: "Weight multipliers applied to each dimension",
-                        properties: {
-                            technical_alignment: {
-                                type: "number",
-                                description: "Weight for technical alignment (0.35)",
-                                minimum: 0,
-                                maximum: 1
-                            },
-                            schedule_compatibility: {
-                                type: "number",
-                                description: "Weight for schedule compatibility (0.15)",
-                                minimum: 0,
-                                maximum: 1
-                            },
-                            interest_alignment: {
-                                type: "number",
-                                description: "Weight for interest alignment (0.20)",
-                                minimum: 0,
-                                maximum: 1
-                            },
-                            communication_alignment: {
-                                type: "number",
-                                description: "Weight for communication alignment (0.15)",
-                                minimum: 0,
-                                maximum: 1
-                            },
-                            work_style_compatibility: {
-                                type: "number",
-                                description: "Weight for work style compatibility (0.15)",
-                                minimum: 0,
-                                maximum: 1
-                            }
-                        },
-                        required: [
-                            "technical_alignment",
-                            "schedule_compatibility",
-                            "interest_alignment",
-                            "communication_alignment",
-                            "work_style_compatibility"
-                        ]
-                    },
-                    calculation_comment: {
-                        type: "string",
-                        description: "Plain language explanation of how the scores were derived"
-                    }
-                },
-                required: [
-                    "technical_alignment",
-                    "schedule_compatibility",
-                    "interest_alignment",
-                    "communication_alignment",
-                    "work_style_compatibility",
-                    "weight_applied",
-                    "calculation_comment"
-                ]
+  type: "json_schema",
+  json_schema: {
+    name: "team_compatibility",
+    schema: {
+      type: "object",
+      properties: {
+        score_breakdown: {
+          type: "object",
+          description: "Weighted breakdown of final score based on Hackathon rubric",
+          properties: {
+            technical_alignment: {
+              type: "number",
+              description: "Technical alignment score (40-100)",
+              minimum: 50,
+              maximum: 100,
             },
-            member_analyses: {
+            schedule_compatibility: {
+              type: "number",
+              description: "Schedule compatibility score (40-100)",
+              minimum: 50,
+              maximum: 100,
+            },
+            interest_alignment: {
+              type: "number",
+              description: "Interest alignment score (40-100)",
+              minimum: 50,
+              maximum: 100,
+            },
+            communication_alignment: {
+              type: "number",
+              description: "Communication and collaboration style alignment score (40-100)",
+              minimum: 50,
+              maximum: 100,
+            },
+            work_style_compatibility: {
+              type: "number",
+              description: "Work style and methodology compatibility score (40-100)",
+              minimum: 50,
+              maximum: 100,
+            },
+            weight_applied: {
+              type: "object",
+              description: "Weight multipliers applied to each dimension",
+              properties: {
+                technical_alignment: {
+                  type: "number",
+                  description: "Weight for technical alignment (0.35)",
+                  minimum: 0,
+                  maximum: 1,
+                },
+                schedule_compatibility: {
+                  type: "number",
+                  description: "Weight for schedule compatibility (0.15)",
+                  minimum: 0,
+                  maximum: 1,
+                },
+                interest_alignment: {
+                  type: "number",
+                  description: "Weight for interest alignment (0.20)",
+                  minimum: 0,
+                  maximum: 1,
+                },
+                communication_alignment: {
+                  type: "number",
+                  description: "Weight for communication alignment (0.15)",
+                  minimum: 0,
+                  maximum: 1,
+                },
+                work_style_compatibility: {
+                  type: "number",
+                  description: "Weight for work style compatibility (0.15)",
+                  minimum: 0,
+                  maximum: 1,
+                },
+              },
+              required: [
+                "technical_alignment",
+                "schedule_compatibility",
+                "interest_alignment",
+                "communication_alignment",
+                "work_style_compatibility",
+              ],
+            },
+            calculation_comment: {
+              type: "string",
+              description: "Plain language explanation of how the scores were derived",
+            },
+          },
+          required: [
+            "technical_alignment",
+            "schedule_compatibility",
+            "interest_alignment",
+            "communication_alignment",
+            "work_style_compatibility",
+            "weight_applied",
+            "calculation_comment",
+          ],
+        },
+        member_analyses: {
+          type: "array",
+          description: "Individual analysis for each team member",
+          items: {
+            type: "object",
+            properties: {
+              member_email: {
+                type: "string",
+                description: "Member's email address",
+              },
+              strengths: {
                 type: "array",
-                description: "Individual analysis for each team member",
+                description: "Key strengths of this member",
                 items: {
+                  type: "string",
+                },
+              },
+              skills: {
+                type: "array",
+                description: "Technical and professional skills",
+                items: {
+                  type: "string",
+                },
+              },
+              interests: {
+                type: "array",
+                description: "Areas of interest",
+                items: {
+                  type: "string",
+                },
+              },
+              compatibility_score: {
+                type: "number",
+                description:
+                  "Individual compatibility score with this specific team and project (not general ability) from 0-100",
+                minimum: 0,
+                maximum: 100,
+              },
+              role_suggestion: {
+                type: "string",
+                description: "Suggested role or position for this member in the team",
+              },
+              detailed_analysis: {
+                type: "object",
+                description: "Detailed analysis of member's capabilities and fit",
+                properties: {
+                  technical_proficiency: {
                     type: "object",
                     properties: {
-                        member_email: {
-                            type: "string",
-                            description: "Member's email address",
-                        },
-                        strengths: {
-                            type: "array",
-                            description: "Key strengths of this member",
-                            items: {
-                                type: "string",
-                            },
-                        },
-                        skills: {
-                            type: "array",
-                            description:
-                                "Technical and professional skills",
-                            items: {
-                                type: "string",
-                            },
-                        },
-                        interests: {
-                            type: "array",
-                            description: "Areas of interest",
-                            items: {
-                                type: "string",
-                            },
-                        },
-                        compatibility_score: {
-                            type: "number",
-                            description:
-                                "Individual compatibility score with this specific team and project (not general ability) from 0-100",
-                            minimum: 0,
-                            maximum: 100,
-                        },
-                        role_suggestion: {
-                            type: "string",
-                            description:
-                                "Suggested role or position for this member in the team",
-                        },
-                        detailed_analysis: {
-                            type: "object",
-                            description: "Detailed analysis of member's capabilities and fit",
-                            properties: {
-                                technical_proficiency: {
-                                    type: "object",
-                                    properties: {
-                                        score: {
-                                            type: "number",
-                                            description: "Technical proficiency score from 0-100",
-                                            minimum: 0,
-                                            maximum: 100
-                                        },
-                                        strengths: {
-                                            type: "array",
-                                            items: { type: "string" },
-                                            description: "Technical strengths"
-                                        },
-                                        areas_for_improvement: {
-                                            type: "array",
-                                            items: { type: "string" },
-                                            description: "Areas needing improvement"
-                                        }
-                                    },
-                                    required: ["score", "strengths", "areas_for_improvement"],
-                                    additionalProperties: false
-                                },
-                                collaboration_style: {
-                                    type: "object",
-                                    properties: {
-                                        preferred_methods: {
-                                            type: "array",
-                                            items: { type: "string" },
-                                            description: "Preferred collaboration methods"
-                                        },
-                                        communication_frequency: {
-                                            type: "string",
-                                            description: "Preferred communication frequency"
-                                        },
-                                        team_role: {
-                                            type: "string",
-                                            description: "Natural team role"
-                                        }
-                                    },
-                                    required: ["preferred_methods", "communication_frequency", "team_role"],
-                                    additionalProperties: false
-                                },
-                                project_contribution: {
-                                    type: "object",
-                                    properties: {
-                                        primary_responsibilities: {
-                                            type: "array",
-                                            items: { type: "string" },
-                                            description: "Primary project responsibilities"
-                                        },
-                                        potential_impact: {
-                                            type: "string",
-                                            description: "Potential impact on project"
-                                        },
-                                        risk_factors: {
-                                            type: "array",
-                                            items: { type: "string" },
-                                            description: "Potential risk factors"
-                                        }
-                                    },
-                                    required: ["primary_responsibilities", "potential_impact", "risk_factors"],
-                                    additionalProperties: false
-                                }
-                            },
-                            required: ["technical_proficiency", "collaboration_style", "project_contribution"],
-                            additionalProperties: false
-                        }
+                      score: {
+                        type: "number",
+                        description: "Technical proficiency score from 0-100",
+                        minimum: 0,
+                        maximum: 100,
+                      },
+                      strengths: {
+                        type: "array",
+                        items: { type: "string" },
+                        description: "Technical strengths",
+                      },
+                      areas_for_improvement: {
+                        type: "array",
+                        items: { type: "string" },
+                        description: "Areas needing improvement",
+                      },
                     },
-                    required: [
-                        "member_email",
-                        "strengths",
-                        "skills",
-                        "interests",
-                        "compatibility_score",
-                        "role_suggestion",
-                        "detailed_analysis"
-                    ],
+                    required: ["score", "strengths", "areas_for_improvement"],
                     additionalProperties: false,
-                },
-            },
-            team_analysis: {
-                type: "object",
-                properties: {
-                    team_strengths: {
+                  },
+                  collaboration_style: {
+                    type: "object",
+                    properties: {
+                      preferred_methods: {
                         type: "array",
-                        description: "Overall team strengths",
-                        items: {
-                            type: "string",
-                        },
-                    },
-                    project_fit: {
-                        type: "object",
-                        description: "Analysis of how well the team fits the project requirements",
-                        properties: {
-                            technical_alignment: {
-                                type: "number",
-                                description: "Score 20-100 indicating how well team's technical skills match project needs",
-                                minimum: 20,
-                                maximum: 100
-                            },
-                            schedule_compatibility: {
-                                type: "number",
-                                description: "Score 20-100 indicating how well team members' schedules align",
-                                minimum: 20,
-                                maximum: 100
-                            },
-                            interest_alignment: {
-                                type: "number",
-                                description: "Score 20-100 indicating how well team's interests align with project goals",
-                                minimum: 20,
-                                maximum: 100
-                            },
-                            charter_alignment: {
-                                type: "object",
-                                description: "Analysis of team charter alignment",
-                                properties: {
-                                    vision_alignment: {
-                                        type: "number",
-                                        description: "Score 20-100 indicating how well team members align on project vision",
-                                        minimum: 20,
-                                        maximum: 100
-                                    },
-                                    values_compatibility: {
-                                        type: "number",
-                                        description: "Score 20-100 indicating how well team members' values and working styles align",
-                                        minimum: 20,
-                                        maximum: 100
-                                    },
-                                    key_findings: {
-                                        type: "array",
-                                        description: "Key observations from team charter analysis",
-                                        items: {
-                                            type: "string"
-                                        }
-                                    }
-                                },
-                                required: ["vision_alignment", "values_compatibility", "key_findings"],
-                                additionalProperties: false
-                            },
-                            comments: {
-                                type: "object",
-                                description: "Structured observations about project-team fit",
-                                properties: {
-                                    positive_observations: {
-                                        type: "array",
-                                        description: "Strengths and positive alignments",
-                                        items: {
-                                            type: "string"
-                                        }
-                                    },
-                                    misalignment_risks: {
-                                        type: "array",
-                                        description: "Potential conflicts and risks",
-                                        items: {
-                                            type: "string"
-                                        }
-                                    }
-                                },
-                                required: ["positive_observations", "misalignment_risks"]
-                            }
-                        },
-                        required: ["technical_alignment", "schedule_compatibility", "interest_alignment", "charter_alignment", "comments"],
-                        additionalProperties: false
-                    },
-                    potential_gaps: {
-                        type: "array",
-                        description:
-                            "Potential skill or knowledge gaps in the team",
-                        items: {
-                            type: "string",
-                        },
-                    },
-                    collaboration_potential: {
+                        items: { type: "string" },
+                        description: "Preferred collaboration methods",
+                      },
+                      communication_frequency: {
                         type: "string",
-                        description:
-                            "Assessment of how well the team might collaborate",
+                        description: "Preferred communication frequency",
+                      },
+                      team_role: {
+                        type: "string",
+                        description: "Natural team role",
+                      },
                     },
-                    recommendations: {
+                    required: ["preferred_methods", "communication_frequency", "team_role"],
+                    additionalProperties: false,
+                  },
+                  project_contribution: {
+                    type: "object",
+                    properties: {
+                      primary_responsibilities: {
                         type: "array",
-                        description:
-                            "Recommendations for improving team effectiveness",
-                        items: {
-                            type: "string",
-                        },
+                        items: { type: "string" },
+                        description: "Primary project responsibilities",
+                      },
+                      potential_impact: {
+                        type: "string",
+                        description: "Potential impact on project",
+                      },
+                      risk_factors: {
+                        type: "array",
+                        items: { type: "string" },
+                        description: "Potential risk factors",
+                      },
                     },
+                    required: ["primary_responsibilities", "potential_impact", "risk_factors"],
+                    additionalProperties: false,
+                  },
                 },
-                required: [
-                    "team_strengths",
-                    "project_fit",
-                    "potential_gaps",
-                    "collaboration_potential",
-                    "recommendations",
-                ],
+                required: ["technical_proficiency", "collaboration_style", "project_contribution"],
                 additionalProperties: false,
+              },
             },
+            required: [
+              "member_email",
+              "strengths",
+              "skills",
+              "interests",
+              "compatibility_score",
+              "role_suggestion",
+              "detailed_analysis",
+            ],
+            additionalProperties: false,
+          },
         },
-        required: ["score_breakdown", "member_analyses", "team_analysis"],
-        additionalProperties: false,
+        team_analysis: {
+          type: "object",
+          properties: {
+            team_strengths: {
+              type: "array",
+              description: "Overall team strengths",
+              items: {
+                type: "string",
+              },
+            },
+            project_fit: {
+              type: "object",
+              description: "Analysis of how well the team fits the project requirements",
+              properties: {
+                technical_alignment: {
+                  type: "number",
+                  description:
+                    "Score 20-100 indicating how well team's technical skills match project needs",
+                  minimum: 20,
+                  maximum: 100,
+                },
+                schedule_compatibility: {
+                  type: "number",
+                  description: "Score 20-100 indicating how well team members' schedules align",
+                  minimum: 20,
+                  maximum: 100,
+                },
+                interest_alignment: {
+                  type: "number",
+                  description:
+                    "Score 20-100 indicating how well team's interests align with project goals",
+                  minimum: 20,
+                  maximum: 100,
+                },
+                charter_alignment: {
+                  type: "object",
+                  description: "Analysis of team charter alignment",
+                  properties: {
+                    vision_alignment: {
+                      type: "number",
+                      description:
+                        "Score 20-100 indicating how well team members align on project vision",
+                      minimum: 20,
+                      maximum: 100,
+                    },
+                    values_compatibility: {
+                      type: "number",
+                      description:
+                        "Score 20-100 indicating how well team members' values and working styles align",
+                      minimum: 20,
+                      maximum: 100,
+                    },
+                    key_findings: {
+                      type: "array",
+                      description: "Key observations from team charter analysis",
+                      items: {
+                        type: "string",
+                      },
+                    },
+                  },
+                  required: ["vision_alignment", "values_compatibility", "key_findings"],
+                  additionalProperties: false,
+                },
+                comments: {
+                  type: "object",
+                  description: "Structured observations about project-team fit",
+                  properties: {
+                    positive_observations: {
+                      type: "array",
+                      description: "Strengths and positive alignments",
+                      items: {
+                        type: "string",
+                      },
+                    },
+                    misalignment_risks: {
+                      type: "array",
+                      description: "Potential conflicts and risks",
+                      items: {
+                        type: "string",
+                      },
+                    },
+                  },
+                  required: ["positive_observations", "misalignment_risks"],
+                },
+              },
+              required: [
+                "technical_alignment",
+                "schedule_compatibility",
+                "interest_alignment",
+                "charter_alignment",
+                "comments",
+              ],
+              additionalProperties: false,
+            },
+            potential_gaps: {
+              type: "array",
+              description: "Potential skill or knowledge gaps in the team",
+              items: {
+                type: "string",
+              },
+            },
+            collaboration_potential: {
+              type: "string",
+              description: "Assessment of how well the team might collaborate",
+            },
+            recommendations: {
+              type: "array",
+              description: "Recommendations for improving team effectiveness",
+              items: {
+                type: "string",
+              },
+            },
+          },
+          required: [
+            "team_strengths",
+            "project_fit",
+            "potential_gaps",
+            "collaboration_potential",
+            "recommendations",
+          ],
+          additionalProperties: false,
         },
+      },
+      required: ["score_breakdown", "member_analyses", "team_analysis"],
+      additionalProperties: false,
     },
+  },
 };
 
 export const analyzeTeamCompatibility = async (
-    onboardingQuestions,
-    memberResponses,
-    teamCharterResponse,
-    projectOnboardingQuestions = []
+  onboardingQuestions,
+  memberResponses,
+  teamCharterResponse,
+  projectOnboardingQuestions = []
 ) => {
-    const context = `
+  const context = `
     You are an experienced HR Manager and professional team analyst. Your task is to evaluate team member compatibility and project fit based on onboarding survey responses and team charter input.
     
     Your analysis must be:
@@ -496,13 +501,12 @@ export const analyzeTeamCompatibility = async (
     - Maintain an optimistic perspective while being realistic about challenges
     - Emphasize team potential and growth opportunities
     `;
-    
 
-    if (!memberResponses || memberResponses.length === 0) {
-        throw new Error("No team member data available for analysis");
-    }
+  if (!memberResponses || memberResponses.length === 0) {
+    throw new Error("No team member data available for analysis");
+  }
 
-    const input = `
+  const input = `
         Onboarding Survey Questions:
         ${onboardingQuestions.join("\n")}
 
@@ -510,42 +514,54 @@ export const analyzeTeamCompatibility = async (
         ${projectOnboardingQuestions && projectOnboardingQuestions.length > 0 ? projectOnboardingQuestions.join("\n") : "Not provided"}
 
         Team Charter Response:
-        ${teamCharterResponse || 'Not provided'}
+        ${teamCharterResponse || "Not provided"}
 
         Team Member Responses:
-        ${memberResponses.map(response => {
+        ${memberResponses
+          .map((response) => {
             // 提取用户邮箱
             const emailMatch = response.match(/User: (.+)/);
-            const email = emailMatch ? emailMatch[1].trim() : 'Unknown';
-            
+            const email = emailMatch ? emailMatch[1].trim() : "Unknown";
+
             // 提取onboarding答案
             const onboardingQ1Match = response.match(/Onboarding Question 1 Answer: (.+?)(?=\n|$)/);
             const onboardingQ2Match = response.match(/Onboarding Question 2 Answer: (.+?)(?=\n|$)/);
             const onboardingQ3Match = response.match(/Onboarding Question 3 Answer: (.+?)(?=\n|$)/);
-            
+
             // 提取项目onboarding答案
-            const projQ1Match = response.match(/Project Onboarding Question 1 \(Technical Skills\): (.+?)(?=\n|$)/);
-            const projQ2Match = response.match(/Project Onboarding Question 2 \(Communication\): (.+?)(?=\n|$)/);
-            const projQ3Match = response.match(/Project Onboarding Question 3 \(Project Structure\): (.+?)(?=\n|$)/);
-            const projQ4Match = response.match(/Project Onboarding Question 4 \(Team Preferences\): (.+?)(?=\n|$)/);
-            const projQ5Match = response.match(/Project Onboarding Question 5 \(Time Availability\): (.+?)(?=\n|$)/);
-            
+            const projQ1Match = response.match(
+              /Project Onboarding Question 1 \(Technical Skills\): (.+?)(?=\n|$)/
+            );
+            const projQ2Match = response.match(
+              /Project Onboarding Question 2 \(Communication\): (.+?)(?=\n|$)/
+            );
+            const projQ3Match = response.match(
+              /Project Onboarding Question 3 \(Project Structure\): (.+?)(?=\n|$)/
+            );
+            const projQ4Match = response.match(
+              /Project Onboarding Question 4 \(Team Preferences\): (.+?)(?=\n|$)/
+            );
+            const projQ5Match = response.match(
+              /Project Onboarding Question 5 \(Time Availability\): (.+?)(?=\n|$)/
+            );
+
             return `
                     Member: ${email}
                     
                     Onboarding Survey Responses:
-                    - Question 1: ${onboardingQ1Match ? onboardingQ1Match[1].trim() : 'No answer'}
-                    - Question 2: ${onboardingQ2Match ? onboardingQ2Match[1].trim() : 'No answer'}
-                    - Question 3: ${onboardingQ3Match ? onboardingQ3Match[1].trim() : 'No answer'}
+                    - Question 1: ${onboardingQ1Match ? onboardingQ1Match[1].trim() : "No answer"}
+                    - Question 2: ${onboardingQ2Match ? onboardingQ2Match[1].trim() : "No answer"}
+                    - Question 3: ${onboardingQ3Match ? onboardingQ3Match[1].trim() : "No answer"}
                     
                     Project Onboarding Responses:
-                    - Technical Skills: ${projQ1Match ? projQ1Match[1].trim() : 'No answer'}
-                    - Communication Preferences: ${projQ2Match ? projQ2Match[1].trim() : 'No answer'}
-                    - Project Structure Preferences: ${projQ3Match ? projQ3Match[1].trim() : 'No answer'}
-                    - Team Preferences: ${projQ4Match ? projQ4Match[1].trim() : 'No answer'}
-                    - Time Slots: ${projQ5Match ? projQ5Match[1].trim() : 'No answer'}
-                    `
-                    }).join("\n\n")}
+                    - Technical Skills: ${projQ1Match ? projQ1Match[1].trim() : "No answer"}
+                    - Communication Preferences: ${projQ2Match ? projQ2Match[1].trim() : "No answer"}
+                    - Project Structure Preferences: ${projQ3Match ? projQ3Match[1].trim() : "No answer"}
+                    - Team Preferences: ${projQ4Match ? projQ4Match[1].trim() : "No answer"}
+                    - Time Slots: ${projQ5Match ? projQ5Match[1].trim() : "No answer"}
+                    `;
+          })
+          .join("\n\n")}
 
             Please analyze the compatibility of this team in detail. Your analysis should strictly follow the JSON schema response format and be grounded in the data provided.
 
@@ -562,32 +578,36 @@ export const analyzeTeamCompatibility = async (
             - A structured **score_breakdown** showing individual dimension scores (DO NOT calculate overall score)
             - Individual member compatibility scores and role suggestions
             - Specific, actionable improvement recommendations`;
-    
 
-    try {
-        // Log the raw input for debugging
-        console.log("=== analyzeTeamCompatibility INPUT ===");
-        console.log("Context:", context);
-        console.log("Response Format:", JSON.stringify(responseFormat, null, 2));
-        console.log("Input:", input);
-        console.log("=====================================");
+  try {
+    // Log the raw input for debugging
+    console.log("=== analyzeTeamCompatibility INPUT ===");
+    console.log("Context:", context);
+    console.log("Response Format:", JSON.stringify(responseFormat, null, 2));
+    console.log("Input:", input);
+    console.log("=====================================");
 
-        const result = await apiRequest({ context, responseFormat, input, functionName: "analyzeTeamCompatibility" });
-        
-        // Log the raw output for debugging
-        console.log("=== analyzeTeamCompatibility OUTPUT ===");
-        console.log("Raw Result:", result);
-        console.log("Result Type:", typeof result);
-        console.log("=====================================");
-        
-        // 确保返回的是有效的 JSON
-        if (typeof result === 'string') {
-            return result;
-        }
+    const result = await apiRequest({
+      context,
+      responseFormat,
+      input,
+      functionName: "analyzeTeamCompatibility",
+    });
 
-        return result;
-    } catch (error) {
-        console.error("Error in analyzeTeamCompatibility:", error);
-        throw error;
+    // Log the raw output for debugging
+    console.log("=== analyzeTeamCompatibility OUTPUT ===");
+    console.log("Raw Result:", result);
+    console.log("Result Type:", typeof result);
+    console.log("=====================================");
+
+    // 确保返回的是有效的 JSON
+    if (typeof result === "string") {
+      return result;
     }
+
+    return result;
+  } catch (error) {
+    console.error("Error in analyzeTeamCompatibility:", error);
+    throw error;
+  }
 };

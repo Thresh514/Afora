@@ -3,9 +3,7 @@
 import { usePathname } from "next/navigation";
 import PublicNavbar from "@/components/PublicNavbar";
 
-export default function PublicLayout({
-  children,
-}: Readonly<{ children: React.ReactNode }>) {
+export default function PublicLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const pathname = usePathname();
   const isLogin = pathname?.startsWith("/login");
 

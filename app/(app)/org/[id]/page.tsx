@@ -12,47 +12,47 @@ import { doc } from "firebase/firestore";
 import { db } from "@/firebase";
 
 function OrgPage() {
-    const params = useParams();
-    const { id } = params;
-    
-    const { isSignedIn, isLoaded } = useAuth();
-    const router = useRouter();
-    const { user } = useUser();
-    const userEmail = user?.primaryEmailAddress?.emailAddress;
+  const params = useParams();
+  const { id } = params;
 
-    // Check if user has completed the onboarding survey
-    const [userData] = useDocument(
-        userEmail && id ? doc(db, "users", userEmail, "orgs", id as string) : null,
-    );
-    const hasCompletedSurvey = userData?.data()?.projOnboardingSurveyResponse;
+  const { isSignedIn, isLoaded } = useAuth();
+  const router = useRouter();
+  const { user } = useUser();
+  const userEmail = user?.primaryEmailAddress?.emailAddress;
 
-    useEffect(() => {
-        // Redirect to login if the user is not authenticated
-        if (isLoaded && !isSignedIn) {
-            router.replace("/login");
-        }
-    }, [isLoaded, isSignedIn, router]);
+  // Check if user has completed the onboarding survey
+  const [userData] = useDocument(
+    userEmail && id ? doc(db, "users", userEmail, "orgs", id as string) : null
+  );
+  const hasCompletedSurvey = userData?.data()?.projOnboardingSurveyResponse;
 
-    // Show onboarding if user hasn't completed the survey
-    const shouldShowOnboarding = !hasCompletedSurvey && isSignedIn && userData !== undefined;
+  useEffect(() => {
+    // Redirect to login if the user is not authenticated
+    if (isLoaded && !isSignedIn) {
+      router.replace("/login");
+    }
+  }, [isLoaded, isSignedIn, router]);
 
-    return (
-        <div className="flex flex-col h-full">
-            {isSignedIn && (
-                <>
-                    <OrganizationPage id={id as string} />
-                    {shouldShowOnboarding && (
-                        <ProjOnboarding
-                            orgId={id as string}
-                            projId=""
-                            onDismiss={() => {
-                                // No need to modify URL, just close the dialog
-                            }}
-                        />
-                    )}
-                </>
-            )}
-        </div>
-    );
+  // Show onboarding if user hasn't completed the survey
+  const shouldShowOnboarding = !hasCompletedSurvey && isSignedIn && userData !== undefined;
+
+  return (
+    <div className="flex flex-col h-full">
+      {isSignedIn && (
+        <>
+          <OrganizationPage id={id as string} />
+          {shouldShowOnboarding && (
+            <ProjOnboarding
+              orgId={id as string}
+              projId=""
+              onDismiss={() => {
+                // No need to modify URL, just close the dialog
+              }}
+            />
+          )}
+        </>
+      )}
+    </div>
+  );
 }
 export default OrgPage;

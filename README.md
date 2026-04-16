@@ -14,23 +14,27 @@ Afora is a full-stack team project management platform that leverages AI technol
 ### 🚀 Core Features
 
 #### 🤖 AI-Powered Team Matching
+
 - **Technical Skill Complementarity (40% weight)**: Form complementary teams based on user technical backgrounds
 - **Interest Alignment (35% weight)**: Cluster users based on industry interests and project enthusiasm
 - **Career Goal Coordination (25% weight)**: Consider long-term career planning for team compatibility
 - Support for dynamic team size configuration and existing team member expansion
 
 #### 📋 Intelligent Task Management System
+
 - **AI Task Generation**: Automatically generate personalized tasks based on project charter and team capabilities
 - **Task Pool Mechanism**: Support task status tracking, point rewards, and progress management
 - **Smart Assignment**: Automatically assign the most suitable tasks based on member skills and interests
 - **Submission System**: Complete task submission, review, and feedback workflow
 
 #### 🏆 User Scoring & Leaderboards
+
 - Personal point statistics and project contribution analysis
 - Team compatibility scoring and performance analysis
 - Real-time leaderboards and achievement system
 
 #### 🏢 Organization Management
+
 - Multi-level permission management (Organization Admin/Member)
 - Project lifecycle management
 - Real-time collaboration and notification system
@@ -38,6 +42,7 @@ Afora is a full-stack team project management platform that leverages AI technol
 ## 🛠 Technical Architecture
 
 ### Frontend Stack
+
 - **Next.js 15** - Full-stack React framework with SSR and API Routes
 - **TypeScript** - Type-safe development
 - **Tailwind CSS + Shadcn/ui** - Modern UI component library
@@ -45,20 +50,24 @@ Afora is a full-stack team project management platform that leverages AI technol
 - **React Hook Form + Zod** - Form handling and data validation
 
 ### Backend & Database
+
 - **Firebase Firestore** - NoSQL real-time database
 - **Firebase Admin SDK** - Server-side data operations
 - **Next.js Server Actions** - Server-side logic processing
 - **React Firebase Hooks** - Real-time data listening
 
 ### Authentication & Security
+
 - **Clerk** - Modern identity authentication solution
 - **Role-based Access Control** - Role-based permission system
 
 ### AI Integration
+
 - **OpenAI GPT-4** - Team matching and task generation
 - **Custom AI Scripts** - Team compatibility analysis algorithms
 
 ### Deployment & Monitoring
+
 - **Vercel** - Serverless deployment platform
 - **Vercel Analytics** - Performance monitoring
 - **Automated CRON Jobs** - Scheduled task processing
@@ -78,32 +87,38 @@ Afora is a full-stack team project management platform that leverages AI technol
 ## 🎨 Core Feature Showcase
 
 ### Intelligent Team Matching Process
+
 ```typescript
 // AI-driven team matching algorithm
 export const matching = async (teamSize, questions, input) => {
   // Technical skill complementarity (40% weight)
-  // Interest alignment matching (35% weight)  
+  // Interest alignment matching (35% weight)
   // Career goal coordination (25% weight)
   return optimizedTeams;
-}
+};
 ```
 
 ### Task Management System
+
 ```typescript
 // Intelligent task generation and assignment
 export const generateTask = async (
-  projQuestions, userResponses, 
-  teamCharterQuestions, teamCharterResponses,
-  teamMembers, memberCapabilities
+  projQuestions,
+  userResponses,
+  teamCharterQuestions,
+  teamCharterResponses,
+  teamMembers,
+  memberCapabilities
 ) => {
   // Generate personalized tasks based on team capabilities and project requirements
   return assignedTasks;
-}
+};
 ```
 
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 - Node.js 18+
 - npm/yarn
 - Firebase project
@@ -183,12 +198,14 @@ Visit [http://localhost:3000](http://localhost:3000) to view the application
 ## 📈 Business Value
 
 ### Problems Solved
+
 - ❌ Inefficient manual team formation
 - ❌ Project failure due to skill mismatches
 - ❌ High learning curve of project management tools
 - ❌ Lack of effective progress tracking mechanisms
 
 ### Solutions Provided
+
 - ✅ AI-automated team matching with 95% efficiency improvement
 - ✅ Data-driven skill complementarity analysis
 - ✅ Zero learning curve intuitive interface

@@ -60,9 +60,7 @@ export function FadeInStagger({ children, className = "", delayMs = 100 }: Stagg
         <div
           key={i}
           className={`origin-center transition-all duration-600 ease-out ${
-            visible
-              ? "translate-y-0 rotate-0 opacity-100"
-              : "translate-y-8 -rotate-2 opacity-0"
+            visible ? "translate-y-0 rotate-0 opacity-100" : "translate-y-8 -rotate-2 opacity-0"
           }`}
           style={{ transitionDelay: visible ? `${i * delayMs}ms` : "0ms" }}
         >

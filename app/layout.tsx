@@ -23,7 +23,7 @@ export default function RootLayout({
     >
       <html lang="en" suppressHydrationWarning>
         <head>
-          <link rel="icon" href="/icon.svg" type="image/svg" sizes="any"/>
+          <link rel="icon" href="/icon.svg" type="image/svg" sizes="any" />
         </head>
         <body>
           <ThemeProvider

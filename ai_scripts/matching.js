@@ -4,42 +4,43 @@
 import { apiRequest } from "./apiRequest.js";
 
 const responseFormat = {
-    type: "json_schema",
-    json_schema: {
-        name: "user_groups",
-        schema: {
-            type: "object",
-            properties: {
-                group_size: {
-                    type: "number",
-                    description: "The size that each group should contain.",
-                },
-                groups: {
-                    type: "array",
-                    description: "List of groups created from users.",
-                    items: {
-                        type: "array",
-                        description: "List of user IDs in each group.",
-                        items: {
-                            type: "string",
-                        },
-                    },
-                },
-                compatibility_score: {
-                    type: "number",
-                    description: "Overall compatibility score for the team (0-100), calculated as weighted average: technical alignment (40%) + interest alignment (35%) + career goal alignment (25%)",
-                    minimum: 70,
-                    maximum: 100
-                },
-            },
-            required: ["group_size", "groups"],
-            additionalProperties: false,
+  type: "json_schema",
+  json_schema: {
+    name: "user_groups",
+    schema: {
+      type: "object",
+      properties: {
+        group_size: {
+          type: "number",
+          description: "The size that each group should contain.",
         },
+        groups: {
+          type: "array",
+          description: "List of groups created from users.",
+          items: {
+            type: "array",
+            description: "List of user IDs in each group.",
+            items: {
+              type: "string",
+            },
+          },
+        },
+        compatibility_score: {
+          type: "number",
+          description:
+            "Overall compatibility score for the team (0-100), calculated as weighted average: technical alignment (40%) + interest alignment (35%) + career goal alignment (25%)",
+          minimum: 70,
+          maximum: 100,
+        },
+      },
+      required: ["group_size", "groups"],
+      additionalProperties: false,
     },
+  },
 };
 
 export const matching = async (teamSize, questions, input) => {
-    const context = `You are an AI-driven team formation engine. Your task is to group users into teams of size ${teamSize} based on their onboarding survey responses. Team formations are based on information from \${platform onboarding} and \${project onboarding} surveys.
+  const context = `You are an AI-driven team formation engine. Your task is to group users into teams of size ${teamSize} based on their onboarding survey responses. Team formations are based on information from \${platform onboarding} and \${project onboarding} surveys.
 
     TEAM SCORING MODEL:
     Evaluate each user across three key dimensions using the survey answers. Assign weighted scores to determine optimal groupings:
@@ -73,22 +74,25 @@ export const matching = async (teamSize, questions, input) => {
     Output Requirement:
     Return teams as a list of grouped user IDs (or names), ranked by compatibility score. Include a brief justification per team showing how they meet the three alignment criteria. Also provide an overall compatibility_score (0-100) calculated as: technical alignment (40%) + interest alignment (35%) + career goal alignment (25%).`;
 
-
-    
-    teamSize = Number(teamSize);
-    if (isNaN(teamSize) || teamSize <= 0) {
-        throw new Error("Team size must be a valid positive number");
-    }
-    if (!input || input.length === 0) {
-        throw new Error("There are no members to be matched.");
-    }
-    input = input.join(" ");
-    return await apiRequest({ context, responseFormat, input, functionName: "matching" });
+  teamSize = Number(teamSize);
+  if (isNaN(teamSize) || teamSize <= 0) {
+    throw new Error("Team size must be a valid positive number");
+  }
+  if (!input || input.length === 0) {
+    throw new Error("There are no members to be matched.");
+  }
+  input = input.join(" ");
+  return await apiRequest({ context, responseFormat, input, functionName: "matching" });
 };
 
 // 新的匹配函数，考虑现有团队成员
-export const matchingWithExistingTeam = async (teamSize, questions, newMembersInput, existingMembersInfo) => {
-    const context = `You are an AI-driven team formation engine. Your task is to select ${teamSize} new members to join an existing team, based on their onboarding survey responses and how they complement the existing team members.
+export const matchingWithExistingTeam = async (
+  teamSize,
+  questions,
+  newMembersInput,
+  existingMembersInfo
+) => {
+  const context = `You are an AI-driven team formation engine. Your task is to select ${teamSize} new members to join an existing team, based on their onboarding survey responses and how they complement the existing team members.
 
     EXISTING TEAM CONTEXT:
     The team already has the following members: ${existingMembersInfo.length > 0 ? existingMembersInfo.join("; ") : "No existing members"}
@@ -126,14 +130,14 @@ export const matchingWithExistingTeam = async (teamSize, questions, newMembersIn
     Output Requirement:
     Return the selected new team members as a single group, ranked by how well they complement the existing team. Include a brief justification showing how they fill gaps and enhance the team's overall capability. Also provide an overall compatibility_score (0-100) representing how well the new members complement the existing team.`;
 
-    teamSize = Number(teamSize);
-    if (isNaN(teamSize) || teamSize <= 0) {
-        throw new Error("Team size must be a valid positive number");
-    }
-    if (!newMembersInput || newMembersInput.length === 0) {
-        throw new Error("There are no new members to be matched.");
-    }
-    
-    const input = newMembersInput.join(" ");
-    return await apiRequest({ context, responseFormat, input, functionName: "matching" });
+  teamSize = Number(teamSize);
+  if (isNaN(teamSize) || teamSize <= 0) {
+    throw new Error("Team size must be a valid positive number");
+  }
+  if (!newMembersInput || newMembersInput.length === 0) {
+    throw new Error("There are no new members to be matched.");
+  }
+
+  const input = newMembersInput.join(" ");
+  return await apiRequest({ context, responseFormat, input, functionName: "matching" });
 };

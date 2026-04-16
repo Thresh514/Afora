@@ -1,14 +1,14 @@
 "use client";
 import { db } from "@/firebase";
 import { Project, Task, Organization } from "@/types/types";
-import {collection, getDocs, query, where, doc} from "firebase/firestore";
+import { collection, getDocs, query, where, doc } from "firebase/firestore";
 import React, { useEffect, useState, useTransition } from "react";
 import { useCollection, useDocument } from "react-firebase-hooks/firestore";
 import { Button } from "./ui/button";
 import { previewSmartAssignment, applyGroupAssignments } from "@/actions/actions";
 import { toast } from "sonner";
 import ProjectCard from "./ProjectCard";
-import {Folder, Briefcase, Loader2, Shuffle } from "lucide-react";
+import { Folder, Briefcase, Loader2, Shuffle } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { Card, CardContent } from "./ui/card";
 import { Separator } from "./ui/separator";
@@ -17,11 +17,11 @@ import AddNewTeamDialog from "./AddNewTeamDialog";
 import LoadingOverlay from "./LoadingOverlay";
 import SmartMatchingDragDrop from "./SmartMatchingDragDrop";
 import {
-    AlertDialog,
-    AlertDialogContent,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "./ui/alert-dialog";
 
 // type MatchingOutput = {
@@ -30,543 +30,551 @@ import {
 // };
 
 const ProjTab = ({
-    orgId,
-    userRole,
-    userId,
+  orgId,
+  userRole,
+  userId,
 }: {
-    userId: string;
-    userRole: string;
-    orgId: string;
+  userId: string;
+  userRole: string;
+  orgId: string;
 }) => {
-    const [isPending, startTransition] = useTransition();
-    const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [isPending, startTransition] = useTransition();
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-    // const [output, setOutput] = useState("");
-    // const [parsedOutput, setParsedOutput] = useState<MatchingOutput | null>(null);
-    const [projectTasks, setProjectTasks] = useState<{[key: string]: Task[]}>({});
-    const [defaultTeamSize] = useState(3); // Default team size for smart matching
-    
-    // Smart Matching Preview Dialog State
-    const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false);
-    const [previewData, setPreviewData] = useState<{
-        success: boolean;
-        message: string;
-        preview: Array<{
-            projectId: string;
-            projectTitle: string;
-            currentMembers: string[];
-            spotsAvailable: number;
-            proposedNewMembers: string[];
-            aiMatchingScore: number | null;
-            matchingReasoning: string;
-        }>;
-        totalUnassigned?: number;
-        totalProjectsNeedingMembers?: number;
-        totalAssigned?: number;
-        remainingUnassigned?: number;
-    } | null>(null);
-    const [isPreviewLoading, setIsPreviewLoading] = useState(false);
-    
-    // Member Transfer State (integrated with Smart Matching)
-    const [transferLoading] = useState(false);
-    
-    // Preview state for temporary changes (not saved until confirm)
-    const [previewChanges, setPreviewChanges] = useState<{
-        [projectId: string]: {
-            addedMembers: string[];
-            removedMembers: string[];
-            addedAdmins: string[];
-            removedAdmins: string[];
-        }
-    }>({});
-    
-    // Error handling state
-    const [smartMatchingError, setSmartMatchingError] = useState<ErrorInfo | null>(null);
+  // const [output, setOutput] = useState("");
+  // const [parsedOutput, setParsedOutput] = useState<MatchingOutput | null>(null);
+  const [projectTasks, setProjectTasks] = useState<{ [key: string]: Task[] }>({});
+  const [defaultTeamSize] = useState(3); // Default team size for smart matching
 
-    // 从组织的 projs 子集合读取基本项目数据
-    const orgProjectsQ = query(collection(db, "organizations", orgId, "projs"));
-    const [orgProjects] = useCollection(orgProjectsQ);
-    
-    // 从主 projects 集合读取完整项目数据（包含 title）
-    const projectsQ = query(collection(db, "projects"), where("orgId", "==", orgId));
-    const [allProjects] = useCollection(projectsQ);
-    
-    // 获取组织数据
-    const [org] = useDocument(doc(db, "organizations", orgId));
-    const orgData = org?.data() as Organization;
+  // Smart Matching Preview Dialog State
+  const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false);
+  const [previewData, setPreviewData] = useState<{
+    success: boolean;
+    message: string;
+    preview: Array<{
+      projectId: string;
+      projectTitle: string;
+      currentMembers: string[];
+      spotsAvailable: number;
+      proposedNewMembers: string[];
+      aiMatchingScore: number | null;
+      matchingReasoning: string;
+    }>;
+    totalUnassigned?: number;
+    totalProjectsNeedingMembers?: number;
+    totalAssigned?: number;
+    remainingUnassigned?: number;
+  } | null>(null);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
 
-    // 移除旧的用户项目获取逻辑，现在直接使用组织的项目数据
+  // Member Transfer State (integrated with Smart Matching)
+  const [transferLoading] = useState(false);
 
-    // useEffect(() => {
-    //     if (output) {
-    //         try {
-    //             const parsed: MatchingOutput = JSON.parse(output);
-    //             setParsedOutput(parsed);
-    //         } catch (error) {
-    //             console.error("Error parsing output:", error);
-    //         }
-    //     }
-    // }, [output]);
-
-    // Fetch project tasks for each project
-    useEffect(() => {
-        const fetchProjectTasks = async () => {
-            if (!allProjects || allProjects.docs.length === 0) return;
-
-            const tasksMap: {[key: string]: Task[]} = {};
-            
-            for (const projectDoc of allProjects.docs) {
-                const projectId = projectDoc.id;
-                try {
-                    const stagesQuery = query(
-                        collection(db, "projects", projectId, "stages")
-                    );
-                    const stagesSnapshot = await getDocs(stagesQuery);
-                    
-                    const allTasks: Task[] = [];
-                    
-                    for (const stageDoc of stagesSnapshot.docs) {
-                        const tasksQuery = query(
-                            collection(db, "projects", projectId, "stages", stageDoc.id, "tasks")
-                        );
-                        const tasksSnapshot = await getDocs(tasksQuery);
-                        
-                        const stageTasks = tasksSnapshot.docs.map(doc => ({
-                            ...(doc.data() as Task),
-                            id: doc.id
-                        }));
-                        
-                        allTasks.push(...stageTasks);
-                    }
-                    
-                    tasksMap[projectId] = allTasks;
-                } catch (error) {
-                    console.error(`Error fetching tasks for project ${projectId}:`, error);
-                }
-            }
-            
-            setProjectTasks(tasksMap);
-        };
-
-        fetchProjectTasks();
-    }, [allProjects, refreshTrigger]);
-
-    // const handleAccept = () => {
-    //     if (!parsedOutput) return;
-
-    //     startTransition(async () => {
-    //         try {
-    //             const result = await updateProjects(orgId, parsedOutput.groups);
-    //             if (result?.success) {
-    //                 toast.success("Teams updated successfully!");
-    //                 setOutput("");
-    //                 setParsedOutput(null);
-    //                 setRefreshTrigger((prev: number) => prev + 1);
-    //             } else {
-    //                 toast.error(result?.message || "Failed to update projects");
-    //             }
-    //         } catch (error) {
-    //             console.error("Failed to update projects:", error);
-    //             toast.error("Failed to update teams");
-    //         }
-    //     });
-    // };
-
-    const handleProjectCreated = () => {
-        setRefreshTrigger((prev: number) => prev + 1);
+  // Preview state for temporary changes (not saved until confirm)
+  const [previewChanges, setPreviewChanges] = useState<{
+    [projectId: string]: {
+      addedMembers: string[];
+      removedMembers: string[];
+      addedAdmins: string[];
+      removedAdmins: string[];
     };
+  }>({});
 
-    const handleSmartMatching = async () => {
-        // console.log("Current userRole:", userRole); // Debug info
-        if (userRole !== "admin") {
-            showErrorToast({
-                type: "smart_matching",
-                message: "Only administrators can use smart matching functionality",
-                canRetry: false
-            });
-            return;
-        }
-        
-        setIsPreviewLoading(true);
-        setSmartMatchingError(null);
-        
+  // Error handling state
+  const [smartMatchingError, setSmartMatchingError] = useState<ErrorInfo | null>(null);
+
+  // 从组织的 projs 子集合读取基本项目数据
+  const orgProjectsQ = query(collection(db, "organizations", orgId, "projs"));
+  const [orgProjects] = useCollection(orgProjectsQ);
+
+  // 从主 projects 集合读取完整项目数据（包含 title）
+  const projectsQ = query(collection(db, "projects"), where("orgId", "==", orgId));
+  const [allProjects] = useCollection(projectsQ);
+
+  // 获取组织数据
+  const [org] = useDocument(doc(db, "organizations", orgId));
+  const orgData = org?.data() as Organization;
+
+  // 移除旧的用户项目获取逻辑，现在直接使用组织的项目数据
+
+  // useEffect(() => {
+  //     if (output) {
+  //         try {
+  //             const parsed: MatchingOutput = JSON.parse(output);
+  //             setParsedOutput(parsed);
+  //         } catch (error) {
+  //             console.error("Error parsing output:", error);
+  //         }
+  //     }
+  // }, [output]);
+
+  // Fetch project tasks for each project
+  useEffect(() => {
+    const fetchProjectTasks = async () => {
+      if (!allProjects || allProjects.docs.length === 0) return;
+
+      const tasksMap: { [key: string]: Task[] } = {};
+
+      for (const projectDoc of allProjects.docs) {
+        const projectId = projectDoc.id;
         try {
-            // console.log("🔍 Getting smart assignment preview with defaultTeamSize:", defaultTeamSize);
-            const result = await previewSmartAssignment(orgId, defaultTeamSize);
-            // console.log("📊 Preview result:", result);
+          const stagesQuery = query(collection(db, "projects", projectId, "stages"));
+          const stagesSnapshot = await getDocs(stagesQuery);
 
-            if (result.success) {
-                setPreviewData(result);
-                setIsPreviewDialogOpen(true);
-                setSmartMatchingError(null);
-            } else {
-                const errorInfo: ErrorInfo = {
-                    type: "smart_matching",
-                    message: result.message || "Failed to generate assignment preview",
-                    details: (result as { debug?: unknown }).debug ? JSON.stringify((result as { debug?: unknown }).debug, null, 2) : undefined,
-                    timestamp: new Date(),
-                    canRetry: true,
-                    onRetry: handleSmartMatching,
-                    onDismiss: () => setSmartMatchingError(null)
-                };
-                setSmartMatchingError(errorInfo);
-                showErrorToast(errorInfo);
-            }
+          const allTasks: Task[] = [];
+
+          for (const stageDoc of stagesSnapshot.docs) {
+            const tasksQuery = query(
+              collection(db, "projects", projectId, "stages", stageDoc.id, "tasks")
+            );
+            const tasksSnapshot = await getDocs(tasksQuery);
+
+            const stageTasks = tasksSnapshot.docs.map((doc) => ({
+              ...(doc.data() as Task),
+              id: doc.id,
+            }));
+
+            allTasks.push(...stageTasks);
+          }
+
+          tasksMap[projectId] = allTasks;
         } catch (error) {
-            console.error("Error getting assignment preview:", error);
-            const errorInfo: ErrorInfo = {
-                type: "smart_matching",
-                message: error instanceof Error ? error.message : "An unexpected error occurred during smart matching",
-                details: error instanceof Error ? error.stack : String(error),
-                timestamp: new Date(),
-                canRetry: true,
-                onRetry: handleSmartMatching,
-                onDismiss: () => setSmartMatchingError(null)
-            };
-            setSmartMatchingError(errorInfo);
-            showErrorToast(errorInfo);
-        } finally {
-            setIsPreviewLoading(false);
+          console.error(`Error fetching tasks for project ${projectId}:`, error);
         }
+      }
+
+      setProjectTasks(tasksMap);
     };
 
-    const handleConfirmAssignment = async () => {
-        startTransition(async () => {
-            try {
-                // 汇总所有项目的最终成员/管理员（包含预览变更与未拖动的 AI 建议）
-                const addedEverywhere = new Set<string>();
-                Object.values(previewChanges).forEach((c) => {
-                    c.addedMembers.forEach((e) => addedEverywhere.add(e));
-                    c.addedAdmins.forEach((e) => addedEverywhere.add(e));
-                });
+    fetchProjectTasks();
+  }, [allProjects, refreshTrigger]);
 
-                const updates = displayProjects.map((project) => {
-                    const aiPreview = previewData?.preview?.find((p) => p.projectId === project.projId);
-                    const proposedNewMembers = aiPreview?.proposedNewMembers || [];
-                    const projectChanges = previewChanges[project.projId] || {
-                        addedMembers: [],
-                        removedMembers: [],
-                        addedAdmins: [],
-                        removedAdmins: [],
-                    };
+  // const handleAccept = () => {
+  //     if (!parsedOutput) return;
 
-                    // 当前成员/管理员
-                    const baseMembers = (project.members || []).filter((m) => !projectChanges.removedMembers.includes(m));
-                    const baseAdmins = (project.admins || []).filter((a) => !projectChanges.removedAdmins.includes(a));
+  //     startTransition(async () => {
+  //         try {
+  //             const result = await updateProjects(orgId, parsedOutput.groups);
+  //             if (result?.success) {
+  //                 toast.success("Teams updated successfully!");
+  //                 setOutput("");
+  //                 setParsedOutput(null);
+  //                 setRefreshTrigger((prev: number) => prev + 1);
+  //             } else {
+  //                 toast.error(result?.message || "Failed to update projects");
+  //             }
+  //         } catch (error) {
+  //             console.error("Failed to update projects:", error);
+  //             toast.error("Failed to update teams");
+  //         }
+  //     });
+  // };
 
-                    // 叠加新增
-                    let members = [...baseMembers, ...projectChanges.addedMembers];
-                    const admins: string[] = [...baseAdmins, ...projectChanges.addedAdmins];
+  const handleProjectCreated = () => {
+    setRefreshTrigger((prev: number) => prev + 1);
+  };
 
-                    // 将仍未拖动的 AI 建议加入成员（排除已被手动添加到任意项目的人）
-                    const remainingProposed = proposedNewMembers.filter((email: string) => !addedEverywhere.has(email));
-                    members = [...members, ...remainingProposed];
+  const handleSmartMatching = async () => {
+    // console.log("Current userRole:", userRole); // Debug info
+    if (userRole !== "admin") {
+      showErrorToast({
+        type: "smart_matching",
+        message: "Only administrators can use smart matching functionality",
+        canRetry: false,
+      });
+      return;
+    }
 
-                    // 去重与互斥（管理员从成员里移除）
-                    const uniqueAdmins = Array.from(new Set(admins));
-                    const uniqueMembers = Array.from(new Set(members)).filter((m) => !uniqueAdmins.includes(m));
+    setIsPreviewLoading(true);
+    setSmartMatchingError(null);
 
-                    return {
-                        projectId: project.projId,
-                        members: uniqueMembers,
-                        admins: uniqueAdmins,
-                    };
-                });
+    try {
+      // console.log("🔍 Getting smart assignment preview with defaultTeamSize:", defaultTeamSize);
+      const result = await previewSmartAssignment(orgId, defaultTeamSize);
+      // console.log("📊 Preview result:", result);
 
-                const result = await applyGroupAssignments(orgId, updates);
-                if (!result?.success) {
-                    throw new Error(result?.message || "Apply group assignments failed");
-                }
-
-                toast.success("All changes applied successfully!");
-                setIsPreviewDialogOpen(false);
-                setPreviewData(null);
-                setPreviewChanges({});
-                setRefreshTrigger((prev: number) => prev + 1);
-            } catch (error) {
-                console.error("Error applying changes:", error);
-                showErrorToast({
-                    type: "smart_matching",
-                    message: "Failed to apply some changes",
-                    details: error instanceof Error ? error.message : String(error),
-                    timestamp: new Date(),
-                    canRetry: true,
-                });
-            }
-        });
-    };
-
-    // Preview-only member transfer (for Smart Matching Preview dialog)
-    const handlePreviewMemberTransfer = (memberEmail: string, fromProjectId: string, toProjectId: string) => {
-        // Get current effective members for both projects (including preview changes)
-        const getEffectiveMembers = (projectId: string) => {
-            const project = displayProjects.find(p => p.projId === projectId);
-            const changes = previewChanges[projectId] || { addedMembers: [], removedMembers: [], addedAdmins: [], removedAdmins: [] };
-            
-            const currentMembers = project?.members || [];
-            const currentAdmins = project?.admins || [];
-            
-            const effectiveMembers = [
-                ...currentMembers.filter(m => !changes.removedMembers.includes(m)),
-                ...changes.addedMembers
-            ];
-            
-            const effectiveAdmins = [
-                ...currentAdmins.filter(a => !changes.removedAdmins.includes(a)),
-                ...changes.addedAdmins
-            ];
-            
-            return { members: effectiveMembers, admins: effectiveAdmins };
+      if (result.success) {
+        setPreviewData(result);
+        setIsPreviewDialogOpen(true);
+        setSmartMatchingError(null);
+      } else {
+        const errorInfo: ErrorInfo = {
+          type: "smart_matching",
+          message: result.message || "Failed to generate assignment preview",
+          details: (result as { debug?: unknown }).debug
+            ? JSON.stringify((result as { debug?: unknown }).debug, null, 2)
+            : undefined,
+          timestamp: new Date(),
+          canRetry: true,
+          onRetry: handleSmartMatching,
+          onDismiss: () => setSmartMatchingError(null),
         };
+        setSmartMatchingError(errorInfo);
+        showErrorToast(errorInfo);
+      }
+    } catch (error) {
+      console.error("Error getting assignment preview:", error);
+      const errorInfo: ErrorInfo = {
+        type: "smart_matching",
+        message:
+          error instanceof Error
+            ? error.message
+            : "An unexpected error occurred during smart matching",
+        details: error instanceof Error ? error.stack : String(error),
+        timestamp: new Date(),
+        canRetry: true,
+        onRetry: handleSmartMatching,
+        onDismiss: () => setSmartMatchingError(null),
+      };
+      setSmartMatchingError(errorInfo);
+      showErrorToast(errorInfo);
+    } finally {
+      setIsPreviewLoading(false);
+    }
+  };
 
-        // Check if member is already in target project
-        const targetEffective = getEffectiveMembers(toProjectId);
-        const isAlreadyInTarget = 
-            targetEffective.members.includes(memberEmail) || 
-            targetEffective.admins.includes(memberEmail);
-        
-        if (isAlreadyInTarget) {
-            showErrorToast({
-                type: "smart_matching",
-                message: "Member is already in this project",
-                canRetry: false
-            });
-            return;
-        }
-
-        // Check source project
-        const sourceProject = displayProjects.find(p => p.projId === fromProjectId);
-        const isAdminInSource = sourceProject?.admins?.includes(memberEmail);
-
-        // Update preview changes
-        setPreviewChanges(prev => {
-            const newChanges = { ...prev };
-            
-            // Initialize project changes if not exists
-            if (!newChanges[toProjectId]) {
-                newChanges[toProjectId] = { addedMembers: [], removedMembers: [], addedAdmins: [], removedAdmins: [] };
-            }
-
-            if (fromProjectId === "unassigned") {
-                // AI suggested member - just add to target if not already added
-                if (!newChanges[toProjectId].addedMembers.includes(memberEmail) && !newChanges[toProjectId].addedAdmins.includes(memberEmail)) {
-                    newChanges[toProjectId].addedMembers.push(memberEmail);
-                }
-            } else {
-                // Initialize source project changes if not exists
-                if (!newChanges[fromProjectId]) {
-                    newChanges[fromProjectId] = { addedMembers: [], removedMembers: [], addedAdmins: [], removedAdmins: [] };
-                }
-
-                if (isAdminInSource) {
-                    // Admin can be in multiple projects - copy (avoid duplicates)
-                    if (!newChanges[toProjectId].addedAdmins.includes(memberEmail)) {
-                        newChanges[toProjectId].addedAdmins.push(memberEmail);
-                    }
-                } else {
-                    // Regular member - move (remove from source, add to target)
-                    if (!newChanges[fromProjectId].removedMembers.includes(memberEmail)) {
-                        newChanges[fromProjectId].removedMembers.push(memberEmail);
-                    }
-                    if (!newChanges[toProjectId].addedMembers.includes(memberEmail)) {
-                        newChanges[toProjectId].addedMembers.push(memberEmail);
-                    }
-                }
-            }
-            
-            return newChanges;
+  const handleConfirmAssignment = async () => {
+    startTransition(async () => {
+      try {
+        // 汇总所有项目的最终成员/管理员（包含预览变更与未拖动的 AI 建议）
+        const addedEverywhere = new Set<string>();
+        Object.values(previewChanges).forEach((c) => {
+          c.addedMembers.forEach((e) => addedEverywhere.add(e));
+          c.addedAdmins.forEach((e) => addedEverywhere.add(e));
         });
 
-        const actionType = isAdminInSource ? "copied" : "moved";
-        toast.success(`Member ${actionType} in preview! Click "Confirm Assignment" to apply.`);
+        const updates = displayProjects.map((project) => {
+          const aiPreview = previewData?.preview?.find((p) => p.projectId === project.projId);
+          const proposedNewMembers = aiPreview?.proposedNewMembers || [];
+          const projectChanges = previewChanges[project.projId] || {
+            addedMembers: [],
+            removedMembers: [],
+            addedAdmins: [],
+            removedAdmins: [],
+          };
+
+          // 当前成员/管理员
+          const baseMembers = (project.members || []).filter(
+            (m) => !projectChanges.removedMembers.includes(m)
+          );
+          const baseAdmins = (project.admins || []).filter(
+            (a) => !projectChanges.removedAdmins.includes(a)
+          );
+
+          // 叠加新增
+          let members = [...baseMembers, ...projectChanges.addedMembers];
+          const admins: string[] = [...baseAdmins, ...projectChanges.addedAdmins];
+
+          // 将仍未拖动的 AI 建议加入成员（排除已被手动添加到任意项目的人）
+          const remainingProposed = proposedNewMembers.filter(
+            (email: string) => !addedEverywhere.has(email)
+          );
+          members = [...members, ...remainingProposed];
+
+          // 去重与互斥（管理员从成员里移除）
+          const uniqueAdmins = Array.from(new Set(admins));
+          const uniqueMembers = Array.from(new Set(members)).filter(
+            (m) => !uniqueAdmins.includes(m)
+          );
+
+          return {
+            projectId: project.projId,
+            members: uniqueMembers,
+            admins: uniqueAdmins,
+          };
+        });
+
+        const result = await applyGroupAssignments(orgId, updates);
+        if (!result?.success) {
+          throw new Error(result?.message || "Apply group assignments failed");
+        }
+
+        toast.success("All changes applied successfully!");
+        setIsPreviewDialogOpen(false);
+        setPreviewData(null);
+        setPreviewChanges({});
+        setRefreshTrigger((prev: number) => prev + 1);
+      } catch (error) {
+        console.error("Error applying changes:", error);
+        showErrorToast({
+          type: "smart_matching",
+          message: "Failed to apply some changes",
+          details: error instanceof Error ? error.message : String(error),
+          timestamp: new Date(),
+          canRetry: true,
+        });
+      }
+    });
+  };
+
+  // Preview-only member transfer (for Smart Matching Preview dialog)
+  const handlePreviewMemberTransfer = (
+    memberEmail: string,
+    fromProjectId: string,
+    toProjectId: string
+  ) => {
+    // Get current effective members for both projects (including preview changes)
+    const getEffectiveMembers = (projectId: string) => {
+      const project = displayProjects.find((p) => p.projId === projectId);
+      const changes = previewChanges[projectId] || {
+        addedMembers: [],
+        removedMembers: [],
+        addedAdmins: [],
+        removedAdmins: [],
+      };
+
+      const currentMembers = project?.members || [];
+      const currentAdmins = project?.admins || [];
+
+      const effectiveMembers = [
+        ...currentMembers.filter((m) => !changes.removedMembers.includes(m)),
+        ...changes.addedMembers,
+      ];
+
+      const effectiveAdmins = [
+        ...currentAdmins.filter((a) => !changes.removedAdmins.includes(a)),
+        ...changes.addedAdmins,
+      ];
+
+      return { members: effectiveMembers, admins: effectiveAdmins };
     };
 
+    // Check if member is already in target project
+    const targetEffective = getEffectiveMembers(toProjectId);
+    const isAlreadyInTarget =
+      targetEffective.members.includes(memberEmail) || targetEffective.admins.includes(memberEmail);
 
+    if (isAlreadyInTarget) {
+      showErrorToast({
+        type: "smart_matching",
+        message: "Member is already in this project",
+        canRetry: false,
+      });
+      return;
+    }
 
-    const totalProjects = allProjects?.docs.length || 0;
-    
-    // 合并项目数据：从主集合获取 title，从组织子集合获取成员信息
-    const allProjectsData = (allProjects?.docs || []).map((doc) => {
-        const mainData = doc.data(); // 主集合数据（包含 title）
-        const orgProjectDoc = orgProjects?.docs.find(orgDoc => orgDoc.id === doc.id);
-        const orgData = orgProjectDoc?.data(); // 组织子集合数据（包含成员信息）
-        
-        return {
-            projId: doc.id,
-            orgId: orgId,
-            title: mainData?.title, // 从主集合读取 title
-            members: orgData?.members || [], // 从组织子集合读取成员
-            admins: orgData?.admins || [], // 从组织子集合读取管理员
-            adminsAsUsers: orgData?.adminsAsUsers || [],
-            teamCharterResponse: mainData?.teamCharterResponse || [],
-            teamSize: orgData?.teamSize, // 从组织子集合读取团队大小
-            createdAt: mainData?.createdAt,
-            description: mainData?.description,
-            projectType: mainData?.projectType,
-            ...mainData,
-            // 用组织子集合的数据覆盖成员相关字段
-            ...(orgData && {
-                members: orgData.members || [],
-                admins: orgData.admins || [],
-                teamSize: orgData.teamSize
-            })
-        } as Project;
+    // Check source project
+    const sourceProject = displayProjects.find((p) => p.projId === fromProjectId);
+    const isAdminInSource = sourceProject?.admins?.includes(memberEmail);
+
+    // Update preview changes
+    setPreviewChanges((prev) => {
+      const newChanges = { ...prev };
+
+      // Initialize project changes if not exists
+      if (!newChanges[toProjectId]) {
+        newChanges[toProjectId] = {
+          addedMembers: [],
+          removedMembers: [],
+          addedAdmins: [],
+          removedAdmins: [],
+        };
+      }
+
+      if (fromProjectId === "unassigned") {
+        // AI suggested member - just add to target if not already added
+        if (
+          !newChanges[toProjectId].addedMembers.includes(memberEmail) &&
+          !newChanges[toProjectId].addedAdmins.includes(memberEmail)
+        ) {
+          newChanges[toProjectId].addedMembers.push(memberEmail);
+        }
+      } else {
+        // Initialize source project changes if not exists
+        if (!newChanges[fromProjectId]) {
+          newChanges[fromProjectId] = {
+            addedMembers: [],
+            removedMembers: [],
+            addedAdmins: [],
+            removedAdmins: [],
+          };
+        }
+
+        if (isAdminInSource) {
+          // Admin can be in multiple projects - copy (avoid duplicates)
+          if (!newChanges[toProjectId].addedAdmins.includes(memberEmail)) {
+            newChanges[toProjectId].addedAdmins.push(memberEmail);
+          }
+        } else {
+          // Regular member - move (remove from source, add to target)
+          if (!newChanges[fromProjectId].removedMembers.includes(memberEmail)) {
+            newChanges[fromProjectId].removedMembers.push(memberEmail);
+          }
+          if (!newChanges[toProjectId].addedMembers.includes(memberEmail)) {
+            newChanges[toProjectId].addedMembers.push(memberEmail);
+          }
+        }
+      }
+
+      return newChanges;
     });
-    
-    // 根据用户角色过滤项目
-    const displayProjects = userRole === "admin" 
-        ? allProjectsData // 管理员显示所有项目
-        : allProjectsData.filter(proj => 
+
+    const actionType = isAdminInSource ? "copied" : "moved";
+    toast.success(`Member ${actionType} in preview! Click "Confirm Assignment" to apply.`);
+  };
+
+  const totalProjects = allProjects?.docs.length || 0;
+
+  // 合并项目数据：从主集合获取 title，从组织子集合获取成员信息
+  const allProjectsData = (allProjects?.docs || []).map((doc) => {
+    const mainData = doc.data(); // 主集合数据（包含 title）
+    const orgProjectDoc = orgProjects?.docs.find((orgDoc) => orgDoc.id === doc.id);
+    const orgData = orgProjectDoc?.data(); // 组织子集合数据（包含成员信息）
+
+    return {
+      projId: doc.id,
+      orgId: orgId,
+      title: mainData?.title, // 从主集合读取 title
+      members: orgData?.members || [], // 从组织子集合读取成员
+      admins: orgData?.admins || [], // 从组织子集合读取管理员
+      adminsAsUsers: orgData?.adminsAsUsers || [],
+      teamCharterResponse: mainData?.teamCharterResponse || [],
+      teamSize: orgData?.teamSize, // 从组织子集合读取团队大小
+      createdAt: mainData?.createdAt,
+      description: mainData?.description,
+      projectType: mainData?.projectType,
+      ...mainData,
+      // 用组织子集合的数据覆盖成员相关字段
+      ...(orgData && {
+        members: orgData.members || [],
+        admins: orgData.admins || [],
+        teamSize: orgData.teamSize,
+      }),
+    } as Project;
+  });
+
+  // 根据用户角色过滤项目
+  const displayProjects =
+    userRole === "admin"
+      ? allProjectsData // 管理员显示所有项目
+      : allProjectsData.filter(
+          (proj) =>
             // 普通用户只显示自己参与的项目
             proj.members?.includes(userId) || proj.admins?.includes(userId)
         );
-    
-    const activeProjects = displayProjects.filter(proj => 
-        (proj.members?.length || 0) > 0 || (proj.admins?.length || 0) > 0
-    ).length;
 
-    return (
-        <>
-            {/* Loading overlay for applying team groups */}
-            <LoadingOverlay 
-                isVisible={isPending}
-                message="Processing Team Groups..."
-                description="Applying new team group configuration, please wait..."
-            />
-            
-            {/* Loading overlay for Smart Matching preview */}
-            <LoadingOverlay 
-                isVisible={isPreviewLoading}
-                message="Generating Smart Matching Preview..."
-                description="Analyzing team compatibility and generating optimal member assignments..."
-            />
-            
-            <div className="flex h-auto overflow-hidden rounded-lg bg-gradient-to-br from-background to-muted/40">
-            {/* Left Sidebar */}
-            <div className="w-80 bg-card border-r border-border flex flex-col">
-                {/* Header */}
-                <div className="p-6 border-b border-border bg-gradient-to-r from-purple-600 to-blue-600 text-white">
-                    <div className="flex items-center gap-3 mb-6">
-                        <div className="p-2 bg-white bg-opacity-20 rounded-lg">
-                            <Briefcase className="h-6 w-6" />
-                        </div>
-                        <h2 className="text-xl font-bold">
-                            Team Management
-                        </h2>
-                    </div>
+  const activeProjects = displayProjects.filter(
+    (proj) => (proj.members?.length || 0) > 0 || (proj.admins?.length || 0) > 0
+  ).length;
 
-                    {/* Stats Cards */}
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="bg-white bg-opacity-20 backdrop-blur-sm p-3 rounded-lg">
-                            <div className="text-2xl font-bold">
-                                {totalProjects}
-                            </div>
-                            <div className="text-xs opacity-90">
-                                Total Teams
-                            </div>
-                        </div>
-                        <div className="bg-white bg-opacity-20 backdrop-blur-sm p-3 rounded-lg">
-                            <div className="text-2xl font-bold">
-                                {activeProjects}
-                            </div>
-                            <div className="text-xs opacity-90">Active</div>
-                        </div>
-                    </div>
-                </div>
-                
+  return (
+    <>
+      {/* Loading overlay for applying team groups */}
+      <LoadingOverlay
+        isVisible={isPending}
+        message="Processing Team Groups..."
+        description="Applying new team group configuration, please wait..."
+      />
 
-                {/* Content Area */}
-                <div className="flex-1 overflow-y-auto p-4">
-                        <div className="space-y-4">
-                            <div className="text-sm font-medium text-muted-foreground">
-                                Team Overview
-                            </div>
-                            <Card className="border-0 shadow-sm">
-                                <CardContent className="p-4">
-                                    <div className="space-y-3">
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-sm text-muted-foreground">
-                                                Total Teams
-                                            </span>
-                                            <Badge variant="secondary">
-                                                {totalProjects}
-                                            </Badge>
-                                        </div>
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-sm text-muted-foreground">
-                                                Active Teams
-                                            </span>
-                                            <Badge variant="default">
-                                                {activeProjects}
-                                            </Badge>
-                                        </div>
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-sm text-muted-foreground">
-                                                Role
-                                            </span>
-                                            <span className="text-sm font-medium">
-                                                {userRole === "admin" ? "Admin" : "Member"}
-                                            </span>
-                                        </div>
-                                        <Separator />
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-sm text-muted-foreground">
-                                                Total Members
-                                            </span>
-                                            <Badge variant="outline">
-                                                {orgData ? (orgData.admins?.length || 0) + (orgData.members?.length || 0) : 0}
-                                            </Badge>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </div>
-                </div>
+      {/* Loading overlay for Smart Matching preview */}
+      <LoadingOverlay
+        isVisible={isPreviewLoading}
+        message="Generating Smart Matching Preview..."
+        description="Analyzing team compatibility and generating optimal member assignments..."
+      />
 
-                {/* Actions */}
-                <div className="p-4 border-t border-border bg-muted/50">
-                    <div className="space-y-2">
-                        
-                        {/* Add New Team - Direct invitation without AI matching */}
-                        <AddNewTeamDialog 
-                            orgId={orgId}
-                            onTeamCreated={handleProjectCreated}
-                            totalProjects={totalProjects}
-                        />
-                        
-                        {/* Smart Matching - Only for admins */}
-                        {userRole === "admin" && (
-                            <>
-                                <Button
-                                    onClick={handleSmartMatching}
-                                    disabled={isPending || isPreviewLoading || (orgData ? (orgData.members?.length || 0) === 0 : true)}
-                                    className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
-                                    size="sm"
-                                >
-                                    <Shuffle className="h-4 w-4 mr-2" />
-                                    Smart Matching
-                                </Button>
-                                
-                                {/* Smart Matching Error Display */}
-                                {smartMatchingError && (
-                                    <ErrorDisplay 
-                                        error={smartMatchingError} 
-                                        className="mt-2 text-sm"
-                                    />
-                                )}
-                                
-                            </>
-                        )}
-                        
-
-                    </div>
-                </div>
+      <div className="flex h-auto overflow-hidden rounded-lg bg-gradient-to-br from-background to-muted/40">
+        {/* Left Sidebar */}
+        <div className="w-80 bg-card border-r border-border flex flex-col">
+          {/* Header */}
+          <div className="p-6 border-b border-border bg-gradient-to-r from-purple-600 to-blue-600 text-white">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 bg-white bg-opacity-20 rounded-lg">
+                <Briefcase className="h-6 w-6" />
+              </div>
+              <h2 className="text-xl font-bold">Team Management</h2>
             </div>
 
-            {/* Right Content Area */}
-            <div className="flex flex-1 flex-col bg-card">
-                {/* Team Generation Results */}
-                {/* {output && parsedOutput && parsedOutput.groups && (
+            {/* Stats Cards */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-white bg-opacity-20 backdrop-blur-sm p-3 rounded-lg">
+                <div className="text-2xl font-bold">{totalProjects}</div>
+                <div className="text-xs opacity-90">Total Teams</div>
+              </div>
+              <div className="bg-white bg-opacity-20 backdrop-blur-sm p-3 rounded-lg">
+                <div className="text-2xl font-bold">{activeProjects}</div>
+                <div className="text-xs opacity-90">Active</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Content Area */}
+          <div className="flex-1 overflow-y-auto p-4">
+            <div className="space-y-4">
+              <div className="text-sm font-medium text-muted-foreground">Team Overview</div>
+              <Card className="border-0 shadow-sm">
+                <CardContent className="p-4">
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Total Teams</span>
+                      <Badge variant="secondary">{totalProjects}</Badge>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Active Teams</span>
+                      <Badge variant="default">{activeProjects}</Badge>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Role</span>
+                      <span className="text-sm font-medium">
+                        {userRole === "admin" ? "Admin" : "Member"}
+                      </span>
+                    </div>
+                    <Separator />
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Total Members</span>
+                      <Badge variant="outline">
+                        {orgData
+                          ? (orgData.admins?.length || 0) + (orgData.members?.length || 0)
+                          : 0}
+                      </Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="p-4 border-t border-border bg-muted/50">
+            <div className="space-y-2">
+              {/* Add New Team - Direct invitation without AI matching */}
+              <AddNewTeamDialog
+                orgId={orgId}
+                onTeamCreated={handleProjectCreated}
+                totalProjects={totalProjects}
+              />
+
+              {/* Smart Matching - Only for admins */}
+              {userRole === "admin" && (
+                <>
+                  <Button
+                    onClick={handleSmartMatching}
+                    disabled={
+                      isPending ||
+                      isPreviewLoading ||
+                      (orgData ? (orgData.members?.length || 0) === 0 : true)
+                    }
+                    className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
+                    size="sm"
+                  >
+                    <Shuffle className="h-4 w-4 mr-2" />
+                    Smart Matching
+                  </Button>
+
+                  {/* Smart Matching Error Display */}
+                  {smartMatchingError && (
+                    <ErrorDisplay error={smartMatchingError} className="mt-2 text-sm" />
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Content Area */}
+        <div className="flex flex-1 flex-col bg-card">
+          {/* Team Generation Results */}
+          {/* {output && parsedOutput && parsedOutput.groups && (
                     <div className="p-6 border-b border-border bg-blue-50">
                         <h3 className="text-lg font-semibold text-foreground mb-4">
                             Generated Team Groups
@@ -615,146 +623,139 @@ const ProjTab = ({
                     </div>
                 )} */}
 
-                {/* Content Header */}
-                <div className="bg-card p-6 border-b border-border">
-                    <h3 className="text-lg font-semibold text-foreground">
-                        Team Overview
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                        Manage and monitor all your teams
-                    </p>
-                </div>
+          {/* Content Header */}
+          <div className="bg-card p-6 border-b border-border">
+            <h3 className="text-lg font-semibold text-foreground">Team Overview</h3>
+            <p className="text-sm text-muted-foreground">Manage and monitor all your teams</p>
+          </div>
 
-                {/* Content Area */}
-                <div className="flex-1 overflow-y-auto p-6">
-                        <div className="space-y-6">
-                            {displayProjects.length > 0 ? (
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                    {displayProjects
-                                        .sort((a, b) =>
-                                            (a.title || "").localeCompare(b.title || ""),
-                                        )
-                                        .map((proj) => (
-                                            <div
-                                                key={proj.projId}
-                                                className="group"
-                                            >
-                                                <ProjectCard
-                                                    orgId={orgId}
-                                                    projId={proj.projId}
-                                                    projectName={proj.title}
-                                                    members={proj.members}
-                                                    admins={proj.admins}
-                                                    tasks={projectTasks[proj.projId] || []}
-                                                    backgroundImage=""
-                                                />
-                                            </div>
-                                        ))}
-                                </div>
-                            ) : (
-                                <div className="text-center py-12">
-                                    <div className="mx-auto max-w-md rounded-xl bg-gradient-to-br from-muted/60 to-card p-6">
-                                        <Folder className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                                        <h3 className="text-lg font-medium text-foreground mb-2">
-                                            {userRole === "admin"
-                                                ? "Welcome to Team Management!"
-                                                : "No teams assigned"}
-                                        </h3>
-                                        <p className="text-muted-foreground mb-4">
-                                            {userRole === "admin"
-                                                ? "Start creating your first team, experience the new task pool management system"
-                                                : "Wait for admins to create teams and assign you"}
-                                        </p>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                </div>
-            </div>
-        </div>
-
-        {/* Smart Matching Preview Dialog */}
-        <AlertDialog open={isPreviewDialogOpen} onOpenChange={setIsPreviewDialogOpen}>
-            <AlertDialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
-                <AlertDialogHeader>
-                    <AlertDialogTitle className="flex items-center gap-2">
-                        <Shuffle className="h-5 w-5" />
-                        Smart Matching Preview
-                    </AlertDialogTitle>
-                </AlertDialogHeader>
-                
-                {previewData && (
-                    <div className="space-y-6">
-                        {/* Statistics */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                            <div className="bg-blue-50 p-3 rounded-lg">
-                                <div className="text-lg font-bold text-blue-600">{previewData.totalUnassigned}</div>
-                                <div className="text-xs">Total Unassigned</div>
-                            </div>
-                            <div className="bg-green-50 p-3 rounded-lg">
-                                <div className="text-lg font-bold text-green-600">{previewData.totalAssigned || 0}</div>
-                                <div className="text-xs">Will Be Assigned</div>
-                            </div>
-                            <div className="bg-purple-50 p-3 rounded-lg">
-                                <div className="text-lg font-bold text-purple-600">{previewData.totalProjectsNeedingMembers}</div>
-                                <div className="text-xs">Projects Involved</div>
-                            </div>
-                            <div className="bg-orange-50 p-3 rounded-lg">
-                                <div className="text-lg font-bold text-orange-600">
-                                    {Math.round(
-                                        (previewData.preview?.reduce((sum, p) => {
-                                            const score = p.aiMatchingScore ?? 0;
-                                            return sum + score;
-                                        }, 0) / (previewData.preview?.length || 1)) || 0
-                                    )}
-                                </div>
-                                <div className="text-xs">Avg Match Score</div>
-                            </div>
-                        </div>
-
-                        {/* DndKit-based Drag & Drop Component */}
-                        <SmartMatchingDragDrop
-                            projects={displayProjects}
-                            previewData={previewData}
-                            previewChanges={previewChanges}
-                            onMemberTransfer={handlePreviewMemberTransfer}
+          {/* Content Area */}
+          <div className="flex-1 overflow-y-auto p-6">
+            <div className="space-y-6">
+              {displayProjects.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {displayProjects
+                    .sort((a, b) => (a.title || "").localeCompare(b.title || ""))
+                    .map((proj) => (
+                      <div key={proj.projId} className="group">
+                        <ProjectCard
+                          orgId={orgId}
+                          projId={proj.projId}
+                          projectName={proj.title}
+                          members={proj.members}
+                          admins={proj.admins}
+                          tasks={projectTasks[proj.projId] || []}
+                          backgroundImage=""
                         />
-                    </div>
-                )}
-                
-                <AlertDialogFooter>
-                    <Button
-                        variant="outline"
-                        onClick={() => {
-                            setIsPreviewDialogOpen(false);
-                            setPreviewData(null);
-                            setPreviewChanges({});
-                        }}
-                        disabled={isPending || transferLoading}
-                    >
-                        Cancel
-                    </Button>
-                    <Button
-                        onClick={handleConfirmAssignment}
-                        disabled={isPending}
-                        className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-                    >
-                        {isPending ? (
-                            <>
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                Assigning...
-                            </>
-                        ) : (
-                            "Confirm Assignment"
-                        )}
-                    </Button>
-                </AlertDialogFooter>
-            </AlertDialogContent>
-        </AlertDialog>
+                      </div>
+                    ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="mx-auto max-w-md rounded-xl bg-gradient-to-br from-muted/60 to-card p-6">
+                    <Folder className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-foreground mb-2">
+                      {userRole === "admin" ? "Welcome to Team Management!" : "No teams assigned"}
+                    </h3>
+                    <p className="text-muted-foreground mb-4">
+                      {userRole === "admin"
+                        ? "Start creating your first team, experience the new task pool management system"
+                        : "Wait for admins to create teams and assign you"}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
 
+      {/* Smart Matching Preview Dialog */}
+      <AlertDialog open={isPreviewDialogOpen} onOpenChange={setIsPreviewDialogOpen}>
+        <AlertDialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Shuffle className="h-5 w-5" />
+              Smart Matching Preview
+            </AlertDialogTitle>
+          </AlertDialogHeader>
 
-        </>
-    );
+          {previewData && (
+            <div className="space-y-6">
+              {/* Statistics */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                <div className="bg-blue-50 p-3 rounded-lg">
+                  <div className="text-lg font-bold text-blue-600">
+                    {previewData.totalUnassigned}
+                  </div>
+                  <div className="text-xs">Total Unassigned</div>
+                </div>
+                <div className="bg-green-50 p-3 rounded-lg">
+                  <div className="text-lg font-bold text-green-600">
+                    {previewData.totalAssigned || 0}
+                  </div>
+                  <div className="text-xs">Will Be Assigned</div>
+                </div>
+                <div className="bg-purple-50 p-3 rounded-lg">
+                  <div className="text-lg font-bold text-purple-600">
+                    {previewData.totalProjectsNeedingMembers}
+                  </div>
+                  <div className="text-xs">Projects Involved</div>
+                </div>
+                <div className="bg-orange-50 p-3 rounded-lg">
+                  <div className="text-lg font-bold text-orange-600">
+                    {Math.round(
+                      previewData.preview?.reduce((sum, p) => {
+                        const score = p.aiMatchingScore ?? 0;
+                        return sum + score;
+                      }, 0) / (previewData.preview?.length || 1) || 0
+                    )}
+                  </div>
+                  <div className="text-xs">Avg Match Score</div>
+                </div>
+              </div>
+
+              {/* DndKit-based Drag & Drop Component */}
+              <SmartMatchingDragDrop
+                projects={displayProjects}
+                previewData={previewData}
+                previewChanges={previewChanges}
+                onMemberTransfer={handlePreviewMemberTransfer}
+              />
+            </div>
+          )}
+
+          <AlertDialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsPreviewDialogOpen(false);
+                setPreviewData(null);
+                setPreviewChanges({});
+              }}
+              disabled={isPending || transferLoading}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleConfirmAssignment}
+              disabled={isPending}
+              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+            >
+              {isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Assigning...
+                </>
+              ) : (
+                "Confirm Assignment"
+              )}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
 };
 
 export default ProjTab;

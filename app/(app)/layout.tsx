@@ -5,34 +5,32 @@ import MySidebar from "@/components/MySidebar";
 import StoreProvider from "../StoreProvider";
 import { AnimationProvider } from "@/contexts/AnimationContext";
 
-export default function AppLayout({
-  children,
-}: Readonly<{ children: React.ReactNode }>) {
+export default function AppLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <AnimationProvider>
-    <SidebarProvider
-      className="flex flex-col h-screen"
-      style={
-        {
-          "--sidebar-width": "14rem",
-          "--sidebar-width-icon": "5rem",
-          "--sidebar-width-mobile": "0rem",
-        } as React.CSSProperties
-      }
-    >
-      <Header />
-      <div className="flex flex-1 overflow-hidden">
-        <div className="flex h-full w-full">
-          <MySidebar />
-          <div className="flex flex-col overflow-hidden w-full">
-            <AppOnboarding />
-            <main className="flex-1 overflow-auto w-full bg-muted/40">
-              <StoreProvider>{children}</StoreProvider>
-            </main>
+      <SidebarProvider
+        className="flex flex-col h-screen"
+        style={
+          {
+            "--sidebar-width": "14rem",
+            "--sidebar-width-icon": "5rem",
+            "--sidebar-width-mobile": "0rem",
+          } as React.CSSProperties
+        }
+      >
+        <Header />
+        <div className="flex flex-1 overflow-hidden">
+          <div className="flex h-full w-full">
+            <MySidebar />
+            <div className="flex flex-col overflow-hidden w-full">
+              <AppOnboarding />
+              <main className="flex-1 overflow-auto w-full bg-muted/40">
+                <StoreProvider>{children}</StoreProvider>
+              </main>
+            </div>
           </div>
         </div>
-      </div>
-    </SidebarProvider>
+      </SidebarProvider>
     </AnimationProvider>
   );
 }

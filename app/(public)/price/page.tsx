@@ -22,7 +22,8 @@ const plans = [
   },
   {
     name: "Team",
-    description: "Per user per month. Everyone on the team needs a seat to collaborate in one place.",
+    description:
+      "Per user per month. Everyone on the team needs a seat to collaborate in one place.",
     price: "$9",
     unit: "/user/month",
     features: [
@@ -38,7 +39,8 @@ const plans = [
   },
   {
     name: "Enterprise",
-    description: "For large organizations. Custom pricing and terms—contact us to discuss your needs.",
+    description:
+      "For large organizations. Custom pricing and terms—contact us to discuss your needs.",
     price: "Custom",
     unit: null,
     features: [
@@ -74,9 +76,7 @@ export default function PricePage() {
             <div
               key={plan.name}
               className={`relative flex flex-col rounded-2xl border bg-white p-8 shadow-sm transition hover:shadow-lg ${
-                plan.primary
-                  ? "border-afora ring-2 ring-afora/20"
-                  : "border-gray-200"
+                plan.primary ? "border-afora ring-2 ring-afora/20" : "border-gray-200"
               }`}
             >
               {plan.primary && (
@@ -92,9 +92,7 @@ export default function PricePage() {
                 ) : plan.price ? (
                   <>
                     <span className="text-3xl font-bold text-gray-900">{plan.price}</span>
-                    {plan.unit && (
-                      <span className="text-gray-500">{plan.unit}</span>
-                    )}
+                    {plan.unit && <span className="text-gray-500">{plan.unit}</span>}
                   </>
                 ) : (
                   <span className="text-3xl font-bold text-gray-900">$0</span>
